@@ -4,7 +4,13 @@ import { getCommentsAction, createCommentAction, Comment } from "@/modules/board
 import { getCardHistoryAction } from "@/modules/board/actions/history";
 import { parseProgress, parseChecklistCounts } from "@/modules/card/utils/parseProgress";
 
-export function useCardModal(card: CardType | null, onUpdate: (card: CardType) => void, tags: any[], priorities: any[]) {
+export function useCardModal(
+  card: CardType | null, 
+  onUpdate: (card: CardType) => void, 
+  tags: any[], 
+  priorities: any[],
+  initialTab: "description" | "comments" = "description"
+) {
   // Card fields
   const [content, setContent] = useState(card?.content || "");
   const [description, setDescription] = useState(card?.description || "");
@@ -17,7 +23,7 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
   // UI states
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
-  const [activeTab, setActiveTab] = useState<"description" | "comments">("description");
+  const [activeTab, setActiveTab] = useState<"description" | "comments">(initialTab);
   const [savedStatus, setSavedStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   // Comments

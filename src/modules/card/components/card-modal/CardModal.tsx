@@ -18,6 +18,7 @@ interface CardModalProps {
   tags: any[];
   priorities: any[];
   workspaceId: string;
+  initialTab?: "description" | "comments";
 }
 
 // Constants for labels and priorities (could be moved to a shared file)
@@ -44,6 +45,7 @@ export default function CardModal({
   tags,
   priorities,
   workspaceId,
+  initialTab,
 }: CardModalProps) {
   const {
     content,
@@ -77,7 +79,7 @@ export default function CardModal({
     handleCoverUpload,
     handleRemoveCover,
     checklistCounts,
-  } = useCardModal(card, onUpdate, tags, priorities);
+  } = useCardModal(card, onUpdate, tags, priorities, initialTab);
 
   if (!card) return null;
 

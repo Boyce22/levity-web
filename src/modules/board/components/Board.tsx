@@ -127,6 +127,15 @@ export default function Board({
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
+  const [initialCardTab, setInitialCardTab] = useState<"description" | "comments">("description");
+
+  const handleNotificationClick = (cardId: string) => {
+    const card = cards.find((c) => c.id === cardId);
+    if (card) {
+      setInitialCardTab("comments");
+      setEditingCard(card);
+    }
+  };
 
   // Workspace creation
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
@@ -171,6 +180,7 @@ export default function Board({
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenShare={() => setIsShareOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
+        onNotificationClick={handleNotificationClick}
         isCreatingWorkspace={isCreatingWorkspace}
         setIsCreatingWorkspace={setIsCreatingWorkspace}
       />
@@ -199,7 +209,10 @@ export default function Board({
           onAddList={addList}
           onDeleteList={deleteList}
           onDeleteCard={deleteCard}
-          onCardClick={setEditingCard}
+          onCardClick={(card) => {
+            setInitialCardTab("description");
+            setEditingCard(card);
+          }}
           allUsers={allUsers}
           commentCounts={commentCounts}
           userAvatarUrl={
@@ -223,6 +236,7 @@ export default function Board({
           tags={tags}
           priorities={priorities}
           workspaceId={currentWorkspaceId}
+          initialTab={initialCardTab}
         />
       )}
 
