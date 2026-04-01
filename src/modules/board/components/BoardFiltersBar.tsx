@@ -142,7 +142,7 @@ export function BoardFiltersBar({
           }}
         />
 
-        {/* Priority filter */}
+  {/* Priority filter */}
         <div className="flex items-center gap-1.5 py-2 shrink-0">
           <Flag
             className="w-3 h-3"
@@ -157,10 +157,10 @@ export function BoardFiltersBar({
               className="text-[10px] font-bold px-2 py-0.5 rounded-full transition-all"
               style={{
                 background:
-                  priorityFilter === p.name ? p.color + "25" : "transparent",
+                  priorityFilter === p.name ? (p.color || "var(--app-text)") + "25" : "transparent",
                 color:
-                  priorityFilter === p.name ? p.color : "var(--app-text-muted)",
-                border: `1px solid ${priorityFilter === p.name ? p.color + "50" : "transparent"}`,
+                  priorityFilter === p.name ? (p.color || "var(--app-text)") : "var(--app-text-muted)",
+                border: `1px solid ${priorityFilter === p.name ? (p.color || "var(--app-text)") + "50" : "transparent"}`,
               }}
             >
               {p.icon} {p.name}
@@ -181,10 +181,10 @@ export function BoardFiltersBar({
               className="text-[10px] font-bold px-2 py-0.5 rounded-full transition-all"
               style={{
                 background:
-                  labelFilter === l.name ? l.color + "25" : "transparent",
+                  labelFilter === l.name ? (l.color || "var(--app-text)") + "25" : "transparent",
                 color:
-                  labelFilter === l.name ? l.color : "var(--app-text-muted)",
-                border: `1px solid ${labelFilter === l.name ? l.color + "50" : "transparent"}`,
+                  labelFilter === l.name ? (l.color || "var(--app-text)") : "var(--app-text-muted)",
+                border: `1px solid ${labelFilter === l.name ? (l.color || "var(--app-text)") + "50" : "transparent"}`,
               }}
             >
               {l.name}
