@@ -55,6 +55,7 @@ export default function Board({
     addCard,
     deleteCard,
     updateCard,
+    updateListType,
   } = useBoardData({
     initialLists,
     initialCards,
@@ -132,6 +133,7 @@ export default function Board({
         currentWorkspaceName={currentWorkspace?.name}
         userProfile={userProfile}
         allUsers={allUsers}
+        lists={lists}
         cards={cards}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenShare={() => setIsShareOpen(true)}
@@ -169,6 +171,7 @@ export default function Board({
             userProfile?.avatar_url ||
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.username}`
           }
+          onListTypeChange={updateListType}
         />
       </DragDropContext>
 

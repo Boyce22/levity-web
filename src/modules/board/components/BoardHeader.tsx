@@ -5,7 +5,8 @@ import { useState } from "react";
 import { Layout, ChevronDown, Settings, Share2, LogOut } from "lucide-react";
 import NotificationBell from "@/modules/users/components/NotificationBell";
 import { logoutAction } from "@/modules/users/actions/users";
-import { Card as CardType } from "@/modules/board/actions/board";
+import { Card as CardType, List as ListType } from "@/modules/board/actions/board";
+import { getListType, getCardEffectiveProgress } from "@/modules/list/utils/listType";
 
 interface BoardHeaderProps {
   workspaces: any[];
@@ -13,6 +14,7 @@ interface BoardHeaderProps {
   currentWorkspaceName?: string;
   userProfile: any;
   allUsers: any[];
+  lists: ListType[];
   cards: CardType[];
   onOpenSettings: () => void;
   onOpenShare: () => void;
@@ -28,6 +30,7 @@ export function BoardHeader({
   currentWorkspaceName,
   userProfile,
   allUsers,
+  lists,
   cards,
   onOpenSettings,
   onOpenShare,
@@ -40,12 +43,22 @@ export function BoardHeader({
     userProfile?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.username}`;
 
-  // Workspace progress — média do progresso de todos os cards com checklists
+  // Workspace progress — média do progresso efetivo de todos os cards
+  // Combina card.progress (checklist) com tipo inferido da lista como fallback
   const totalCards = cards.length;
+  const sortedLists = [...lists].sort((a, b) => a.position - b.position);
+  const listTypeMap = new Map<string, ReturnType<typeof getListType>>();
+  sortedLists.forEach((list, idx) => {
+    listTypeMap.set(list.id, getListType(list, idx, sortedLists.length));
+  });
+
   const progressPct =
     totalCards > 0
       ? Math.round(
-          cards.reduce((sum, c) => sum + (c.progress ?? 0), 0) / totalCards
+          cards.reduce((sum, c) => {
+            const listType = listTypeMap.get(c.list_id) ?? "todo";
+            return sum + getCardEffectiveProgress(c.progress, listType);
+          }, 0) / totalCards
         )
       : 0;
 

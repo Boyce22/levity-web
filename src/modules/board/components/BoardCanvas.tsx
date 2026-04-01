@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import { Plus } from "lucide-react";
 
-import { List as ListType, Card as CardType } from "@/modules/board/actions/board";
+import { List as ListType, Card as CardType, ListType as LType } from "@/modules/board/actions/board";
 import List from "@/modules/list/components/List";
 
 interface BoardCanvasProps {
@@ -17,6 +17,7 @@ interface BoardCanvasProps {
   allUsers: any[];
   commentCounts: Record<string, number>;
   userAvatarUrl: string;
+  onListTypeChange?: (listId: string, type: LType) => void;
 }
 
 const DEFAULT_WIP_LIMIT = 5;
@@ -32,6 +33,7 @@ export function BoardCanvas({
   allUsers,
   commentCounts,
   userAvatarUrl,
+  onListTypeChange,
 }: BoardCanvasProps) {
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
@@ -66,6 +68,7 @@ export function BoardCanvas({
                   list={list}
                   cards={listCards}
                   index={index}
+                  totalLists={lists.length}
                   onAddCard={onAddCard}
                   onDeleteList={() => onDeleteList(list.id)}
                   onDeleteCard={onDeleteCard}
@@ -74,6 +77,7 @@ export function BoardCanvas({
                   allUsers={allUsers}
                   commentCounts={commentCounts}
                   wipLimit={list.wip_limit ?? DEFAULT_WIP_LIMIT}
+                  onListTypeChange={onListTypeChange}
                 />
               );
             })}

@@ -10,6 +10,8 @@ import {
   assertUserOwnsCard,
 } from "@/modules/workspace/actions/assertions";
 
+export type ListType = 'todo' | 'in_progress' | 'review' | 'done';
+
 export type List = {
   id: string;
   user_id: string;
@@ -17,6 +19,7 @@ export type List = {
   position: number;
   wip_limit?: number | null;
   workspace_id: string;
+  list_type?: ListType | null;
 };
 
 export type Card = {
@@ -161,6 +164,14 @@ export async function deleteListAction(id: string) {
   await assertUserOwnsList(userId, id);
 
   await supabase.from("lists").delete().eq("id", id);
+  revalidatePath("/");
+}
+
+export async function updateListTypeAction(listId: string, listType: ListType | null) {
+  const userId = await getUserId();
+  await assertUserOwnsList(userId, listId);
+
+  await supabase.from("lists").update({ list_type: listType }).eq("id", listId);
   revalidatePath("/");
 }
 

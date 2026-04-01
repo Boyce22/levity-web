@@ -6,12 +6,14 @@ import { renameListAction } from "@/modules/board/actions/board";
 import Card from "@/modules/card/components/Card";
 import { ListHeader } from "./ListHeader";
 import { ListAddCard } from "./ListAddCard";
-import { List as ListType, Card as CardType } from "@/modules/board/actions/board";
+import { List as ListType, Card as CardType, ListType as LType } from "@/modules/board/actions/board";
+import { getListType, LIST_TYPE_COLOR } from "@/modules/list/utils/listType";
 
 interface ListProps {
   list: ListType;
   cards: CardType[];
   index: number;
+  totalLists: number;
   onAddCard: (listId: string, content: string) => Promise<any> | void;
   onDeleteList: () => void;
   onDeleteCard: (cardId: string) => void;
@@ -20,6 +22,7 @@ interface ListProps {
   allUsers: any[];
   commentCounts?: Record<string, number>;
   wipLimit?: number;
+  onListTypeChange?: (listId: string, type: LType) => void;
 }
 
 const COL_ACCENTS: string[] = [
@@ -30,6 +33,7 @@ export default function List({
   list,
   cards,
   index,
+  totalLists,
   onAddCard,
   onDeleteList,
   onDeleteCard,
@@ -37,8 +41,10 @@ export default function List({
   allUsers,
   commentCounts = {},
   wipLimit,
+  onListTypeChange,
 }: ListProps) {
-  const accent = COL_ACCENTS[index % COL_ACCENTS.length];
+  const listType = getListType(list, index, totalLists);
+  const accent = LIST_TYPE_COLOR[listType];
   const isWipExceeded = wipLimit != null && cards.length >= wipLimit;
 
   const handleRename = async (newTitle: string) => {
@@ -97,8 +103,10 @@ export default function List({
             cardCount={cards.length}
             wipLimit={wipLimit}
             accentColor={accent}
+            listType={listType}
             onRename={handleRename}
             onDelete={onDeleteList}
+            onTypeChange={(type) => onListTypeChange?.(list.id, type)}
           />
 
           {/* Aviso de limite WIP */}

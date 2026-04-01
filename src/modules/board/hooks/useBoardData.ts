@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import {
   List as ListType,
   Card as CardType,
+  ListType as LType,
   createListAction,
   createCardAction,
   deleteListAction,
@@ -101,6 +102,12 @@ export function useBoardData({
     await deleteCardAction(cardId);
   }, []);
 
+  const updateListType = useCallback((listId: string, type: LType) => {
+    setLists((prev) =>
+      prev.map((l) => (l.id === listId ? { ...l, list_type: type } : l)),
+    );
+  }, []);
+
   const updateCard = useCallback((updatedCard: CardType) => {
     setCards((prev) =>
       prev.map((c) => (c.id === updatedCard.id ? updatedCard : c)),
@@ -119,5 +126,6 @@ export function useBoardData({
     addCard,
     deleteCard,
     updateCard,
+    updateListType,
   };
 }
