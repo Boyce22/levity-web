@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { updateUserProfile, uploadAvatarAction } from "@/modules/users/actions/user";
-import { X, Check, Camera, AlertCircle, Loader2 } from "lucide-react";
+import { X, Check, Camera, Loader2, User, Type, Link as LinkIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ProfileModalProps {
@@ -17,8 +17,6 @@ interface FormErrors {
   avatarUrl?: string;
   bio?: string;
 }
-
-const ease = [0.16, 1, 0.3, 1];
 
 export default function ProfileModal({
   isOpen,
@@ -39,7 +37,6 @@ export default function ProfileModal({
         : null),
   );
   const [avatarHovered, setAvatarHovered] = useState(false);
-  const [activeField, setActiveField] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -77,9 +74,9 @@ export default function ProfileModal({
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    if (!displayName.trim()) newErrors.displayName = "Display name is required";
+    if (!displayName.trim()) newErrors.displayName = "Required";
     else if (displayName.length < 2)
-      newErrors.displayName = "At least 2 characters";
+      newErrors.displayName = "Min 2 characters";
     else if (displayName.length > 50)
       newErrors.displayName = "Max 50 characters";
     if (avatarUrl && !isValidUrl(avatarUrl) && !avatarUrl.startsWith("data:"))
@@ -94,10 +91,6 @@ export default function ProfileModal({
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setErrors((p) => ({ ...p, avatarUrl: "Upload an image file" }));
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors((p) => ({ ...p, avatarUrl: "Image must be < 5MB" }));
       return;
     }
     const reader = new FileReader();
@@ -135,9 +128,9 @@ export default function ProfileModal({
       setTimeout(() => {
         setSaved(false);
         onClose();
-      }, 1600);
+      }, 1000);
     } catch {
-      setErrors({ avatarUrl: "Failed to save. Please try again." });
+      setErrors({ avatarUrl: "Failed to save." });
     } finally {
       setSaving(false);
     }
@@ -146,161 +139,61 @@ export default function ProfileModal({
   const memberSince = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString("en-US", {
         year: "numeric",
-        month: "long",
+        month: "short",
       })
     : null;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
-        {/* Backdrop */}
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: 0.15 }}
           onClick={onClose}
-          className="absolute inset-0"
-          style={{
-            background: "rgba(0,0,0,0.75)",
-            backdropFilter: "blur(14px)",
-          }}
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         />
 
-        {/* Modal */}
         <motion.div
-          initial={{ opacity: 0, y: 36, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 16, scale: 0.97 }}
-          transition={{ duration: 0.45, ease: "easeInOut" }}
-          className="relative w-full max-w-110 z-10 overflow-hidden"
+          initial={{ opacity: 0, scale: 0.97, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.97, y: 8 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="relative w-full max-w-[420px] z-10 flex flex-col"
           style={{
             background: "var(--app-panel)",
-            borderRadius: "24px",
-            border: "1px solid var(--app-border)",
-            boxShadow: "0 40px 100px rgba(0,0,0,0.55)",
+            borderRadius: "10px",
+            border: "1px solid var(--app-border-faint)",
+            boxShadow: "0 24px 64px -12px rgba(0,0,0,0.8)",
           }}
         >
-          {/* Top accent line */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "1px",
-              zIndex: 2,
-              background:
-                "linear-gradient(90deg, transparent 0%, var(--app-primary) 35%, var(--app-primary-hover) 65%, transparent 100%)",
-              opacity: 0.6,
-            }}
-          />
+          {/* Subtle top border highlight */}
+          <div className="absolute top-0 inset-x-0 h-[1px] bg-white/5 rounded-t-[10px]" />
 
-          {/* Ambient glow */}
-          <div
-            style={{
-              position: "absolute",
-              top: -80,
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 260,
-              height: 260,
-              background:
-                "radial-gradient(circle, var(--app-primary-muted) 0%, transparent 70%)",
-              pointerEvents: "none",
-              opacity: 0.6,
-            }}
-          />
-
-          <form onSubmit={handleSave}>
-            {/* Hero */}
-            <div
-              className="relative flex flex-col items-center"
-              style={{ paddingTop: 40, paddingBottom: 28, paddingInline: 32 }}
-            >
-              {/* Close button */}
-              <motion.button
+          <form onSubmit={handleSave} className="flex flex-col relative z-10 w-full h-full">
+            {/* Header */}
+            <div className="pt-7 pb-5 px-7 flex flex-col items-center relative border-b border-[var(--app-border-faint)] bg-[var(--app-elevated)]/50 rounded-t-[10px]">
+              <button
                 type="button"
                 onClick={onClose}
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.92 }}
-                transition={{ duration: 0.2 }}
-                className="absolute flex items-center justify-center"
-                style={{
-                  top: 14,
-                  right: 14,
-                  width: 28,
-                  height: 28,
-                  borderRadius: "8px",
-                  background: "var(--app-hover)",
-                  border: "1px solid var(--app-border-faint)",
-                  color: "var(--app-text-muted)",
-                  cursor: "pointer",
-                  zIndex: 3,
-                }}
-                aria-label="Close"
+                className="absolute top-4 right-4 p-1.5 rounded-md text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-hover)] transition-colors"
               >
-                <X size={13} />
-              </motion.button>
+                <X size={16} strokeWidth={2} />
+              </button>
 
-              {/* Avatar */}
-              <motion.div
-                className="relative cursor-pointer"
-                style={{ marginBottom: 16 }}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                onHoverStart={() => setAvatarHovered(true)}
-                onHoverEnd={() => setAvatarHovered(false)}
+              <div
+                className="relative group cursor-pointer mb-5"
                 onClick={() => fileInputRef.current?.click()}
+                onMouseEnter={() => setAvatarHovered(true)}
+                onMouseLeave={() => setAvatarHovered(false)}
               >
-                {/* Spinning ring */}
-                <motion.div
-                  animate={{ rotate: avatarHovered ? 360 : 0 }}
-                  transition={{
-                    duration: 2.5,
-                    ease: "linear",
-                    repeat: avatarHovered ? Infinity : 0,
-                  }}
-                  style={{
-                    position: "absolute",
-                    inset: -3,
-                    borderRadius: "50%",
-                    background:
-                      "conic-gradient(from 0deg, var(--app-primary) 0%, var(--app-primary-hover) 40%, transparent 60%, var(--app-primary) 100%)",
-                    opacity: avatarHovered ? 1 : 0.35,
-                    transition: "opacity 0.3s",
-                  }}
-                />
-                {/* Gap ring */}
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: -0.5,
-                    borderRadius: "50%",
-                    background: "var(--app-panel)",
-                  }}
-                />
-
-                {/* Photo */}
-                <div
-                  style={{
-                    position: "relative",
-                    width: 88,
-                    height: 88,
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    background: "var(--app-elevated)",
-                  }}
-                >
-                  {avatarPreview && (
+                <div className="w-20 h-20 rounded-md overflow-hidden bg-[var(--app-bg)] border border-[var(--app-border)] group-hover:border-[var(--app-primary)] transition-colors duration-200 relative z-10 shadow-sm">
+                  {avatarPreview ? (
                     <img
                       src={avatarPreview}
                       alt="Avatar"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
+                      className="w-full h-full object-cover"
                       onError={() =>
                         setAvatarPreview(
                           profile?.username
@@ -309,7 +202,12 @@ export default function ProfileModal({
                         )
                       }
                     />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[var(--app-bg)] text-[var(--app-text-muted)]">
+                      <User size={28} />
+                    </div>
                   )}
+                  
                   <AnimatePresence>
                     {avatarHovered && (
                       <motion.div
@@ -317,18 +215,13 @@ export default function ProfileModal({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute inset-0 flex items-center justify-center"
-                        style={{
-                          background: "rgba(0,0,0,0.5)",
-                          backdropFilter: "blur(2px)",
-                        }}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center text-white"
                       >
-                        <Camera size={20} style={{ color: "white" }} />
+                        <Camera size={20} />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -336,230 +229,99 @@ export default function ProfileModal({
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-              </motion.div>
+              </div>
 
-              {/* Identity */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.4, ease: "easeInOut" }}
-                className="text-center"
-              >
-                <h2
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 700,
-                    letterSpacing: "-0.4px",
-                    color: "var(--app-text)",
-                    lineHeight: 1.25,
-                    marginBottom: 6,
-                  }}
-                >
-                  {profile?.display_name || profile?.username || "Your Profile"}
-                </h2>
-                <div className="flex items-center justify-center gap-2 flex-wrap">
-                  {profile?.username && (
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "var(--app-primary)",
-                        background: "var(--app-primary-muted)",
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                        border: "1px solid var(--app-border)",
-                      }}
-                    >
-                      @{profile.username}
-                    </span>
-                  )}
+              <h2 className="text-[17px] font-medium text-[var(--app-text)] tracking-tight">
+                {profile?.display_name || profile?.username || "Profile Settings"}
+              </h2>
+              {profile?.username && (
+                <div className="mt-2 flex items-center justify-center gap-2">
+                  <span className="bg-[var(--app-bg)] px-2 py-0.5 rounded-[4px] border border-[var(--app-border-faint)] text-[12px] font-mono text-[var(--app-text-muted)]">
+                    @{profile.username}
+                  </span>
                   {memberSince && (
-                    <span
-                      style={{
-                        fontSize: 11.5,
-                        color: "var(--app-text-muted)",
-                        opacity: 0.65,
-                      }}
-                    >
-                      Member since {memberSince}
+                    <span className="text-[12px] text-[var(--app-text-muted)] opacity-60">
+                      Joined {memberSince}
                     </span>
                   )}
                 </div>
-              </motion.div>
+              )}
             </div>
 
-            {/* Divider */}
-            <div
-              style={{ height: "1px", background: "var(--app-border-faint)" }}
-            />
-
-            {/* Fields */}
-            <div
-              style={{
-                padding: "24px 28px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 20,
-              }}
-            >
-              <PremiumField
-                label="Display name"
+            {/* Form Fields */}
+            <div className="px-7 py-6 flex flex-col gap-5">
+              <CleanField
+                label="Display Name"
+                icon={<User size={14} />}
                 error={errors.displayName}
-                counter={`${displayName.length}/50`}
-                active={activeField === "name"}
               >
                 <input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  onFocus={() => setActiveField("name")}
-                  onBlur={() => setActiveField(null)}
                   placeholder="Your full name"
-                  style={fieldInputStyle(
-                    !!errors.displayName,
-                    activeField === "name",
-                  )}
+                  className="w-full bg-[var(--app-bg)] text-[var(--app-text)] rounded-md pl-9 pr-3 py-2.5 text-[13px] border border-[var(--app-border)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-1 focus:ring-[var(--app-primary)] transition-all placeholder:text-[var(--app-text-muted)] placeholder:opacity-50"
                 />
-              </PremiumField>
+              </CleanField>
 
-              <PremiumField
+              <CleanField
                 label="Bio"
+                icon={<Type size={14} />}
                 error={errors.bio}
-                counter={`${bio.length}/200`}
-                active={activeField === "bio"}
               >
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  onFocus={() => setActiveField("bio")}
-                  onBlur={() => setActiveField(null)}
+                  placeholder="A short bio..."
                   rows={3}
-                  placeholder="A few words about yourself..."
-                  style={{
-                    ...fieldInputStyle(!!errors.bio, activeField === "bio"),
-                    resize: "none",
-                  }}
+                  className="w-full bg-[var(--app-bg)] text-[var(--app-text)] rounded-md pl-9 pr-3 py-2.5 text-[13px] border border-[var(--app-border)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-1 focus:ring-[var(--app-primary)] transition-all resize-none placeholder:text-[var(--app-text-muted)] placeholder:opacity-50"
                 />
-              </PremiumField>
+              </CleanField>
 
-              <PremiumField
+              <CleanField
                 label="Avatar URL"
+                icon={<LinkIcon size={14} />}
                 error={errors.avatarUrl}
-                hint="Or click your photo above to upload"
-                active={activeField === "avatar"}
               >
                 <input
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
-                  onFocus={() => setActiveField("avatar")}
-                  onBlur={() => setActiveField(null)}
-                  placeholder="https://example.com/photo.jpg"
-                  style={fieldInputStyle(
-                    !!errors.avatarUrl,
-                    activeField === "avatar",
-                  )}
+                  placeholder="https://..."
+                  className="w-full bg-[var(--app-bg)] text-[var(--app-text)] rounded-md pl-9 pr-3 py-2.5 text-[13px] border border-[var(--app-border)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-1 focus:ring-[var(--app-primary)] transition-all placeholder:text-[var(--app-text-muted)] placeholder:opacity-50"
                 />
-              </PremiumField>
+              </CleanField>
             </div>
 
-            {/* Divider */}
-            <div
-              style={{ height: "1px", background: "var(--app-border-faint)" }}
-            />
-
             {/* Footer */}
-            <div
-              className="flex items-center justify-between"
-              style={{ padding: "16px 28px 24px" }}
-            >
+            <div className="px-7 py-5 flex items-center justify-end gap-3 border-t border-[var(--app-border-faint)] bg-[var(--app-elevated)]/30 rounded-b-[10px]">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={saving}
-                className="text-sm font-medium rounded-xl px-4 py-2 transition-all"
-                style={{
-                  color: "var(--app-text-muted)",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.color =
-                    "var(--app-text)";
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    "var(--app-hover)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.color =
-                    "var(--app-text-muted)";
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    "transparent";
-                }}
+                className="px-4 py-2 rounded-md text-[13px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)] bg-transparent border border-transparent hover:border-[var(--app-border)] hover:bg-[var(--app-hover)] transition-colors focus:outline-none"
               >
                 Cancel
               </button>
-
-              <motion.button
+              <button
                 type="submit"
                 disabled={saving || saved}
-                whileHover={{ scale: saving || saved ? 1 : 1.025 }}
-                whileTap={{ scale: saving || saved ? 1 : 0.97 }}
-                className="flex items-center justify-center gap-1.5"
+                className="px-5 py-2 rounded-md text-[13px] font-medium text-white transition-all flex items-center gap-2"
                 style={{
-                  minWidth: 140,
-                  padding: "10px 24px",
-                  borderRadius: "13px",
-                  border: "none",
-                  fontSize: 13.5,
-                  fontWeight: 650,
-                  letterSpacing: "-0.15px",
-                  cursor: saving || saved ? "not-allowed" : "pointer",
-                  opacity: saving ? 0.72 : 1,
-                  transition:
-                    "background 0.3s, color 0.3s, box-shadow 0.3s, opacity 0.2s",
-                  ...(saved
-                    ? {
-                        background: "rgba(52,211,153,0.12)",
-                        color: "#34d399",
-                        boxShadow: "0 0 0 1px rgba(52,211,153,0.3)",
-                      }
-                    : {
-                        background: "var(--app-primary)",
-                        color: "var(--app-bg)",
-                        boxShadow:
-                          "0 6px 24px var(--app-primary-muted), 0 2px 6px rgba(0,0,0,0.3)",
-                      }),
+                  background: saved ? "#10b981" : "var(--app-primary)",
+                  opacity: saving ? 0.8 : 1,
                 }}
               >
-                <AnimatePresence mode="wait">
-                  {saved ? (
-                    <motion.span
-                      key="saved"
-                      initial={{ opacity: 0, scale: 0.75 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center gap-1.5"
-                    >
-                      <Check size={14} strokeWidth={2.5} /> Saved
-                    </motion.span>
-                  ) : saving ? (
-                    <motion.span
-                      key="saving"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center gap-1.5"
-                    >
-                      <Loader2 size={14} className="animate-spin" /> Saving…
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="idle"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                    >
-                      Save changes
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
+                {saved ? (
+                  <>
+                    <Check size={14} strokeWidth={2.5} /> Saved
+                  </>
+                ) : saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" /> Saving
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
             </div>
           </form>
         </motion.div>
@@ -568,133 +330,33 @@ export default function ProfileModal({
   );
 }
 
-/* ─── PremiumField ─── */
-
-function PremiumField({
+function CleanField({
   label,
+  icon,
   error,
-  hint,
-  counter,
-  active,
   children,
 }: {
   label: string;
+  icon: React.ReactNode;
   error?: string;
-  hint?: string;
-  counter?: string;
-  active?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <div
-        className="flex items-center justify-between"
-        style={{ marginBottom: 8 }}
-      >
-        <label
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: active ? "var(--app-primary)" : "var(--app-text-muted)",
-            transition: "color 0.2s",
-          }}
-        >
+    <div className="flex flex-col gap-1.5 relative">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-semibold text-[var(--app-text)] opacity-70">
           {label}
         </label>
-        {counter && (
-          <span
-            style={{
-              fontSize: 11,
-              color: "var(--app-text-muted)",
-              opacity: 0.5,
-            }}
-          >
-            {counter}
-          </span>
+        {error && (
+          <span className="text-[11px] text-red-400 font-medium">{error}</span>
         )}
       </div>
-
-      <div style={{ position: "relative" }}>
-        {/* Animated left accent bar */}
-        <AnimatePresence>
-          {active && (
-            <motion.div
-              initial={{ scaleY: 0, opacity: 0 }}
-              animate={{ scaleY: 1, opacity: 1 }}
-              exit={{ scaleY: 0, opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 8,
-                bottom: 8,
-                width: 2.5,
-                borderRadius: 2,
-                background: "var(--app-primary)",
-                transformOrigin: "center",
-                zIndex: 1,
-              }}
-            />
-          )}
-        </AnimatePresence>
+      <div className="relative">
+        <div className="absolute left-[11px] top-[11px] text-[var(--app-text-muted)] pointer-events-none opacity-50">
+          {icon}
+        </div>
         {children}
       </div>
-
-      <AnimatePresence>
-        {(error || hint) && (
-          <motion.div
-            initial={{ opacity: 0, y: -3 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -3 }}
-            transition={{ duration: 0.18 }}
-            className="flex items-center gap-1.5"
-            style={{
-              marginTop: 7,
-              fontSize: 11.5,
-              lineHeight: 1.4,
-              color: error ? "#f87171" : "var(--app-text-muted)",
-              opacity: error ? 1 : 0.65,
-            }}
-          >
-            {error && <AlertCircle size={11} strokeWidth={2.5} />}
-            <span>{error || hint}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
-}
-
-/* ─── Field input style ─── */
-
-function fieldInputStyle(
-  hasError: boolean,
-  active: boolean,
-): React.CSSProperties {
-  return {
-    width: "100%",
-    padding: "10px 14px 10px 16px",
-    borderRadius: 12,
-    border: `1px solid ${
-      hasError
-        ? "rgba(248,113,113,0.5)"
-        : active
-          ? "var(--app-primary)"
-          : "var(--app-border)"
-    }`,
-    background: "var(--app-elevated)",
-    color: "var(--app-text)",
-    fontSize: 13.5,
-    fontFamily: "inherit",
-    outline: "none",
-    display: "block",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-    boxShadow: active
-      ? "0 0 0 3px var(--app-primary-muted), 0 2px 8px rgba(0,0,0,0.15)"
-      : hasError
-        ? "0 0 0 3px rgba(248,113,113,0.1)"
-        : "0 1px 3px rgba(0,0,0,0.12)",
-  };
 }

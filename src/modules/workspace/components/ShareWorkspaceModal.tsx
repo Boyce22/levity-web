@@ -90,7 +90,7 @@ export default function ShareWorkspaceModal({
             <button
               onClick={handleGenerate}
               disabled={loading}
-              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-indigo-500 hover:bg-indigo-600 disabled:bg-indigo-500/50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shadow-lg shadow-indigo-500/20"
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-[var(--app-primary)] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13px] font-medium rounded-md transition-all"
             >
               {loading ? (
                 <>
