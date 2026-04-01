@@ -71,7 +71,11 @@ export default function List({
             boxShadow: snapshot.isDragging
               ? `0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px ${accent}40`
               : "0 2px 8px rgba(0,0,0,0.15)",
-            transition: snapshot.isDragging ? "none" : "border-color 0.2s, box-shadow 0.2s",
+            transition: snapshot.isDragging
+              ? provided.draggableProps.style?.transition
+              : provided.draggableProps.style?.transition
+                ? `${provided.draggableProps.style.transition}, border-color 0.2s, box-shadow 0.2s`
+                : "border-color 0.2s, box-shadow 0.2s",
           }}
         >
           {/* Barra de cor superior */}

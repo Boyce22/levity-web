@@ -50,11 +50,15 @@ export default function Card({
               ? "0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--app-primary)"
               : "0 1px 3px rgba(0,0,0,0.2)",
             transition: snapshot.isDragging
-              ? "none"
-              : "border-color 0.2s, box-shadow 0.2s, transform 0.15s",
+              ? provided.draggableProps.style?.transition
+              : provided.draggableProps.style?.transition
+                ? `${provided.draggableProps.style.transition}, border-color 0.2s, box-shadow 0.2s`
+                : "border-color 0.2s, box-shadow 0.2s",
             transform: snapshot.isDragging
-              ? "scale(1.03) rotate(1deg)"
-              : "translateY(0px)",
+              ? provided.draggableProps.style?.transform
+                ? `${provided.draggableProps.style.transform} scale(1.03) rotate(1deg)`
+                : "scale(1.03) rotate(1deg)"
+              : provided.draggableProps.style?.transform,
           }}
         >
           {card.cover_url && <CardCover coverUrl={card.cover_url} />}

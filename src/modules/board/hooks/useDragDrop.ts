@@ -43,6 +43,7 @@ export function useDragDrop({
 
     if (type === "card") {
       const destListId = destination.droppableId;
+      const sourceListId = source.droppableId;
       const newCards = Array.from(cards);
       const cardIndex = newCards.findIndex((c) => c.id === draggableId);
       const [movedCard] = newCards.splice(cardIndex, 1);
@@ -54,17 +55,28 @@ export function useDragDrop({
       destListCards.splice(destination.index, 0, movedCard);
       const updatedDest = destListCards.map((c, i) => ({ ...c, position: i }));
 
+      let updatedSource: typeof newCards = [];
+      if (sourceListId !== destListId) {
+        const sourceListCards = newCards
+          .filter((c) => c.list_id === sourceListId)
+          .sort((a, b) => a.position - b.position);
+        updatedSource = sourceListCards.map((c, i) => ({ ...c, position: i }));
+      }
+
       // Combine with cards from other lists
-      const others = newCards.filter((c) => c.list_id !== destListId);
-      const finalCards = [...others, ...updatedDest];
+      const others = newCards.filter(
+        (c) => c.list_id !== destListId && c.list_id !== sourceListId
+      );
+      const finalCards = [...others, ...updatedDest, ...updatedSource];
       setCards(finalCards);
 
+      const toUpdate = [...updatedDest, ...updatedSource];
       await updateCardPositionsAction(
-        updatedDest.map((c) => ({
+        toUpdate.map((c) => ({
           id: c.id,
           list_id: c.list_id,
           position: c.position,
-        })),
+        }))
       );
     }
   };
