@@ -25,70 +25,80 @@ export function ListAddCard({ accentColor, onAdd }: ListAddCardProps) {
 
   return (
     <div className="px-3 pb-2">
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         {isAdding ? (
           <motion.div
             key="input"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className="mt-1 px-2 py-1 rounded-lg transition"
-            style={{
-              background: "transparent",
-            }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
           >
-            <textarea
-              autoFocus
-              placeholder="Descreva a tarefa..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={2}
-              className="w-full bg-transparent resize-none text-[13px] focus:outline-none placeholder:opacity-50"
-              style={{ color: "var(--app-text)" }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-                if (e.key === "Escape") handleCancel();
+            <div
+              className="mt-1 px-2 py-1 rounded-lg transition"
+              style={{
+                background: "transparent",
               }}
-            />
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleSubmit}
-                className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-md transition"
-                style={{
-                  background: accentColor + "20",
-                  color: accentColor,
+            >
+              <textarea
+                autoFocus
+                placeholder="Descreva a tarefa..."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={2}
+                className="w-full bg-transparent resize-none text-[13px] focus:outline-none placeholder:opacity-50"
+                style={{ color: "var(--app-text)" }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                  if (e.key === "Escape") handleCancel();
                 }}
-              >
-                Add
-              </button>
+              />
 
-              <button
-                onClick={handleCancel}
-                className="text-[12px] px-2 py-1 opacity-60 hover:opacity-100 transition"
-              >
-                Cancel
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSubmit}
+                  className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-md transition"
+                  style={{
+                    background: accentColor + "20",
+                    color: accentColor,
+                  }}
+                >
+                  Add
+                </button>
+
+                <button
+                  onClick={handleCancel}
+                  className="text-[12px] px-2 py-1 opacity-60 hover:opacity-100 transition"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </motion.div>
         ) : (
-          <motion.button
+          <motion.div
             key="button"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 w-full py-2 text-[13px] transition group"
-            style={{ color: "var(--app-text-muted)" }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
           >
-            <Plus className="w-4 h-4 opacity-70 group-hover:opacity-100 transition" />
-            <span className="group-hover:translate-x-[2px] transition">
-              Adicionar tarefa
-            </span>
-          </motion.button>
+            <button
+              onClick={() => setIsAdding(true)}
+              className="flex items-center gap-2 w-full py-2 text-[13px] transition group"
+              style={{ color: "var(--app-text-muted)" }}
+            >
+              <Plus className="w-4 h-4 opacity-70 group-hover:opacity-100 transition" />
+              <span className="group-hover:translate-x-[2px] transition">
+                Adicionar tarefa
+              </span>
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
