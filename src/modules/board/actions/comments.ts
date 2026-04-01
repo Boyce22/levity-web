@@ -50,14 +50,12 @@ export async function getCommentsAction(cardId: string, limit: number = 3, curso
     .select('*, users(username, display_name, avatar_url)')
     .in('parent_id', parentIds)
     .order('created_at', { ascending: true });
-    
-  const reversedParents = parents.reverse() as Comment[];
   
   if (!repliesErr && replies) {
-     return [...reversedParents, ...(replies as Comment[])];
+     return [...(parents as Comment[]), ...(replies as Comment[])];
   }
   
-  return reversedParents;
+  return parents as Comment[];
 }
 
 export async function createCommentAction(cardId: string, content: string, parentId?: string | null) {

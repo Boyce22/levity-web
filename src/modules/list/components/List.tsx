@@ -66,7 +66,6 @@ export default function List({
             ...provided.draggableProps.style,
             minWidth: "280px",
             maxWidth: "280px",
-            maxHeight: "100%",
             background: snapshot.isDragging ? "var(--app-elevated)" : "var(--app-panel)",
             border: isWipExceeded
               ? "1px solid rgba(248,113,113,0.4)"
@@ -138,7 +137,7 @@ export default function List({
               <div
                 ref={prov.innerRef}
                 {...prov.droppableProps}
-                className="flex-1 overflow-y-auto px-3 pb-2 flex flex-col gap-2.5 transition-colors duration-150"
+                className="px-3 pb-2 flex flex-col gap-2.5 transition-colors duration-150"
                 style={{
                   minHeight: "10px",
                   background: snap.isDraggingOver ? `${accent}08` : "transparent",

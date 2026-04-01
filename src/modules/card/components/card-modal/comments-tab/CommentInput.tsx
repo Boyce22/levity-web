@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Smile, Paperclip, Loader2 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Send, Paperclip, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import EmojiPicker, { Theme } from "emoji-picker-react";
 import { useMentions } from "@/modules/card/hooks/useMentions";
 
 interface CommentInputProps {
@@ -14,23 +14,55 @@ interface CommentInputProps {
 
 export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, allUsers }: CommentInputProps) {
   const [text, setText] = useState("");
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, bottom: 0, left: 0, width: 0 });
+  
   const {
     mentionState,
     setMentionState,
     handleMentionTextChange,
     handleMentionSelect,
     handleMentionKeyDown,
+    textareaRef,
   } = useMentions(allUsers);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const updatePos = () => {
+      const el = textareaRef.current;
+      if (mentionState.active && el) {
+        const rect = el.getBoundingClientRect();
+        setMenuPos({
+          top: rect.top,
+          bottom: rect.bottom,
+          left: rect.left,
+          width: rect.width
+        });
+      }
+    };
+    
+    if (mentionState.active) {
+      updatePos();
+      window.addEventListener("resize", updatePos, { passive: true });
+      window.addEventListener("scroll", updatePos, { capture: true, passive: true });
+    }
+    
+    return () => {
+      window.removeEventListener("resize", updatePos);
+      window.removeEventListener("scroll", updatePos, { capture: true } as any);
+    };
+  }, [mentionState.active, textareaRef]);
 
   useEffect(() => {
     if (textareaRef.current && replyingTo) {
       textareaRef.current.focus();
     }
-  }, [replyingTo]);
+  }, [replyingTo, textareaRef]);
 
   const handleSubmit = async () => {
     if (!text.trim() || isSubmitting) return;
@@ -38,12 +70,11 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
     setText("");
     setSubmitError("");
     setMentionState({ active: false, query: "", target: null, index: 0, filteredUsers: [] });
-    setShowEmojiPicker(false);
     setIsSubmitting(true);
     try {
       await onPost(draft, replyingTo?.id || null);
     } catch (err: any) {
-      setText(draft); // restore on failure
+      setText(draft);
       setSubmitError("Erro ao enviar. Tente novamente.");
     } finally {
       setIsSubmitting(false);
@@ -51,7 +82,16 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (mentionState.active && mentionState.filteredUsers.length > 0) {
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        handleMentionSelect(mentionState.filteredUsers[mentionState.index], text, setText);
+        return;
+      }
+    }
+
     handleMentionKeyDown(e);
+    
     if (!mentionState.active && e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSubmit();
@@ -73,53 +113,61 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
           ["--tw-ring-color" as string]: "var(--app-primary)",
         }}
       >
-        <AnimatePresence>
-          {mentionState.active && mentionState.filteredUsers.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="absolute bottom-full left-0 mb-2 z-9999 w-56 overflow-hidden py-1"
-              style={{
-                borderRadius: "14px",
-                background: "var(--app-panel)",
-                border: "1px solid var(--app-border)",
-                boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
-              }}
-            >
-              {mentionState.filteredUsers.map((u, i) => (
-                <div
-                  key={u.id}
-                  onClick={() => {
-                    handleMentionSelect(u, text, setText);
-                    textareaRef.current?.focus();
-                  }}
-                  onMouseEnter={() => setMentionState((p) => ({ ...p, index: i }))}
-                  className="px-3 py-2.5 flex items-center gap-2.5 cursor-pointer transition-colors"
-                  style={{
-                    background: i === mentionState.index ? "var(--app-primary-muted)" : "transparent",
-                  }}
-                >
-                  <img
-                    src={
-                      u.avatar_url ||
-                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`
-                    }
-                    className="w-5 h-5 rounded-full object-cover"
-                  />
-                  <span
-                    className="text-xs font-medium"
+        {mounted && createPortal(
+          <AnimatePresence>
+            {mentionState.active && mentionState.filteredUsers.length > 0 && menuPos.bottom > 0 && (
+              <motion.div
+                key="mention-list"
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                className="fixed z-[99999] overflow-hidden py-1 mt-2"
+                style={{
+                  top: menuPos.bottom + 8,
+                  left: menuPos.left,
+                  width: Math.max(menuPos.width, 220),
+                  maxHeight: "30vh",
+                  overflowY: "auto",
+                  borderRadius: "14px",
+                  background: "var(--app-panel)",
+                  border: "1px solid var(--app-border)",
+                  boxShadow: "0 24px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)",
+                }}
+              >
+                {mentionState.filteredUsers.map((u, i) => (
+                  <div
+                    key={u.id}
+                    onClick={() => {
+                      handleMentionSelect(u, text, setText);
+                    }}
+                    onMouseEnter={() => setMentionState((p) => ({ ...p, index: i }))}
+                    className="px-3 py-2.5 flex items-center gap-2.5 cursor-pointer transition-colors"
                     style={{
-                      color: i === mentionState.index ? "var(--app-primary)" : "var(--app-text)",
+                      background: i === mentionState.index ? "var(--app-primary-muted)" : "transparent",
                     }}
                   >
-                    {u.display_name || u.username}
-                  </span>
-                </div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                    <img
+                      src={
+                        u.avatar_url ||
+                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`
+                      }
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                    <span
+                      className="text-xs font-medium"
+                      style={{
+                        color: i === mentionState.index ? "var(--app-primary)" : "var(--app-text)",
+                      }}
+                    >
+                      {u.display_name || u.username}
+                    </span>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
 
         {replyingTo && (
           <div
@@ -140,58 +188,76 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
           </div>
         )}
 
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            handleMentionTextChange(e.target.value, "comment", e.target.selectionStart);
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            replyingTo
-              ? "Escreva sua resposta… @ para mencionar (⌘↵ para enviar)"
-              : "Adicione um comentário… @ para mencionar (⌘↵ para enviar)"
-          }
-          className="w-full bg-transparent text-[14px] px-4 pt-3 pb-2 focus:outline-none resize-none leading-relaxed"
-          style={{ color: "var(--app-text)" }}
-          rows={3}
-        />
+        <div className="relative min-h-[100px]">
+          {/* Highlight Layer */}
+          <div
+            ref={(el) => {
+              if (el && textareaRef.current) {
+                el.scrollTop = textareaRef.current.scrollTop;
+              }
+            }}
+            className="absolute inset-0 px-4 pt-3 pb-2 text-[14px] leading-relaxed whitespace-pre-wrap break-words pointer-events-none select-none overflow-hidden"
+            style={{ 
+              color: "var(--app-text)",
+              fontFamily: "inherit",
+              letterSpacing: "inherit",
+            }}
+          >
+            {text.split(/(@\w+)/g).map((part, i) => {
+              if (part.startsWith("@") && part.length > 1) {
+                return (
+                  <span
+                    key={i}
+                    className="px-1 -mx-1 rounded-md"
+                    style={{
+                      background: "var(--app-primary-muted)",
+                      color: "var(--app-primary)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {part}
+                  </span>
+                );
+              }
+              return <span key={i}>{part}</span>;
+            })}
+          </div>
+
+          <textarea
+            ref={textareaRef}
+            value={text}
+            spellCheck={false}
+            onChange={(e) => {
+              setText(e.target.value);
+              handleMentionTextChange(e.target.value, "comment", e.target.selectionStart || 0);
+            }}
+            onScroll={(e) => {
+              const highlight = e.currentTarget.previousSibling as HTMLDivElement;
+              if (highlight) highlight.scrollTop = e.currentTarget.scrollTop;
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              replyingTo
+                ? "Escreva sua resposta… @ para mencionar (⌘↵ para enviar)"
+                : "Adicione um comentário… @ para mencionar (⌘↵ para enviar)"
+            }
+            className="w-full bg-transparent text-[13px] px-4 pt-3 pb-2 focus:outline-none resize-none leading-relaxed relative z-10 block cursor-text max-h-[120px] overflow-y-auto"
+            style={{ 
+              color: "var(--app-text)",
+              fontFamily: "inherit",
+              caretColor: "var(--app-text)",
+              WebkitTextFillColor: "transparent",
+            }}
+            rows={3}
+          />
+        </div>
 
         <div className="px-3 pb-3 flex justify-between items-center relative">
           <div className="flex gap-1">
-            <button
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="p-1.5 rounded-lg transition-colors"
-              style={{ color: showEmojiPicker ? "var(--app-primary)" : "var(--app-text-muted)" }}
-            >
-              <Smile className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 rounded-lg transition-colors" style={{ color: "var(--app-text-muted)" }}>
+            <button className="p-1.5 rounded-lg transition-colors" style={{ color: "var(--app-text-muted)" }} title="Sugerência: Use Win + . para emojis nativos">
               <Paperclip className="w-4 h-4" />
             </button>
           </div>
-
-          <AnimatePresence>
-            {showEmojiPicker && (
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute bottom-full left-0 mb-2 z-9999 rounded-xl overflow-hidden"
-                style={{ border: "1px solid var(--app-border)" }}
-              >
-                <EmojiPicker
-                  theme={Theme.DARK}
-                  onEmojiClick={(data) => {
-                    setText((prev) => prev + data.emoji);
-                    setShowEmojiPicker(false);
-                    textareaRef.current?.focus();
-                  }}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           <button
             onClick={handleSubmit}

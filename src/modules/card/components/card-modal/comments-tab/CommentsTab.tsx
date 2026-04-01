@@ -79,7 +79,7 @@ export function CommentsTab({
           </p>
         </div>
       ) : (
-        <div className="space-y-5 max-h-[45vh] overflow-y-auto pr-2 pb-2" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--app-border) transparent" }}>
+        <div className="space-y-4 max-h-[38vh] overflow-y-auto pr-2 pb-2 custom-scrollbar" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--app-border) transparent" }}>
           {rootComments.map((comment, i) => (
             <CommentThread
               key={comment.id}

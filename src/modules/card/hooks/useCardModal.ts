@@ -123,14 +123,14 @@ export function useCardModal(
   const handlePostComment = useCallback(async (commentText: string, parentId: string | null = null) => {
     if (!card) return;
     const newComment = await createCommentAction(card.id, commentText, parentId);
-    if (newComment) setComments((prev) => [...prev, newComment]);
+    if (newComment) setComments((prev) => [newComment, ...prev]);
   }, [card]);
 
   const loadMoreComments = useCallback(async () => {
     if (!card) return;
     setIsLoadingMore(true);
     const parents = comments.filter((c) => !c.parent_id);
-    const cursor = parents[0]?.created_at || null;
+    const cursor = parents[parents.length - 1]?.created_at || null;
     if (cursor) {
       const more = await getCommentsAction(card.id, 3, cursor);
       setComments((prev) => [...prev, ...more]);
