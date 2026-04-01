@@ -30,8 +30,8 @@ export type Card = {
   description?: string | null;
   cover_url?: string | null;
   assignee_id?: string | null;
-  priority?: "low" | "medium" | "high" | null;
-  label?: "feature" | "bug" | "infra" | "design" | "research" | null;
+  priority?: string | null;
+  label?: string | null;
   progress?: number | null;
   due_date?: string | null;
 };
@@ -128,7 +128,19 @@ export async function getBoardData(workspaceId?: string) {
 
   const { lists, cards } = await fetchBoardLists(currentWsId);
 
-  return { lists, cards, workspaces };
+  // 4. Fetch dynamic settings
+  const { data: tags } = await supabase
+    .from('workspace_tags')
+    .select('*')
+    .eq('workspace_id', currentWsId);
+
+  const { data: priorities } = await supabase
+    .from('workspace_priorities')
+    .select('*')
+    .eq('workspace_id', currentWsId)
+    .order('position');
+
+  return { lists, cards, workspaces, tags: tags || [], priorities: priorities || [] };
 }
 export async function createListAction(
   title: string,

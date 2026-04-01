@@ -11,6 +11,8 @@ interface BoardFiltersBarProps {
   labelFilter: string | null;
   setLabelFilter: (filter: string | null) => void;
   allUsers: any[];
+  tags: any[];
+  priorities: any[];
   hasActiveFilters: boolean;
   clearFilters: () => void;
 }
@@ -25,6 +27,8 @@ export function BoardFiltersBar({
   labelFilter,
   setLabelFilter,
   allUsers,
+  tags,
+  priorities,
   hasActiveFilters,
   clearFilters,
 }: BoardFiltersBarProps) {
@@ -144,26 +148,22 @@ export function BoardFiltersBar({
             className="w-3 h-3"
             style={{ color: "var(--app-text-muted)", opacity: 0.5 }}
           />
-          {[
-            { id: "high", label: "High", color: "#f87171" },
-            { id: "medium", label: "Medium", color: "#fbbf24" },
-            { id: "low", label: "Low", color: "#34d399" },
-          ].map((p) => (
+          {priorities.map((p) => (
             <button
               key={p.id}
               onClick={() =>
-                setPriorityFilter(priorityFilter === p.id ? null : p.id)
+                setPriorityFilter(priorityFilter === p.name ? null : p.name)
               }
               className="text-[10px] font-bold px-2 py-0.5 rounded-full transition-all"
               style={{
                 background:
-                  priorityFilter === p.id ? p.color + "25" : "transparent",
+                  priorityFilter === p.name ? p.color + "25" : "transparent",
                 color:
-                  priorityFilter === p.id ? p.color : "var(--app-text-muted)",
-                border: `1px solid ${priorityFilter === p.id ? p.color + "50" : "transparent"}`,
+                  priorityFilter === p.name ? p.color : "var(--app-text-muted)",
+                border: `1px solid ${priorityFilter === p.name ? p.color + "50" : "transparent"}`,
               }}
             >
-              {p.label}
+              {p.icon} {p.name}
             </button>
           ))}
         </div>
@@ -174,24 +174,20 @@ export function BoardFiltersBar({
             className="w-3 h-3"
             style={{ color: "var(--app-text-muted)", opacity: 0.5 }}
           />
-          {[
-            { id: "feature", label: "Feature", color: "#818cf8" },
-            { id: "bug", label: "Bug", color: "#f87171" },
-            { id: "infra", label: "Infra", color: "#94a3b8" },
-          ].map((l) => (
+          {tags.map((l) => (
             <button
               key={l.id}
-              onClick={() => setLabelFilter(labelFilter === l.id ? null : l.id)}
+              onClick={() => setLabelFilter(labelFilter === l.name ? null : l.name)}
               className="text-[10px] font-bold px-2 py-0.5 rounded-full transition-all"
               style={{
                 background:
-                  labelFilter === l.id ? l.color + "25" : "transparent",
+                  labelFilter === l.name ? l.color + "25" : "transparent",
                 color:
-                  labelFilter === l.id ? l.color : "var(--app-text-muted)",
-                border: `1px solid ${labelFilter === l.id ? l.color + "50" : "transparent"}`,
+                  labelFilter === l.name ? l.color : "var(--app-text-muted)",
+                border: `1px solid ${labelFilter === l.name ? l.color + "50" : "transparent"}`,
               }}
             >
-              {l.label}
+              {l.name}
             </button>
           ))}
         </div>

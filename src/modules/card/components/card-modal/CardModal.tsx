@@ -15,6 +15,9 @@ interface CardModalProps {
   onUpdate: (updatedCard: CardType) => void;
   currentUserAvatar: string;
   allUsers: any[];
+  tags: any[];
+  priorities: any[];
+  workspaceId: string;
 }
 
 // Constants for labels and priorities (could be moved to a shared file)
@@ -38,6 +41,9 @@ export default function CardModal({
   onUpdate,
   currentUserAvatar,
   allUsers,
+  tags,
+  priorities,
+  workspaceId,
 }: CardModalProps) {
   const {
     content,
@@ -71,7 +77,7 @@ export default function CardModal({
     handleCoverUpload,
     handleRemoveCover,
     checklistCounts,
-  } = useCardModal(card, onUpdate);
+  } = useCardModal(card, onUpdate, tags, priorities);
 
   if (!card) return null;
 
@@ -132,6 +138,9 @@ export default function CardModal({
             onCoverUpload={handleCoverUpload}
             onClose={onClose}
             allUsers={allUsers}
+            tags={tags}
+            priorities={priorities}
+            workspaceId={workspaceId}
           />
 
           <div className="px-7 pt-2" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>

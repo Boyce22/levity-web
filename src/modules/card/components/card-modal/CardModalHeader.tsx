@@ -27,6 +27,9 @@ interface CardModalHeaderProps {
   onCoverUpload: (url: string) => void;
   onClose: () => void;
   allUsers: any[];
+  tags: any[];
+  priorities: any[];
+  workspaceId: string;
 }
 
 export function CardModalHeader({
@@ -49,6 +52,9 @@ export function CardModalHeader({
   onCoverUpload,
   onClose,
   allUsers,
+  tags,
+  priorities,
+  workspaceId,
 }: CardModalHeaderProps) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -226,6 +232,8 @@ export function CardModalHeader({
             setIsOpen={setIsPriorityOpen}
             selectedPriority={selectedPriority}
             onSelect={onPrioritySelect}
+            priorities={priorities}
+            workspaceId={workspaceId}
           />
 
           <LabelPicker
@@ -233,6 +241,8 @@ export function CardModalHeader({
             setIsOpen={setIsLabelsOpen}
             selectedLabel={selectedLabel}
             onSelect={onLabelSelect}
+            tags={tags}
+            workspaceId={workspaceId}
           />
 
           <MemberPicker

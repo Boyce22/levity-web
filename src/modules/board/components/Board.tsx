@@ -30,6 +30,8 @@ interface BoardProps {
   allUsers: any[];
   workspaces: any[];
   currentWorkspaceId: string;
+  tags: any[];
+  priorities: any[];
 }
 
 export default function Board({
@@ -39,6 +41,8 @@ export default function Board({
   allUsers,
   workspaces,
   currentWorkspaceId,
+  tags,
+  priorities,
 }: BoardProps) {
   const router = useRouter();
 
@@ -152,6 +156,8 @@ export default function Board({
         labelFilter={labelFilter}
         setLabelFilter={setLabelFilter}
         allUsers={allUsers}
+        tags={tags}
+        priorities={priorities}
         hasActiveFilters={hasActiveFilters}
         clearFilters={clearFilters}
       />
@@ -185,6 +191,9 @@ export default function Board({
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.username}`
           }
           allUsers={allUsers}
+          tags={tags}
+          priorities={priorities}
+          workspaceId={currentWorkspaceId}
         />
       )}
 

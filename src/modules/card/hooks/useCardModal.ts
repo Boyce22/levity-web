@@ -4,7 +4,7 @@ import { getCommentsAction, createCommentAction, Comment } from "@/modules/board
 import { getCardHistoryAction } from "@/modules/board/actions/history";
 import { parseProgress, parseChecklistCounts } from "@/modules/card/utils/parseProgress";
 
-export function useCardModal(card: CardType | null, onUpdate: (card: CardType) => void) {
+export function useCardModal(card: CardType | null, onUpdate: (card: CardType) => void, tags: any[], priorities: any[]) {
   // Card fields
   const [content, setContent] = useState(card?.content || "");
   const [description, setDescription] = useState(card?.description || "");

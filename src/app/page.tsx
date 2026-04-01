@@ -13,6 +13,8 @@ export default async function Home(props: { searchParams: Promise<{ workspace?: 
   let userProfile = null;
   let allUsers: any[] = [];
   let workspaces: any[] = [];
+  let tags: any[] = [];
+  let priorities: any[] = [];
   let currentWorkspaceId = sp.workspace || '';
   let isAuthError = false;
 
@@ -21,6 +23,8 @@ export default async function Home(props: { searchParams: Promise<{ workspace?: 
     initialLists = data.lists;
     initialCards = data.cards;
     workspaces = data.workspaces;
+    tags = data.tags;
+    priorities = data.priorities;
     if (!currentWorkspaceId && workspaces.length > 0) currentWorkspaceId = workspaces[0].id;
 
     userProfile = await getUserProfile();
@@ -43,6 +47,8 @@ export default async function Home(props: { searchParams: Promise<{ workspace?: 
         allUsers={allUsers} 
         workspaces={workspaces}
         currentWorkspaceId={currentWorkspaceId}
+        tags={tags}
+        priorities={priorities}
       />
     </main>
   );

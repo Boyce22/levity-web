@@ -40,10 +40,25 @@ export async function createWorkspaceAction(name: string) {
       role: 'owner',
     });
 
-  // rollback manual
   if (memberError) {
     await supabase.from('workspaces').delete().eq('id', workspace.id);
     throw new Error(memberError.message);
+  }
+
+  // 3. Semear prioridades padrão
+  const defaultPriorities = [
+    { workspace_id: workspace.id, name: 'Low', color: '#34d399', icon: '↓', position: 0 },
+    { workspace_id: workspace.id, name: 'Medium', color: '#fbbf24', icon: '→', position: 1 },
+    { workspace_id: workspace.id, name: 'High', color: '#f87171', icon: '↑', position: 2 },
+  ];
+
+  const { error: seedError } = await supabase
+    .from('workspace_priorities')
+    .insert(defaultPriorities);
+
+  if (seedError) {
+    console.error('Error seeding priorities:', seedError);
+    // Não paramos a criação por causa disso, mas logamos
   }
 
   revalidatePath('/');
