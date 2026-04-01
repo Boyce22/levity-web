@@ -23,6 +23,7 @@ export function ListHeader({
 }: ListHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
+  const [isHovered, setIsHovered] = useState(false);
 
   const isWipExceeded = wipLimit != null && cardCount >= wipLimit;
 
@@ -43,6 +44,8 @@ export function ListHeader({
   return (
     <div
       className="px-4 pt-3.5 pb-3 flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       {...dragHandleProps}
     >
       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -93,10 +96,15 @@ export function ListHeader({
             e.stopPropagation();
             onDelete();
           }}
-          className="opacity-0 group-hover/list:opacity-100 transition-opacity p-1 rounded-md"
-          style={{ color: "var(--app-text-muted)" }}
+          className="p-1 rounded-md transition-all duration-150"
+          style={{
+            opacity: isHovered ? 1 : 0,
+            color: "var(--app-text-muted)",
+            pointerEvents: isHovered ? "auto" : "none",
+          }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
           onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
+          title="Deletar lista"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
