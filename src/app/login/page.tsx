@@ -3,17 +3,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Layout } from 'lucide-react';
+import { Layout, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setError('');
+    setIsLoading(true);
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -27,9 +30,11 @@ export default function LoginPage() {
       } else {
         const data = await res.json();
         setError(data.message || 'Login failed');
+        setIsLoading(false);
       }
     } catch (err) {
       setError('An error occurred');
+      setIsLoading(false);
     }
   };
 
@@ -57,7 +62,8 @@ export default function LoginPage() {
               id="user"
               type="text"
               autoFocus
-              className="w-full px-4 py-3 bg-[#212124] border border-white/5 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 placeholder-white/20 transition-all text-[14px] text-white/90"
+              disabled={isLoading}
+              className="w-full px-4 py-3 bg-[#212124] border border-white/5 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 placeholder-white/20 transition-all text-[14px] text-white/90 disabled:opacity-50"
               placeholder="e.g. admin"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -68,7 +74,8 @@ export default function LoginPage() {
             <input
               id="pass"
               type="password"
-              className="w-full px-4 py-3 bg-[#212124] border border-white/5 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 placeholder-white/20 transition-all text-[14px] text-white/90"
+              disabled={isLoading}
+              className="w-full px-4 py-3 bg-[#212124] border border-white/5 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 placeholder-white/20 transition-all text-[14px] text-white/90 disabled:opacity-50"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -76,9 +83,17 @@ export default function LoginPage() {
           </div>
           <button
             type="submit"
-            className="w-full py-3 px-4 mt-6 bg-indigo-500 hover:bg-indigo-400 text-white font-semibold rounded-xl shadow-[0_4px_14px_0_rgba(99,102,241,0.25)] transition-all transform hover:-translate-y-0.5 text-[14px]"
+            disabled={isLoading}
+            className="flex items-center justify-center gap-2 w-full py-3 px-4 mt-6 bg-indigo-500 hover:bg-indigo-400 disabled:bg-indigo-500/50 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-[0_4px_14px_0_rgba(99,102,241,0.25)] transition-all transform hover:-translate-y-0.5 disabled:hover:translate-y-0 text-[14px]"
           >
-            Sign In
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
 
