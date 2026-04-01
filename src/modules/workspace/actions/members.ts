@@ -15,9 +15,9 @@ async function getUserId() {
   return payload.id as string;
 }
 
-async function createInviteRecord(workspaceId: string, userId: string, maxUses: number) {
+async function createInviteRecord(workspaceId: string, userId: string, maxUses: number, expiresInHours: number) {
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
+  expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
   const { data, error } = await supabase
     .from('workspace_invites')
@@ -39,7 +39,11 @@ async function createInviteRecord(workspaceId: string, userId: string, maxUses: 
   return data.token;
 }
 
-export async function generateInviteAction(workspaceId: string, maxUses: number = 100) {
+export async function generateInviteAction(
+  workspaceId: string, 
+  maxUses: number = 100,
+  expiresInHours: number = 168 // 7 days default
+) {
   const userId = await getUserId();
 
   // 🛡️ Security Boundary: DoS Rate Limiting (Max 5/minute)
@@ -52,7 +56,37 @@ export async function generateInviteAction(workspaceId: string, maxUses: number 
     throw new Error('403 Forbidden: You lack permission to generate invites for this workspace.');
   }
 
-  return await createInviteRecord(workspaceId, userId, maxUses);
+  return await createInviteRecord(workspaceId, userId, maxUses, expiresInHours);
+}
+
+export async function getInviteDetailsAction(token: string) {
+  const { data: invite, error } = await supabase
+    .from('workspace_invites')
+    .select(`
+      id,
+      expires_at,
+      max_uses,
+      current_uses,
+      workspaces (
+        id,
+        name
+      )
+    `)
+    .eq('token', token)
+    .single();
+
+  if (error || !invite) return null;
+
+  const isExpired = new Date() > new Date(invite.expires_at);
+  const isFull = invite.current_uses >= invite.max_uses;
+
+  return {
+    workspaceName: (invite.workspaces as any)?.name,
+    workspaceId: (invite.workspaces as any)?.id,
+    isExpired,
+    isFull,
+    isValid: !isExpired && !isFull
+  };
 }
 
 async function validateInviteToken(token: string) {

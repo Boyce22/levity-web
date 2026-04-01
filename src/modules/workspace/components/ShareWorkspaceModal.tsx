@@ -9,6 +9,8 @@ import {
   Link as LinkIcon,
   AlertCircle,
   Loader2,
+  Users,
+  Clock,
 } from "lucide-react";
 import { generateInviteAction } from "@/modules/workspace/actions/members";
 
@@ -29,6 +31,9 @@ export default function ShareWorkspaceModal({
   const [inviteUrl, setInviteUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  
+  const [maxUses, setMaxUses] = useState(10);
+  const [duration, setDuration] = useState(168); // 7 days in hours
 
   if (!isOpen) return null;
 
@@ -36,8 +41,7 @@ export default function ShareWorkspaceModal({
     setLoading(true);
     setError("");
     try {
-      // Hardcapped UX: 100 uses per default link in this interface
-      const token = await generateInviteAction(workspaceId, 100);
+      const token = await generateInviteAction(workspaceId, maxUses, duration);
       const url = `${window.location.origin}/invite/${token}`;
       setInviteUrl(url);
     } catch (err: any) {
@@ -87,21 +91,59 @@ export default function ShareWorkspaceModal({
           )}
 
           {!inviteUrl ? (
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-[var(--app-primary)] shadow-sm focus:ring-[3px] focus:ring-[var(--app-primary)]/30 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl transition-all"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> Generating Secure Link...
-                </>
-              ) : (
-                <>
-                  <LinkIcon className="w-4 h-4" /> Create Invite Link
-                </>
-              )}
-            </button>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3 h-3" /> Max Uses
+                  </label>
+                  <select
+                    value={maxUses}
+                    onChange={(e) => setMaxUses(Number(e.target.value))}
+                    className="w-full bg-[var(--app-panel)] border border-[var(--app-border-faint)] rounded-xl px-3 py-2 text-sm text-[var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[var(--app-primary)]/20 appearance-none cursor-pointer"
+                  >
+                    <option value={1}>1 person</option>
+                    <option value={5}>5 people</option>
+                    <option value={10}>10 people</option>
+                    <option value={25}>25 people</option>
+                    <option value={100}>100 people</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-3 h-3" /> Expiration
+                  </label>
+                  <select
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    className="w-full bg-[var(--app-panel)] border border-[var(--app-border-faint)] rounded-xl px-3 py-2 text-sm text-[var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[var(--app-primary)]/20 appearance-none cursor-pointer"
+                  >
+                    <option value={1}>1 hour</option>
+                    <option value={24}>1 day</option>
+                    <option value={72}>3 days</option>
+                    <option value={168}>7 days</option>
+                    <option value={720}>30 days</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-[var(--app-primary)] shadow-md shadow-[var(--app-primary)]/10 focus:ring-4 focus:ring-[var(--app-primary)]/20 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Generating...
+                  </>
+                ) : (
+                  <>
+                    <LinkIcon className="w-4 h-4" /> Create Secure Link
+                  </>
+                )}
+              </button>
+            </div>
           ) : (
             <div className="space-y-5">
               <div className="flex items-center gap-2 p-1.5 bg-[var(--app-panel)] border border-[var(--app-border-faint)] rounded-xl shadow-sm focus-within:ring-[3px] focus-within:ring-[var(--app-primary)]/20 transition-all">
@@ -125,8 +167,8 @@ export default function ShareWorkspaceModal({
                   )}
                 </button>
               </div>
-              <p className="text-[12px] text-center text-[var(--app-text-muted)] font-medium opacity-80">
-                Link expires automatically in 7 days and allows up to 100 uses.
+              <p className="text-[12px] text-center text-[var(--app-text-muted)] font-medium opacity-80 italic">
+                This link allows up to {maxUses} uses and expires in {duration >= 24 ? `${duration/24} day(s)` : `${duration} hour(s)`}.
               </p>
             </div>
           )}
