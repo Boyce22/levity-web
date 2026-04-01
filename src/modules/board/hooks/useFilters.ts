@@ -14,7 +14,8 @@ export function useFilters({ cards }: { cards: CardType[] }) {
         (c.description || "").toLowerCase().includes(searchQuery.toLowerCase());
       const matchesUser =
         selectedUserFilters.length === 0 ||
-        (c.assignee_id && selectedUserFilters.includes(c.assignee_id));
+        (c.assignee_id && selectedUserFilters.includes(c.assignee_id)) ||
+        (!c.assignee_id && selectedUserFilters.includes("unassigned"));
       const matchesPriority = !priorityFilter || c.priority === priorityFilter;
       const matchesLabel = !labelFilter || c.label === labelFilter;
       return matchesSearch && matchesUser && matchesPriority && matchesLabel;
