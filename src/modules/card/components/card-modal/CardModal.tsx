@@ -134,11 +134,13 @@ export default function CardModal({
             allUsers={allUsers}
           />
 
-          <CardModalTabs
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            commentsCount={comments.length}
-          />
+          <div className="px-7 pt-2" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
+            <CardModalTabs
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              commentsCount={comments.length}
+            />
+          </div>
 
           {/* Checklist progress bar */}
           {checklistCounts.total > 0 && (
@@ -169,32 +171,55 @@ export default function CardModal({
           )}
 
           <div
-            className="flex-1 overflow-y-auto px-7 py-6 space-y-4"
-            style={{ scrollbarWidth: "thin", scrollbarColor: "var(--app-border) transparent" }}
+            className="flex-1 overflow-y-auto relative"
+            style={{ 
+              scrollbarWidth: "thin", 
+              scrollbarColor: "var(--app-border) transparent",
+              minHeight: "300px" 
+            }}
           >
-            {activeTab === "description" && (
-              <DescriptionTab
-                description={description}
-                setDescription={setDescription}
-                isEditing={isEditingDesc}
-                setIsEditing={setIsEditingDesc}
-                savedStatus={savedStatus}
-                history={history}
-                allUsers={allUsers}
-              />
-            )}
-            {activeTab === "comments" && (
-              <CommentsTab
-                comments={comments}
-                loading={loadingComments}
-                hasMore={hasMoreComments}
-                isLoadingMore={isLoadingMore}
-                onLoadMore={loadMoreComments}
-                onPostComment={handlePostComment}
-                currentUserAvatar={currentUserAvatar}
-                allUsers={allUsers}
-              />
-            )}
+            <AnimatePresence mode="wait">
+              {activeTab === "description" ? (
+                <motion.div
+                  key="description"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="px-7 py-6"
+                >
+                  <DescriptionTab
+                    description={description}
+                    setDescription={setDescription}
+                    isEditing={isEditingDesc}
+                    setIsEditing={setIsEditingDesc}
+                    savedStatus={savedStatus}
+                    history={history}
+                    allUsers={allUsers}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="comments"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="px-7 py-6"
+                >
+                  <CommentsTab
+                    comments={comments}
+                    loading={loadingComments}
+                    hasMore={hasMoreComments}
+                    isLoadingMore={isLoadingMore}
+                    onLoadMore={loadMoreComments}
+                    onPostComment={handlePostComment}
+                    currentUserAvatar={currentUserAvatar}
+                    allUsers={allUsers}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div

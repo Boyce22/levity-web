@@ -48,9 +48,6 @@ export function LabelPicker({ isOpen, setIsOpen, selectedLabel, onSelect }: Labe
               boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
             }}
           >
-            <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--app-text-muted)" }}>
-              Etiqueta
-            </div>
             {LABELS.map((l) => (
               <div
                 key={l.id}

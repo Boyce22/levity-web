@@ -25,40 +25,43 @@ export function CardModalTabs({ activeTab, setActiveTab, commentsCount }: CardMo
   ];
 
   return (
-    <div className="flex px-7 pt-4 mt-0" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => setActiveTab(tab.id)}
-          className="relative pb-3 px-1 mr-6 text-sm font-semibold transition-colors"
-          style={{
-            color: activeTab === tab.id ? "var(--app-text)" : "var(--app-text-muted)",
-          }}
-        >
-          <span className="flex items-center gap-1.5">
+    <div className="flex gap-4" style={{ position: "relative" }}>
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="relative flex items-center gap-2 py-3 px-1 text-[13px] font-bold transition-colors"
+            style={{
+              color: isActive ? "var(--app-text)" : "var(--app-text-muted)",
+            }}
+          >
             {tab.icon}
             {tab.label}
+            
             {tab.badge != null && tab.badge > 0 && (
               <span
-                className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                className="ml-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold"
                 style={{
-                  background: "var(--app-primary-muted)",
-                  color: "var(--app-primary)",
+                  background: isActive ? "var(--app-primary)" : "var(--app-border)",
+                  color: isActive ? "#fff" : "var(--app-text-muted)",
                 }}
               >
                 {tab.badge}
               </span>
             )}
-          </span>
-          {activeTab === tab.id && (
-            <motion.div
-              layoutId="modal-tab-indicator"
-              className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-              style={{ background: "var(--app-primary)" }}
-            />
-          )}
-        </button>
-      ))}
+
+            {isActive && (
+              <motion.div
+                layoutId="modal-tab-indicator"
+                className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                style={{ background: "var(--app-primary)" }}
+              />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -14,15 +14,15 @@ export function MemberPicker({ isOpen, setIsOpen, assigneeId, onSelect, allUsers
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+        className="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
         style={{
           background: isOpen ? "var(--app-border)" : "var(--app-hover)",
           border: "1px solid var(--app-border)",
           color: "var(--app-text-muted)",
         }}
+        title="Membros"
       >
         <Users className="w-4 h-4" />
-        <span className="hidden sm:inline text-xs">Membros</span>
       </button>
       <AnimatePresence>
         {isOpen && (
@@ -39,9 +39,6 @@ export function MemberPicker({ isOpen, setIsOpen, assigneeId, onSelect, allUsers
               boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
             }}
           >
-            <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--app-text-muted)" }}>
-              Add member
-            </div>
             <div className="space-y-0.5 max-h-48 overflow-y-auto">
               {allUsers.map((u) => (
                 <div
