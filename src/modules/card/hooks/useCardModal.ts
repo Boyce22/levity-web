@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card as CardType, updateCardDetailsAction } from "@/modules/board/actions/board";
 import { getCommentsAction, createCommentAction, Comment } from "@/modules/board/actions/comments";
 import { getCardHistoryAction } from "@/modules/board/actions/history";
+import { parseProgress, parseChecklistCounts } from "@/modules/card/utils/parseProgress";
 
 export function useCardModal(card: CardType | null, onUpdate: (card: CardType) => void) {
   // Card fields
@@ -33,7 +34,8 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
     if (!isEditingDesc || description === card?.description) return;
     setSavedStatus("saving");
     const timer = setTimeout(async () => {
-      await handleSave({ description });
+      const progress = parseProgress(description);
+      await handleSave({ description, progress });
       setSavedStatus("saved");
       setTimeout(() => setSavedStatus("idle"), 2000);
     }, 3000); // 3s para evitar múltiplas entradas de histórico
@@ -131,6 +133,8 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
     setIsLoadingMore(false);
   }, [card, comments]);
 
+  const checklistCounts = parseChecklistCounts(description);
+
   return {
     content,
     setContent,
@@ -162,5 +166,6 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
     handlePrioritySelect,
     handleCoverUpload,
     handleRemoveCover,
+    checklistCounts,
   };
-}
+}

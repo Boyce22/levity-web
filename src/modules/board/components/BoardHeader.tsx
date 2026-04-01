@@ -40,18 +40,14 @@ export function BoardHeader({
     userProfile?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.username}`;
 
-  // Sprint progress
+  // Workspace progress — média do progresso de todos os cards com checklists
   const totalCards = cards.length;
-  const doneListId = workspaces.find(
-    (l) =>
-      l.title?.toLowerCase().includes("done") ||
-      l.title?.toLowerCase().includes("concluído")
-  )?.id;
-  const doneCards = doneListId
-    ? cards.filter((c) => c.list_id === doneListId).length
-    : 0;
   const progressPct =
-    totalCards > 0 ? Math.round((doneCards / totalCards) * 100) : 0;
+    totalCards > 0
+      ? Math.round(
+          cards.reduce((sum, c) => sum + (c.progress ?? 0), 0) / totalCards
+        )
+      : 0;
 
   return (
     <header

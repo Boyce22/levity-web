@@ -70,6 +70,7 @@ export default function CardModal({
     handlePrioritySelect,
     handleCoverUpload,
     handleRemoveCover,
+    checklistCounts,
   } = useCardModal(card, onUpdate);
 
   if (!card) return null;
@@ -138,6 +139,34 @@ export default function CardModal({
             setActiveTab={setActiveTab}
             commentsCount={comments.length}
           />
+
+          {/* Checklist progress bar */}
+          {checklistCounts.total > 0 && (
+            <div className="px-7 py-3" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex-1 h-1.5 rounded-full overflow-hidden"
+                  style={{ background: "var(--app-border)" }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.round((checklistCounts.done / checklistCounts.total) * 100)}%`,
+                      background:
+                        checklistCounts.done === checklistCounts.total
+                          ? "#34d399"
+                          : checklistCounts.done / checklistCounts.total >= 0.4
+                          ? "var(--app-primary)"
+                          : "#fbbf24",
+                    }}
+                  />
+                </div>
+                <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--app-text-muted)" }}>
+                  {checklistCounts.done}/{checklistCounts.total} tasks
+                </span>
+              </div>
+            </div>
+          )}
 
           <div
             className="flex-1 overflow-y-auto px-7 py-6 space-y-4"

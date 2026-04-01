@@ -6,7 +6,10 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Markdown } from 'tiptap-markdown';
-import { uploadImageAction } from '@/modules/shared/actions/upload'; // Make sure this is available
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import { uploadImageAction } from '@/modules/shared/actions/upload';
+import { ListTodo } from 'lucide-react';
 
 interface RichTextEditorProps {
   initialValue: string;
@@ -72,13 +75,20 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
       }),
       Markdown,
       Placeholder.configure({
-        placeholder: 'Describe this task... Use Markdown, or drop images dynamically.',
+        placeholder: 'Descreva esta tarefa… Suporta **Markdown**. Use ☑ para criar checklists.',
+      }),
+      TaskList.configure({
+        HTMLAttributes: { class: 'task-list' },
+      }),
+      TaskItem.configure({
+        nested: false,
+        HTMLAttributes: { class: 'task-item' },
       }),
     ],
     content: initialValue,
     editorProps: {
       attributes: {
-        class: 'prose prose-invert prose-sm max-w-none focus:outline-none min-h-[180px] p-4 text-white/85 leading-relaxed',
+        class: 'prose prose-invert prose-sm max-w-none focus:outline-none min-h-[160px] p-4 leading-relaxed',
       },
       handleDrop,
       handlePaste,
@@ -91,13 +101,113 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
   });
 
   return (
-    <div 
+    <div
       className="w-full rounded-xl transition-all relative group"
-      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
-      onClick={() => editor?.commands.focus()}
-      onKeyDown={onKeyDown}
+      style={{ background: 'var(--app-panel)', border: '1px solid var(--app-border)' }}
     >
-      <EditorContent editor={editor} />
+      {/* Toolbar */}
+      <div
+        className="flex items-center gap-1 px-3 pt-2 pb-1"
+        style={{ borderBottom: '1px solid var(--app-border-faint)' }}
+      >
+        <button
+          type="button"
+          onClick={() => editor?.chain().focus().toggleTaskList().run()}
+          className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[12px] font-medium transition-all"
+          style={{
+            background: editor?.isActive('taskList') ? 'var(--app-primary-muted)' : 'transparent',
+            color: editor?.isActive('taskList') ? 'var(--app-primary)' : 'var(--app-text-muted)',
+            border: editor?.isActive('taskList') ? '1px solid var(--app-primary)' : '1px solid transparent',
+          }}
+          title="Inserir checklist"
+        >
+          <ListTodo className="w-3.5 h-3.5" />
+          Checklist
+        </button>
+        <div
+          style={{ width: '1px', height: '16px', background: 'var(--app-border-faint)', margin: '0 4px' }}
+        />
+        <span className="text-[11px]" style={{ color: 'var(--app-text-muted)', opacity: 0.5 }}>
+          Markdown · drag&drop de imagens
+        </span>
+      </div>
+
+      <div onClick={() => editor?.commands.focus()} onKeyDown={onKeyDown}>
+        <EditorContent editor={editor} />
+      </div>
+
+      <style>{`
+        /* TipTap TaskList / TaskItem DOM structure:
+           <ul class="task-list">
+             <li class="task-item" data-checked="true/false">
+               <label contenteditable="false"><input type="checkbox" /></label>
+               <div><p>Task text</p></div>
+             </li>
+           </ul>
+        */
+        .task-list {
+          list-style: none;
+          padding-left: 0.125rem;
+          margin: 0.25rem 0;
+        }
+        .task-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+          margin: 0.15rem 0;
+          padding: 0;
+        }
+        .task-item label {
+          display: inline-flex;
+          align-items: center;
+          flex-shrink: 0;
+          margin-top: 3px;
+          cursor: pointer;
+          line-height: 1;
+        }
+        .task-item > div,
+        .task-item > p {
+          flex: 1;
+          min-width: 0;
+          margin: 0;
+          line-height: 1.55;
+        }
+        .task-item > div > p {
+          margin: 0;
+        }
+        .task-item[data-checked="true"] > div,
+        .task-item[data-checked="true"] > p {
+          text-decoration: line-through;
+          opacity: 0.5;
+        }
+        /* Custom checkbox */
+        .task-item input[type="checkbox"] {
+          appearance: none;
+          -webkit-appearance: none;
+          width: 15px;
+          height: 15px;
+          border-radius: 4px;
+          border: 1.5px solid var(--app-border);
+          background: transparent;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: all 0.15s;
+          position: relative;
+          display: block;
+        }
+        .task-item input[type="checkbox"]:hover {
+          border-color: var(--app-primary);
+        }
+        .task-item input[type="checkbox"]:checked {
+          background: var(--app-primary);
+          border-color: var(--app-primary);
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5l2.5 2.5 4.5-4.5' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+          background-size: 10px 10px;
+          background-repeat: no-repeat;
+          background-position: center;
+        }
+      `}</style>
     </div>
   );
 }
+
