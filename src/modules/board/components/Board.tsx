@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getCommentsAction } from "@/modules/board/actions/comments";
 import { createWorkspaceAction } from "@/modules/workspace/actions/workspace";
+import { ProgressLoader } from "@/modules/shared/components/ProgressLoader";
+import { AnimatePresence } from "framer-motion";
 
 import {
   Card as CardType,
@@ -45,8 +47,42 @@ export default function Board({
   priorities,
 }: BoardProps) {
   const router = useRouter();
+  const [isResolving, setIsResolving] = useState(true);
+  const [minTimeReached, setMinTimeReached] = useState(false);
+
+  // Persistence & Workspace Resolution
+  useEffect(() => {
+    // Ensure the premium loader is seen for at least 1.2s to feel high-fidelity
+    const timer = setTimeout(() => setMinTimeReached(true), 1200);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlWorkspace = urlParams.get("workspace");
+    const lastWorkspace = localStorage.getItem("last-workspace-id");
+
+    if (!urlWorkspace && lastWorkspace && lastWorkspace !== currentWorkspaceId) {
+      const exists = workspaces.some(w => w.id === lastWorkspace);
+      if (exists) {
+        router.replace(`/?workspace=${lastWorkspace}`);
+        return;
+      }
+    }
+
+    if (currentWorkspaceId) {
+      localStorage.setItem("last-workspace-id", currentWorkspaceId);
+    }
+
+    setIsResolving(false);
+    return () => clearTimeout(timer);
+  }, [currentWorkspaceId, router, workspaces]);
 
   // Core board state management
+  const boardData = useBoardData({
+    initialLists,
+    initialCards,
+    currentWorkspaceId,
+    userProfile,
+  });
+
   const {
     lists,
     setLists,
@@ -54,18 +90,14 @@ export default function Board({
     setCards,
     commentCounts,
     setCommentCounts,
+    isReady,
     addList,
     deleteList,
     addCard,
     deleteCard,
     updateCard,
     updateListType,
-  } = useBoardData({
-    initialLists,
-    initialCards,
-    currentWorkspaceId,
-    userProfile,
-  });
+  } = boardData;
 
   // Filters & search
   const {
@@ -90,20 +122,6 @@ export default function Board({
     setCards,
   });
 
-  useEffect(() => {
-    const loadCounts = async () => {
-      const counts: Record<string, number> = {};
-      await Promise.all(
-        initialCards.map(async (card) => {
-          const comments = await getCommentsAction(card.id, 50, null);
-          counts[card.id] = comments.length;
-        }),
-      );
-      setCommentCounts(counts);
-    };
-    if (initialCards.length) loadCounts();
-  }, [initialCards, setCommentCounts]);
-
   // Workspace modals state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -112,7 +130,6 @@ export default function Board({
 
   // Workspace creation
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
-  const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const handleCreateWorkspace = async (name: string) => {
     setIsCreatingWorkspace(true);
     try {
@@ -129,8 +146,20 @@ export default function Board({
 
   const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId);
 
+  const showLoader = isResolving || !isReady || !minTimeReached;
+
   return (
     <>
+      <AnimatePresence mode="wait">
+        {showLoader && (
+          <ProgressLoader 
+            key="global-loader"
+            isComplete={!isResolving && isReady}
+            message={isResolving ? "Synchronizing Workspace..." : "Preparing Board Content..."} 
+          />
+        )}
+      </AnimatePresence>
+
       <BoardHeader
         workspaces={workspaces}
         currentWorkspaceId={currentWorkspaceId}

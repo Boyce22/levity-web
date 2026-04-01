@@ -29,6 +29,7 @@ export function useBoardData({
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>(
     {},
   );
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const loadCounts = async () => {
@@ -40,8 +41,13 @@ export function useBoardData({
         }),
       );
       setCommentCounts(counts);
+      setIsReady(true);
     };
-    if (initialCards.length) loadCounts();
+    if (initialCards.length) {
+      loadCounts();
+    } else {
+      setIsReady(true);
+    }
   }, [initialCards]);
 
   const addList = useCallback(
@@ -121,6 +127,7 @@ export function useBoardData({
     setCards,
     commentCounts,
     setCommentCounts,
+    isReady,
     addList,
     deleteList,
     addCard,
