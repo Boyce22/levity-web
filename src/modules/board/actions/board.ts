@@ -116,6 +116,9 @@ export async function getBoardData(workspaceId?: string) {
   const currentWsId = workspaceId || workspaces[0]?.id;
   if (!currentWsId) throw new Error("Could not determine active workspace ID.");
 
+  // 🛡️ Security Boundary: Explicitly verify membership for the active workspace
+  await assertUserOwnsWorkspace(userId, currentWsId);
+
   // Seamlessly migrate legacy lists missing a workspace_id mapping
   await supabase
     .from("lists")

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { verifyJwtToken } from '@/lib/auth';
+import { assertUserOwnsWorkspace } from './assertions';
 
 async function getUserId() {
   const token = (await cookies()).get('token')?.value;
@@ -50,7 +51,14 @@ export async function createWorkspaceAction(name: string) {
 }
 
 export async function renameWorkspaceAction(id: string, newName: string) {
-  await getUserId(); // Verify auth
+  const userId = await getUserId();
+  
+  // 🛡️ Security Gateway: Verify RBAC
+  const member = await assertUserOwnsWorkspace(userId, id);
+  if (!['owner', 'admin'].includes(member.role)) {
+    throw new Error('403 Forbidden: Permission denied for renaming this workspace.');
+  }
+
   const { error } = await supabase
     .from('workspaces')
     .update({ name: newName })
@@ -58,14 +66,21 @@ export async function renameWorkspaceAction(id: string, newName: string) {
 
   if (error) {
     console.error('Error renaming workspace:', error);
-    throw new Error(error.message);
+    throw new Error('Failed to update workspace name.');
   }
 
   revalidatePath('/');
 }
 
 export async function deleteWorkspaceAction(id: string) {
-  await getUserId(); // Verify auth
+  const userId = await getUserId();
+  
+  // 🛡️ Security Gateway: Only owners can delete the entire workspace
+  const member = await assertUserOwnsWorkspace(userId, id);
+  if (member.role !== 'owner') {
+    throw new Error('403 Forbidden: Only the workspace owner can perform this irreversible action.');
+  }
+
   const { error } = await supabase
     .from('workspaces')
     .delete()
@@ -73,7 +88,7 @@ export async function deleteWorkspaceAction(id: string) {
 
   if (error) {
     console.error('Error deleting workspace:', error);
-    throw new Error(error.message);
+    throw new Error('Failed to delete workspace.');
   }
 
   revalidatePath('/');

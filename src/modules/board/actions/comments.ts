@@ -2,6 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 import { verifyJwtToken } from '@/lib/auth';
+import { assertUserOwnsCard } from '@/modules/workspace/actions/assertions';
 
 export type Comment = { 
   id: string; 
@@ -22,6 +23,11 @@ async function getUserId() {
 }
 
 export async function getCommentsAction(cardId: string, limit: number = 3, cursor: string | null = null) {
+  const userId = await getUserId();
+  
+  // 🛡️ Security Gateway: Verify access to the card
+  await assertUserOwnsCard(userId, cardId);
+
   let query = supabase
     .from('comments')
     .select('*, users(username, display_name, avatar_url)')
@@ -56,6 +62,10 @@ export async function getCommentsAction(cardId: string, limit: number = 3, curso
 
 export async function createCommentAction(cardId: string, content: string, parentId?: string | null) {
   const userId = await getUserId();
+
+  // 🛡️ Security Gateway: Verify access to the card
+  await assertUserOwnsCard(userId, cardId);
+
   const { data: newComment, error } = await supabase
     .from('comments')
     .insert({ card_id: cardId, user_id: userId, content, parent_id: parentId })
