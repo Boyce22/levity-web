@@ -1,7 +1,7 @@
-import { getBoardData, List as ListType, Card as CardType } from '@/actions/board';
-import { getUserProfile } from '@/actions/user';
-import { getAllUsersAction } from '@/actions/users';
-import Board from '@/components/Board';
+import { getBoardData, List as ListType, Card as CardType } from '@/modules/board/actions/board';
+import { getUserProfile } from '@/modules/users/actions/user';
+import { getAllUsersAction } from '@/modules/users/actions/users';
+import Board from '@/modules/board/components/Board';
 import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +24,7 @@ export default async function Home(props: { searchParams: Promise<{ workspace?: 
     if (!currentWorkspaceId && workspaces.length > 0) currentWorkspaceId = workspaces[0].id;
 
     userProfile = await getUserProfile();
-    allUsers = await getAllUsersAction();
+    allUsers = await getAllUsersAction(currentWorkspaceId);
   } catch (err: any) {
     if (err?.message === 'Unauthorized') isAuthError = true;
     else console.error('Failed to fetch board data', err);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Bell, CheckCheck, Sparkles } from 'lucide-react';
-import { getNotificationsAction, markNotificationsReadAction, Notification } from '@/actions/notifications';
+import { getNotificationsAction, markNotificationsReadAction, Notification } from '@/modules/users/actions/notifications';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface NotificationBellProps {

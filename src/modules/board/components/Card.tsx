@@ -1,6 +1,6 @@
 'use client';
 
-import { Card as CardType } from '@/actions/board';
+import { Card as CardType } from '@/modules/board/actions/board';
 import { Draggable } from '@hello-pangea/dnd';
 import { Trash2, MessageSquare, AlignLeft, User } from 'lucide-react';
 

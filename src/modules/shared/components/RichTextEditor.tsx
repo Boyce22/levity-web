@@ -6,7 +6,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Markdown } from 'tiptap-markdown';
-import { uploadImageAction } from '@/actions/upload'; // Make sure this is available
+import { uploadImageAction } from '@/modules/shared/actions/upload'; // Make sure this is available
 
 interface RichTextEditorProps {
   initialValue: string;

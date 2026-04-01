@@ -2,16 +2,17 @@
 
 import { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
-import { List as ListType, Card as CardType, updateListPositionsAction, updateCardPositionsAction, createListAction, createCardAction, deleteListAction, deleteCardAction } from '@/actions/board';
-import { logoutAction } from '@/actions/users';
-import { createWorkspaceAction } from '@/actions/workspace';
+import { List as ListType, Card as CardType, updateListPositionsAction, updateCardPositionsAction, createListAction, createCardAction, deleteListAction, deleteCardAction } from '@/modules/board/actions/board';
+import { logoutAction } from '@/modules/users/actions/users';
+import { createWorkspaceAction } from '@/modules/workspace/actions/workspace';
 import { useRouter } from 'next/navigation';
-import List from './List';
-import CardModal from './CardModal';
-import ProfileModal from './ProfileModal';
-import NotificationBell from './NotificationBell';
-import WorkspaceSettingsModal from './WorkspaceSettingsModal';
-import { Plus, Layout, Star, Search, LayoutGrid, LogOut, ChevronDown, Settings } from 'lucide-react';
+import List from '@/modules/board/components/List';
+import CardModal from '@/modules/board/components/CardModal';
+import ProfileModal from '@/modules/users/components/ProfileModal';
+import NotificationBell from '@/modules/users/components/NotificationBell';
+import WorkspaceSettingsModal from '@/modules/workspace/components/WorkspaceSettingsModal';
+import ShareWorkspaceModal from '@/modules/workspace/components/ShareWorkspaceModal';
+import { Plus, Layout, Star, Search, LayoutGrid, LogOut, ChevronDown, Settings, Share2 } from 'lucide-react';
 
 interface BoardProps {
   initialLists: ListType[];
@@ -31,6 +32,7 @@ export default function Board({ initialLists, initialCards, userProfile, allUser
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState('');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
 
@@ -214,6 +216,13 @@ export default function Board({ initialLists, initialCards, userProfile, allUser
           </div>
 
           <div className="w-px h-6 bg-white/10 mx-1"></div>
+          
+          <button 
+            onClick={() => setIsShareOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 hover:border-indigo-500/40 rounded-xl text-sm font-semibold transition-all mr-1"
+          >
+            <Share2 className="w-4 h-4" /> Share
+          </button>
 
           {/* Avatar Profile Toggle & Filter */}
           <div className="flex -space-x-1.5 cursor-pointer hover:scale-105 transition-transform" onClick={() => setIsProfileOpen(true)}>
@@ -346,6 +355,13 @@ export default function Board({ initialLists, initialCards, userProfile, allUser
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
         workspace={workspaces.find(w => w.id === currentWorkspaceId)} 
+      />
+
+      <ShareWorkspaceModal 
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        workspaceId={currentWorkspaceId}
+        workspaceName={workspaces.find(w => w.id === currentWorkspaceId)?.name}
       />
     </>
   );

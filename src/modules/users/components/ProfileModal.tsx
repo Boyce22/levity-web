@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { updateUserProfile } from '@/actions/user';
+import { updateUserProfile } from '@/modules/users/actions/user';
 import { X, UserRound, Link2, Check, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

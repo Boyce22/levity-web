@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card as CardType, updateCardDetailsAction } from '@/actions/board';
-import { getCommentsAction, createCommentAction, Comment } from '@/actions/comments';
-import { getCardHistoryAction } from '@/actions/history';
-import { uploadImageAction } from '@/actions/upload';
+import { Card as CardType, updateCardDetailsAction } from '@/modules/board/actions/board';
+import { getCommentsAction, createCommentAction, Comment } from '@/modules/board/actions/comments';
+import { getCardHistoryAction } from '@/modules/board/actions/history';
+import { uploadImageAction } from '@/modules/shared/actions/upload';
 import {
   X, ImagePlus, AlignLeft, MessageSquare, Send,
   Calendar, Tag, Trash2, Paperclip, Smile, Users, Check,
@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
-import RichTextEditor from './RichTextEditor';
+import RichTextEditor from '@/modules/shared/components/RichTextEditor';
 
 interface CardModalProps {
   card: CardType | null;

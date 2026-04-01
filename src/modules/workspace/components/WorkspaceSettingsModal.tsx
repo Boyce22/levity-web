@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Settings, Trash2, X, Save, AlertTriangle } from 'lucide-react';
-import { renameWorkspaceAction, deleteWorkspaceAction } from '@/actions/workspace';
+import { renameWorkspaceAction, deleteWorkspaceAction } from '@/modules/workspace/actions/workspace';
 import { useRouter } from 'next/navigation';
 
 interface Props {

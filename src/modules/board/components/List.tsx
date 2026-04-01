@@ -1,9 +1,9 @@
 'use client';
 
-import { List as ListType, Card as CardType, renameListAction } from '@/actions/board';
+import { List as ListType, Card as CardType, renameListAction } from '@/modules/board/actions/board';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import { useState } from 'react';
-import Card from './Card';
+import Card from '@/modules/board/components/Card';
 import { Plus, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 

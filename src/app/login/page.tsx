@@ -26,7 +26,16 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        window.location.href = '/';
+        const urlParams = new URLSearchParams(window.location.search);
+        const callbackUrl = urlParams.get('callbackUrl');
+        
+        // Open Redirect Vulnerability Protection
+        // Strictly only accept relative intra-app paths matching the invite paradigm
+        if (callbackUrl && callbackUrl.match(/^\/invite\/[a-zA-Z0-9-]+$/)) {
+          window.location.href = callbackUrl;
+        } else {
+          window.location.href = '/';
+        }
       } else {
         const data = await res.json();
         setError(data.message || 'Login failed');
