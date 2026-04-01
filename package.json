@@ -1,5 +1,5 @@
 {
-  "name": "next.js",
+  "name": "levity",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,12 +9,35 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1021.0",
+    "@aws-sdk/s3-request-presigner": "^3.1021.0",
+    "@hello-pangea/dnd": "^18.0.1",
+    "@supabase/supabase-js": "^2.101.1",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tiptap/extension-image": "^3.22.0",
+    "@tiptap/extension-placeholder": "^3.22.0",
+    "@tiptap/pm": "^3.22.0",
+    "@tiptap/react": "^3.22.0",
+    "@tiptap/starter-kit": "^3.22.0",
+    "backblaze-b2": "^1.7.1",
+    "clsx": "^2.1.1",
+    "emoji-picker-react": "^4.18.0",
+    "framer-motion": "^12.38.0",
+    "jose": "^6.2.2",
+    "lucide-react": "^1.7.0",
     "next": "16.2.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "sharp": "^0.34.5",
+    "tailwind-merge": "^3.5.0",
+    "tiptap-markdown": "^0.9.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/backblaze-b2": "^1.5.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
