@@ -21,76 +21,51 @@
 /* Default (Dark / Graphite) */
 :root, [data-theme='dark'] {
   --app-bg: #151515;
-  --app-header: 
-#1c1c1e;
-  --app-panel: 
-#212124;
-  --app-elevated: 
-#1a1a1c;
+  --app-header: #1c1c1e;
+  --app-panel: #212124;
+  --app-elevated: #1a1a1c;
   --app-hover: rgba(255, 255, 255, 0.05);
   --app-border: rgba(255, 255, 255, 0.1);
   --app-border-faint: rgba(255, 255, 255, 0.05);
-  --app-primary: 
-#818cf8; /* legacy indigo-400 */
-  --app-primary-hover: 
-#6366f1; /* legacy indigo-500 */
+  --app-primary: #818cf8; /* legacy indigo-400 */
+  --app-primary-hover: #6366f1; /* legacy indigo-500 */
   --app-primary-muted: rgba(99, 102, 241, 0.2);
-  --app-text: 
-#ffffff;
+  --app-text: #ffffff;
   --app-text-muted: rgba(255, 255, 255, 0.5);
   --foreground: var(--app-text);
   --background: var(--app-bg);
 }
 /* Artic (Nordic Blizzard) */
 [data-theme='artic'] {
-  --app-bg: 
-#2e3440;
-  --app-header: 
-#3b4252;
-  --app-panel: 
-#434c5e;
-  --app-elevated: 
-#4c566a;
+  --app-bg: #2e3440;
+  --app-header: #3b4252;
+  --app-panel: #434c5e;
+  --app-elevated: #4c566a;
   --app-hover: rgba(255, 255, 255, 0.1);
-  --app-border: 
-#4c566a;
-  --app-border-faint: 
-#3b4252;
-  --app-primary: 
-#88c0d0; 
-  --app-primary-hover: 
-#81a1c1; 
+  --app-border: #4c566a;
+  --app-border-faint: #3b4252;
+  --app-primary: #88c0d0; 
+  --app-primary-hover: #81a1c1; 
   --app-primary-muted: rgba(136, 192, 208, 0.2);
-  --app-text: 
-#eceff4;
-  --app-text-muted: 
-#d8dee9;
+  --app-text: #eceff4;
+  --app-text-muted: #d8dee9;
   --foreground: var(--app-text);
   --background: var(--app-bg);
 }
 /* Omni (Rocketseat Dracula) */
 [data-theme='omni'] {
-  --app-bg: 
-#191622;
-  --app-header: 
-#211c2e;
-  --app-panel: 
-#282a36;
-  --app-elevated: 
-#303342;
+  --app-bg: #191622;
+  --app-header: #211c2e;
+  --app-panel: #282a36;
+  --app-elevated: #303342;
   --app-hover: rgba(255, 255, 255, 0.05);
-  --app-border: 
-#44475a;
+  --app-border: #44475a;
   --app-border-faint: rgba(68, 71, 90, 0.5);
-  --app-primary: 
-#ff79c6; /* Neon Pink */
-  --app-primary-hover: 
-#bd93f9; /* Purple */
+  --app-primary: #ff79c6; /* Neon Pink */
+  --app-primary-hover: #bd93f9; /* Purple */
   --app-primary-muted: rgba(255, 121, 198, 0.2);
-  --app-text: 
-#f8f8f2;
-  --app-text-muted: 
-#8be9fd;
+  --app-text: #f8f8f2;
+  --app-text-muted: #8be9fd;
   --foreground: var(--app-text);
   --background: var(--app-bg);
 }
@@ -100,18 +75,36 @@ body {
   font-family: var(--font-sans), sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+
 /* Custom Webkit Scrollbar for Theme matching */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--background);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--app-border);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--app-primary);
+}
+
+/* Fix for yellow autofill background and outline in WebKit browsers */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 32px var(--app-bg) inset !important;
+  -webkit-text-fill-color: var(--app-text) !important;
+  box-shadow: none !important;
+  border-color: var(--app-border) !important;
+  outline: none !important;
+  caret-color: var(--app-text);
+  transition: background-color 5000s ease-in-out 0s;
 }

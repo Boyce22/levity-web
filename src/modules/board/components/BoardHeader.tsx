@@ -8,6 +8,8 @@ import { logoutAction } from "@/modules/users/actions/users";
 import { Card as CardType, List as ListType } from "@/modules/board/actions/board";
 import { getListType, getCardEffectiveProgress } from "@/modules/list/utils/listType";
 
+import { LevityLogo } from "@/modules/shared/components/LevityLogo";
+
 interface BoardHeaderProps {
   workspaces: any[];
   currentWorkspaceId: string;
@@ -73,13 +75,13 @@ export function BoardHeader({
       <div className="flex items-center gap-3">
         {/* Logo */}
         <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
           style={{
             background: "var(--app-primary-muted)",
             border: "1px solid var(--app-border)",
           }}
         >
-          <Layout className="w-4 h-4" style={{ color: "var(--app-primary)" }} />
+          <LevityLogo size={24} />
         </div>
 
         {/* Workspace switcher */}
