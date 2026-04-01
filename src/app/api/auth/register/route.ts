@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { signJwtToken } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
@@ -18,8 +19,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Username already taken.' }, { status: 400 });
     }
 
-    const { data: newUser, error } = await supabase.from('users').insert({ username, password }).select().single();
-    
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({ username, password: hashedPassword })
+      .select()
+      .single();
+
     if (error || !newUser) {
       return NextResponse.json({ success: false, message: 'Failed to create user.' }, { status: 500 });
     }
@@ -32,12 +39,12 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: 60 * 60 * 24,
       path: '/'
     });
-    
+
     return response;
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, message: 'Internal Server Error' }, { status: 500 });
   }
 }

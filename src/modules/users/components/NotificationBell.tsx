@@ -77,7 +77,7 @@ export default function NotificationBell({ onNotificationClick }: NotificationBe
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.96 }}
               transition={{ type: 'spring', damping: 28, stiffness: 340 }}
-              className="absolute right-0 top-12 w-[300px] flex flex-col z-50 overflow-hidden"
+              className="absolute right-0 top-12 w-75 flex flex-col z-50 overflow-hidden"
               style={{
                 borderRadius: '18px',
                 background: '#151515',

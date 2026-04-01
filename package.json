@@ -20,6 +20,7 @@
     "@tiptap/react": "^3.22.0",
     "@tiptap/starter-kit": "^3.22.0",
     "backblaze-b2": "^1.7.1",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "emoji-picker-react": "^4.18.0",
     "framer-motion": "^12.38.0",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/backblaze-b2": "^1.5.6",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

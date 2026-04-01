@@ -1,36 +1,117 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-
 @theme {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Semantic Theme Variables mapped to Tailwind V4 classes */
+  --color-app-bg: var(--app-bg);
+  --color-app-header: var(--app-header);
+  --color-app-panel: var(--app-panel);
+  --color-app-elevated: var(--app-elevated);
+  --color-app-hover: var(--app-hover);
+  
+  --color-app-border: var(--app-border);
+  --color-app-border-faint: var(--app-border-faint);
+  --color-app-primary: var(--app-primary);
+  --color-app-primary-hover: var(--app-primary-hover);
+  --color-app-primary-muted: var(--app-primary-muted);
+  --color-app-text: var(--app-text);
+  --color-app-text-muted: var(--app-text-muted);
 }
-
-:root {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
+/* Default (Dark / Graphite) */
+:root, [data-theme='dark'] {
+  --app-bg: #151515;
+  --app-header: 
+#1c1c1e;
+  --app-panel: 
+#212124;
+  --app-elevated: 
+#1a1a1c;
+  --app-hover: rgba(255, 255, 255, 0.05);
+  --app-border: rgba(255, 255, 255, 0.1);
+  --app-border-faint: rgba(255, 255, 255, 0.05);
+  --app-primary: 
+#818cf8; /* legacy indigo-400 */
+  --app-primary-hover: 
+#6366f1; /* legacy indigo-500 */
+  --app-primary-muted: rgba(99, 102, 241, 0.2);
+  --app-text: 
+#ffffff;
+  --app-text-muted: rgba(255, 255, 255, 0.5);
+  --foreground: var(--app-text);
+  --background: var(--app-bg);
 }
-
+/* Artic (Nordic Blizzard) */
+[data-theme='artic'] {
+  --app-bg: 
+#2e3440;
+  --app-header: 
+#3b4252;
+  --app-panel: 
+#434c5e;
+  --app-elevated: 
+#4c566a;
+  --app-hover: rgba(255, 255, 255, 0.1);
+  --app-border: 
+#4c566a;
+  --app-border-faint: 
+#3b4252;
+  --app-primary: 
+#88c0d0; 
+  --app-primary-hover: 
+#81a1c1; 
+  --app-primary-muted: rgba(136, 192, 208, 0.2);
+  --app-text: 
+#eceff4;
+  --app-text-muted: 
+#d8dee9;
+  --foreground: var(--app-text);
+  --background: var(--app-bg);
+}
+/* Omni (Rocketseat Dracula) */
+[data-theme='omni'] {
+  --app-bg: 
+#191622;
+  --app-header: 
+#211c2e;
+  --app-panel: 
+#282a36;
+  --app-elevated: 
+#303342;
+  --app-hover: rgba(255, 255, 255, 0.05);
+  --app-border: 
+#44475a;
+  --app-border-faint: rgba(68, 71, 90, 0.5);
+  --app-primary: 
+#ff79c6; /* Neon Pink */
+  --app-primary-hover: 
+#bd93f9; /* Purple */
+  --app-primary-muted: rgba(255, 121, 198, 0.2);
+  --app-text: 
+#f8f8f2;
+  --app-text-muted: 
+#8be9fd;
+  --foreground: var(--app-text);
+  --background: var(--app-bg);
+}
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-sans), sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-
-/* Custom Webkit Scrollbar for Antigravity Look */
+/* Custom Webkit Scrollbar for Theme matching */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+  background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--app-border);
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--app-primary);
 }
