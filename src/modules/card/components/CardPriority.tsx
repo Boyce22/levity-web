@@ -1,7 +1,7 @@
 const PRIORITY_STYLES: Record<string, { color: string; label: string }> = {
-  high: { color: "#f87171", label: "Alta" },
-  medium: { color: "#fbbf24", label: "Média" },
-  low: { color: "#34d399", label: "Baixa" },
+  high: { color: "#f87171", label: "High" },
+  medium: { color: "#fbbf24", label: "Medium" },
+  low: { color: "#34d399", label: "Low" },
 };
 
 export function CardPriority({ priority }: { priority: keyof typeof PRIORITY_STYLES }) {

@@ -134,7 +134,7 @@ export function CardModalHeader({
               style={{ color: "var(--app-text)" }}
             >
               {content || (
-                <span className="font-normal italic opacity-30">Título da tarefa…</span>
+                <span className="font-normal italic opacity-30">Title</span>
               )}
             </h2>
           )}

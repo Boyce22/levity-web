@@ -9,7 +9,8 @@ import List from "@/modules/list/components/List";
 interface BoardCanvasProps {
   lists: ListType[];
   cards: CardType[];
-  onAddCard: (listId: string, content: string) => void;
+  onAddCard: (listId: string, content: string) => Promise<any> | void;
+  onAddList: (title: string) => Promise<any> | void;
   onDeleteList: (listId: string) => void;
   onDeleteCard: (cardId: string) => void;
   onCardClick: (card: CardType) => void;
@@ -24,6 +25,7 @@ export function BoardCanvas({
   lists,
   cards,
   onAddCard,
+  onAddList,
   onDeleteList,
   onDeleteCard,
   onCardClick,
@@ -35,18 +37,15 @@ export function BoardCanvas({
   const [newListTitle, setNewListTitle] = useState("");
 
   const handleCreateList = () => {
-    if (!newListTitle.trim()) {
-      setIsAddingList(false);
-      return;
+    if (!newListTitle.trim()) return setIsAddingList(false);
+    
+    if (onAddList) {
+      onAddList(newListTitle);
     }
-    // Call parent's addList (passed via props? Actually addList is from useBoardData, but we need to expose it)
-    // We need to receive an onAddList prop. The original BoardCanvas did not have that; it handled adding list internally.
-    // But the refactored Board component uses addList from useBoardData. We need to pass onAddList.
-    // Let's add onAddList prop.
+    setNewListTitle("");
+    setIsAddingList(false);
   };
 
-  // We need to add onAddList prop. The original BoardCanvas should receive onAddList from Board component.
-  // We'll update the props.
 
   return (
     <div className="p-5 md:p-6 flex-1 overflow-x-auto overflow-y-auto w-full flex items-start gap-4">
@@ -101,7 +100,7 @@ export function BoardCanvas({
                 color: "var(--app-text)",
                 border: "1px solid var(--app-border)",
               }}
-              placeholder="Título da lista…"
+              placeholder="Title"
               value={newListTitle}
               onChange={(e) => setNewListTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -119,14 +118,14 @@ export function BoardCanvas({
                   border: "1px solid var(--app-primary)",
                 }}
               >
-                Adicionar
+                Add
               </button>
               <button
                 onClick={() => setIsAddingList(false)}
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                 style={{ color: "var(--app-text-muted)" }}
               >
-                Cancelar
+                Discard
               </button>
             </div>
           </div>
@@ -150,7 +149,7 @@ export function BoardCanvas({
               e.currentTarget.style.background = "transparent";
             }}
           >
-            <Plus className="w-4 h-4" /> Adicionar lista
+            <Plus className="w-4 h-4" /> Create list
           </button>
         )}
       </div>

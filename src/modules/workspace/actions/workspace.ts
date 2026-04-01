@@ -15,19 +15,38 @@ async function getUserId() {
 
 export async function createWorkspaceAction(name: string) {
   const userId = await getUserId();
-  const { data, error } = await supabase
+
+  const trimmed = name?.trim();
+  if (!trimmed || trimmed.length < 3) {
+    throw new Error('O nome do workspace deve ter pelo menos 3 caracteres.');
+  }
+
+  // 1. cria workspace
+  const { data: workspace, error: wsError } = await supabase
     .from('workspaces')
-    .insert({ user_id: userId, name })
+    .insert({ name })
     .select()
     .single();
 
-  if (error) {
-    console.error('Error creating workspace:', error);
-    throw new Error(error.message);
+  if (wsError) throw new Error(wsError.message);
+
+  // 2. cria membership (owner)
+  const { error: memberError } = await supabase
+    .from('workspace_members')
+    .insert({
+      workspace_id: workspace.id,
+      user_id: userId,
+      role: 'owner',
+    });
+
+  // rollback manual
+  if (memberError) {
+    await supabase.from('workspaces').delete().eq('id', workspace.id);
+    throw new Error(memberError.message);
   }
-  
+
   revalidatePath('/');
-  return data;
+  return workspace;
 }
 
 export async function renameWorkspaceAction(id: string, newName: string) {

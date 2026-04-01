@@ -40,7 +40,7 @@ export function MemberPicker({ isOpen, setIsOpen, assigneeId, onSelect, allUsers
             }}
           >
             <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest" style={{ color: "var(--app-text-muted)" }}>
-              Atribuir membro
+              Add member
             </div>
             <div className="space-y-0.5 max-h-48 overflow-y-auto">
               {allUsers.map((u) => (

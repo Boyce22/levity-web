@@ -12,7 +12,7 @@ interface ListProps {
   list: ListType;
   cards: CardType[];
   index: number;
-  onAddCard: (listId: string, content: string) => void;
+  onAddCard: (listId: string, content: string) => Promise<any> | void;
   onDeleteList: () => void;
   onDeleteCard: (cardId: string) => void;
   onCardClick: (card: CardType) => void;
@@ -45,8 +45,8 @@ export default function List({
     await renameListAction(list.id, newTitle);
   };
 
-  const handleAddCard = (content: string) => {
-    onAddCard(list.id, content);
+  const handleAddCard = async (content: string) => {
+    await onAddCard(list.id, content);
   };
 
   return (

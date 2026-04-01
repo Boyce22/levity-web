@@ -52,7 +52,7 @@ export function BoardFiltersBar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             type="text"
-            placeholder="Buscar cards…"
+            placeholder="Search"
             className="rounded-xl py-1.5 pl-9 pr-4 text-sm focus:outline-none w-35 sm:w-50 transition-all"
             style={{
               background: "var(--app-bg)",
@@ -77,7 +77,7 @@ export function BoardFiltersBar({
             className="text-[10px] uppercase tracking-widest font-bold"
             style={{ color: "var(--app-text-muted)", opacity: 0.5 }}
           >
-            Membros
+            Members
           </span>
           <div className="flex -space-x-1.5">
             {allUsers.map((user) => {
@@ -145,9 +145,9 @@ export function BoardFiltersBar({
             style={{ color: "var(--app-text-muted)", opacity: 0.5 }}
           />
           {[
-            { id: "high", label: "Alta", color: "#f87171" },
-            { id: "medium", label: "Média", color: "#fbbf24" },
-            { id: "low", label: "Baixa", color: "#34d399" },
+            { id: "high", label: "High", color: "#f87171" },
+            { id: "medium", label: "Medium", color: "#fbbf24" },
+            { id: "low", label: "Low", color: "#34d399" },
           ].map((p) => (
             <button
               key={p.id}

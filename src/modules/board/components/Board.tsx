@@ -15,6 +15,7 @@ import CardModal from "@/modules/card/components/card-modal/CardModal";
 import ProfileModal from "@/modules/users/components/ProfileModal";
 import ShareWorkspaceModal from "@/modules/workspace/components/ShareWorkspaceModal";
 import WorkspaceSettingsModal from "@/modules/workspace/components/WorkspaceSettingsModal";
+import CreateWorkspaceModal from "@/modules/workspace/components/CreateWorkspaceModal";
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardFiltersBar } from "./BoardFiltersBar";
 import { BoardHeader } from "./BoardHeader";
@@ -107,16 +108,17 @@ export default function Board({
   // Workspace creation
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
-  const handleCreateWorkspace = async () => {
-    if (!newWorkspaceName.trim()) {
-      setIsCreatingWorkspace(false);
-      return;
-    }
-    const newWorkspace = await createWorkspaceAction(newWorkspaceName);
-    if (newWorkspace) {
-      setNewWorkspaceName("");
-      setIsCreatingWorkspace(false);
-      router.push(`/?workspace=${newWorkspace.id}`);
+  const handleCreateWorkspace = async (name: string) => {
+    setIsCreatingWorkspace(true);
+    try {
+      const newWorkspace = await createWorkspaceAction(name);
+      if (newWorkspace) {
+        setIsCreatingWorkspace(false);
+        router.push(`/?workspace=${newWorkspace.id}`);
+      }
+    } catch (err) {
+      console.error(err);
+      throw err;
     }
   };
 
@@ -135,9 +137,6 @@ export default function Board({
         onOpenShare={() => setIsShareOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
         isCreatingWorkspace={isCreatingWorkspace}
-        newWorkspaceName={newWorkspaceName}
-        setNewWorkspaceName={setNewWorkspaceName}
-        onCreateWorkspace={handleCreateWorkspace}
         setIsCreatingWorkspace={setIsCreatingWorkspace}
       />
 
@@ -160,6 +159,7 @@ export default function Board({
           lists={lists}
           cards={filteredCards}
           onAddCard={addCard}
+          onAddList={addList}
           onDeleteList={deleteList}
           onDeleteCard={deleteCard}
           onCardClick={setEditingCard}
@@ -196,6 +196,12 @@ export default function Board({
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         workspace={currentWorkspace}
+      />
+
+      <CreateWorkspaceModal
+        isOpen={isCreatingWorkspace}
+        onClose={() => setIsCreatingWorkspace(false)}
+        onCreate={handleCreateWorkspace}
       />
 
       <ShareWorkspaceModal

@@ -4,18 +4,15 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface ListAddCardProps {
   accentColor: string;
-  onAdd: (content: string) => void;
+  onAdd: (content: string) => Promise<any> | void;
 }
 
 export function ListAddCard({ accentColor, onAdd }: ListAddCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [content, setContent] = useState("");
-
   const handleSubmit = () => {
-    if (!content.trim()) {
-      setIsAdding(false);
-      return;
-    }
+    if (!content.trim()) return setIsAdding(false);
+
     onAdd(content);
     setContent("");
     setIsAdding(false);
@@ -27,28 +24,27 @@ export function ListAddCard({ accentColor, onAdd }: ListAddCardProps) {
   };
 
   return (
-    <div className="px-3 pb-3 pt-1">
+    <div className="px-3 pb-2">
       <AnimatePresence mode="wait">
         {isAdding ? (
           <motion.div
-            key="form"
-            initial={{ opacity: 0, y: -6 }}
+            key="input"
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            className="rounded-xl overflow-hidden"
+            exit={{ opacity: 0, y: -4 }}
+            className="mt-1 px-2 py-1 rounded-lg transition"
             style={{
-              background: "var(--app-bg)",
-              border: `1px solid ${accentColor}50`,
+              background: "transparent",
             }}
           >
             <textarea
               autoFocus
-              className="w-full px-3 py-2.5 bg-transparent resize-none text-[13px] focus:outline-none"
-              style={{ color: "var(--app-text)" }}
-              placeholder="Descrição da tarefa..."
+              placeholder="Descreva a tarefa..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              rows={3}
+              rows={2}
+              className="w-full bg-transparent resize-none text-[13px] focus:outline-none placeholder:opacity-50"
+              style={{ color: "var(--app-text)" }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -57,53 +53,41 @@ export function ListAddCard({ accentColor, onAdd }: ListAddCardProps) {
                 if (e.key === "Escape") handleCancel();
               }}
             />
-            <div
-              className="flex items-center gap-2 px-3 pb-2.5"
-              style={{ borderTop: "1px solid var(--app-border-faint)" }}
-            >
+
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleSubmit}
-                className="px-3 py-1 rounded-lg text-[12px] font-semibold transition-colors"
+                className="flex items-center gap-1 text-[12px] font-medium px-2.5 py-1.5 rounded-md transition"
                 style={{
-                  background: accentColor + "25",
+                  background: accentColor + "20",
                   color: accentColor,
-                  border: `1px solid ${accentColor}40`,
                 }}
               >
-                Adicionar
+                Add
               </button>
+
               <button
                 onClick={handleCancel}
-                className="px-3 py-1 rounded-lg text-[12px] font-semibold transition-colors"
-                style={{ color: "var(--app-text-muted)" }}
+                className="text-[12px] px-2 py-1 opacity-60 hover:opacity-100 transition"
               >
-                Cancelar
+                Cancel
               </button>
             </div>
           </motion.div>
         ) : (
           <motion.button
-            key="btn"
+            key="button"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={() => setIsAdding(true)}
-            className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-[12px] font-semibold transition-all"
-            style={{
-              color: "var(--app-text-muted)",
-              border: "1px dashed var(--app-border)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = accentColor;
-              e.currentTarget.style.borderColor = accentColor + "60";
-              e.currentTarget.style.background = accentColor + "08";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--app-text-muted)";
-              e.currentTarget.style.borderColor = "var(--app-border)";
-              e.currentTarget.style.background = "transparent";
-            }}
+            className="flex items-center gap-2 w-full py-2 text-[13px] transition group"
+            style={{ color: "var(--app-text-muted)" }}
           >
-            <Plus className="w-3.5 h-3.5" /> Adicionar tarefa
+            <Plus className="w-4 h-4 opacity-70 group-hover:opacity-100 transition" />
+            <span className="group-hover:translate-x-[2px] transition">
+              Adicionar tarefa
+            </span>
           </motion.button>
         )}
       </AnimatePresence>

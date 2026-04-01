@@ -19,9 +19,6 @@ interface BoardHeaderProps {
   onOpenProfile: () => void;
   onNotificationClick?: (cardId: string) => void;
   isCreatingWorkspace: boolean;
-  newWorkspaceName: string;
-  setNewWorkspaceName: (name: string) => void;
-  onCreateWorkspace: () => void;
   setIsCreatingWorkspace: (creating: boolean) => void;
 }
 
@@ -37,9 +34,6 @@ export function BoardHeader({
   onOpenProfile,
   onNotificationClick,
   isCreatingWorkspace,
-  newWorkspaceName,
-  setNewWorkspaceName,
-  onCreateWorkspace,
   setIsCreatingWorkspace,
 }: BoardHeaderProps) {
   const displayAvatar =
@@ -155,45 +149,24 @@ export function BoardHeader({
                 margin: "4px 0",
               }}
             />
-            {!isCreatingWorkspace ? (
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsCreatingWorkspace(true);
-                }}
-                className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                style={{ color: "var(--app-primary)" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background =
-                    "var(--app-primary-muted)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                + Criar workspace
-              </button>
-            ) : (
-              <div onClick={(e) => e.stopPropagation()} className="px-2 py-1">
-                <input
-                  autoFocus
-                  value={newWorkspaceName}
-                  onChange={(e) => setNewWorkspaceName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") onCreateWorkspace();
-                    if (e.key === "Escape") setIsCreatingWorkspace(false);
-                  }}
-                  className="w-full rounded-lg px-2 py-1.5 text-sm focus:outline-none"
-                  style={{
-                    background: "var(--app-bg)",
-                    color: "var(--app-text)",
-                    border: "1px solid var(--app-primary)",
-                  }}
-                  placeholder="Nome do workspace…"
-                />
-              </div>
-            )}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsCreatingWorkspace(true);
+              }}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={{ color: "var(--app-primary)" }}
+              onMouseEnter={(e) =>
+              (e.currentTarget.style.background =
+                "var(--app-primary-muted)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              + Criar workspace
+            </button>
           </div>
         </div>
 
@@ -258,7 +231,7 @@ export function BoardHeader({
               "var(--app-primary)";
           }}
         >
-          <Share2 className="w-4 h-4" /> Compartilhar
+          <Share2 className="w-4 h-4" /> Share
         </button>
 
         <button

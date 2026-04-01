@@ -64,7 +64,7 @@ async function ensureDefaultWorkspace(userId: string, workspaces: any[]) {
 
   const { data: cw, error } = await supabase
     .from("workspaces")
-    .insert({ user_id: userId, name: "My Workspace" })
+    .insert({ name: "My Workspace" })
     .select()
     .single();
   if (error)

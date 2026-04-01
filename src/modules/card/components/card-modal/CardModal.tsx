@@ -27,9 +27,9 @@ const LABELS = [
 ];
 
 const PRIORITIES = [
-  { id: "high", label: "Alta", color: "#f87171", icon: "↑" },
-  { id: "medium", label: "Média", color: "#fbbf24", icon: "→" },
-  { id: "low", label: "Baixa", color: "#34d399", icon: "↓" },
+  { id: "high", label: "High", color: "#f87171", icon: "↑" },
+  { id: "medium", label: "Medium", color: "#fbbf24", icon: "→" },
+  { id: "low", label: "Low", color: "#34d399", icon: "↓" },
 ];
 
 export default function CardModal({

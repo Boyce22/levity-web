@@ -32,9 +32,9 @@ export default function ProfileModal({
   const [errors, setErrors] = useState<FormErrors>({});
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     profile?.avatar_url ||
-      (profile?.username
-        ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`
-        : null),
+    (profile?.username
+      ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`
+      : null),
   );
   const [avatarHovered, setAvatarHovered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,9 +46,9 @@ export default function ProfileModal({
       setBio(profile.bio || "");
       setAvatarPreview(
         profile.avatar_url ||
-          (profile.username
-            ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`
-            : null),
+        (profile.username
+          ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`
+          : null),
       );
     }
   }, [profile]);
@@ -138,9 +138,9 @@ export default function ProfileModal({
 
   const memberSince = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-      })
+      year: "numeric",
+      month: "short",
+    })
     : null;
 
   return (
@@ -160,16 +160,16 @@ export default function ProfileModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: 10 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="relative w-full max-w-[480px] z-10 flex flex-col"
+          className="relative w-full max-w-[480px] z-10 flex flex-col overflow-hidden"
           style={{
-            background: "var(--app-panel)",
-            borderRadius: "16px",
-            border: "1px solid var(--app-border-faint)",
-            boxShadow: "0 32px 80px rgba(0,0,0,0.5)",
+            background: "var(--app-bg)",
+            borderRadius: "24px",
+            border: "1px solid var(--app-border)",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
           }}
         >
           <form onSubmit={handleSave} className="flex flex-col relative z-10 w-full h-full">
-            
+
             {/* Header: Left-aligned profile info */}
             <div className="px-8 pt-8 pb-6 flex items-center gap-5">
               <div
@@ -178,7 +178,7 @@ export default function ProfileModal({
                 onMouseEnter={() => setAvatarHovered(true)}
                 onMouseLeave={() => setAvatarHovered(false)}
               >
-                <div className="w-[88px] h-[88px] rounded-full overflow-hidden bg-[var(--app-bg)] border border-[var(--app-border-faint)] relative z-10 transition-colors">
+                <div className="w-[88px] h-[88px] rounded-full overflow-hidden bg-[var(--app-panel)] border border-[var(--app-border)] relative z-10 transition-colors shadow-sm ring-4 ring-[var(--app-panel)]/50">
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -189,9 +189,9 @@ export default function ProfileModal({
                       }
                     />
                   ) : (
-                    <div className="w-full h-full bg-[var(--app-bg)]" />
+                    <div className="w-full h-full bg-[var(--app-panel)]" />
                   )}
-                  
+
                   <AnimatePresence>
                     {avatarHovered && (
                       <motion.div
@@ -237,14 +237,14 @@ export default function ProfileModal({
               <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[var(--app-text-muted)] mb-5 opacity-70">
                 Perfil
               </h3>
-              
+
               <div className="flex flex-col gap-5">
                 <SimpleField label="Display Name" error={errors.displayName}>
                   <input
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Your full name"
-                    className="w-full bg-[var(--app-bg)] text-[var(--app-text)] rounded-lg px-4 py-[11px] text-[14px] border border-[var(--app-border)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-1 focus:ring-[var(--app-primary)] transition-colors placeholder:text-[var(--app-text-muted)] placeholder:opacity-50"
+                    className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-xl px-4 py-3 text-[14.5px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm"
                   />
                 </SimpleField>
 
@@ -252,42 +252,42 @@ export default function ProfileModal({
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    placeholder="Alô"
+                    placeholder="Tell us a bit about yourself"
                     rows={3}
-                    className="w-full bg-[var(--app-bg)] text-[var(--app-text)] rounded-lg px-4 py-[11px] text-[14px] border border-[var(--app-border)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-1 focus:ring-[var(--app-primary)] transition-colors resize-none placeholder:text-[var(--app-text-muted)] placeholder:opacity-50"
+                    className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-xl px-4 py-3 text-[14.5px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all resize-none placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm leading-relaxed"
                   />
                 </SimpleField>
               </div>
             </div>
 
             {/* Separator */}
-            <div className="mx-8 border-t border-[var(--app-border-faint)] my-4 opacity-50" />
+            <div className="mx-8 border-t border-[var(--app-border-faint)] my-5 opacity-50" />
 
-            <div className="px-8 flex flex-col">
+            <div className="px-8 flex flex-col mb-4">
               <SimpleField label="Avatar URL (opcional)" error={errors.avatarUrl}>
                 <input
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
-                  placeholder="/file/..."
-                  className="w-full bg-[var(--app-bg)] text-[var(--app-text)] rounded-lg px-4 py-[11px] text-[14px] border border-[var(--app-border)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-1 focus:ring-[var(--app-primary)] transition-colors placeholder:text-[var(--app-text-muted)] placeholder:opacity-50"
+                  placeholder="https://example.com/avatar.png"
+                  className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-xl px-4 py-3 text-[14.5px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm"
                 />
               </SimpleField>
             </div>
 
             {/* Footer */}
-            <div className="px-8 pt-8 pb-8 flex items-center justify-between mt-2">
+            <div className="px-8 pt-5 pb-6 flex items-center justify-between mt-2 bg-[var(--app-panel)]/30 border-t border-[var(--app-border-faint)]">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={saving}
-                className="text-[14px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition-colors focus:outline-none"
+                className="px-3 py-2 text-[14px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)] bg-transparent hover:bg-[var(--app-panel)] rounded-lg transition-colors focus:outline-none"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || saved}
-                className="px-6 py-[10px] rounded-lg text-[14px] font-medium text-white transition-colors flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl text-[14px] font-medium text-white transition-all flex items-center gap-2 shadow-sm focus:ring-[3px] focus:ring-[var(--app-primary)]/30"
                 style={{
                   background: saved ? "#10b981" : "var(--app-primary)",
                   opacity: saving ? 0.8 : 1,
