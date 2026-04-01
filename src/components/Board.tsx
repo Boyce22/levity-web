@@ -4,11 +4,14 @@ import { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { List as ListType, Card as CardType, updateListPositionsAction, updateCardPositionsAction, createListAction, createCardAction, deleteListAction, deleteCardAction } from '@/actions/board';
 import { logoutAction } from '@/actions/users';
+import { createWorkspaceAction } from '@/actions/workspace';
+import { useRouter } from 'next/navigation';
 import List from './List';
 import CardModal from './CardModal';
 import ProfileModal from './ProfileModal';
 import NotificationBell from './NotificationBell';
-import { Plus, Layout, Star, Search, LayoutGrid, LogOut, ChevronDown } from 'lucide-react';
+import WorkspaceSettingsModal from './WorkspaceSettingsModal';
+import { Plus, Layout, Star, Search, LayoutGrid, LogOut, ChevronDown, Settings } from 'lucide-react';
 
 interface BoardProps {
   initialLists: ListType[];
@@ -20,10 +23,14 @@ interface BoardProps {
 }
 
 export default function Board({ initialLists, initialCards, userProfile, allUsers, workspaces, currentWorkspaceId }: BoardProps) {
+  const router = useRouter();
   const [lists, setLists] = useState<ListType[]>(initialLists);
   const [cards, setCards] = useState<CardType[]>(initialCards);
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
 
@@ -72,6 +79,19 @@ export default function Board({ initialLists, initialCards, userProfile, allUser
 
       const updates = updatedDestListCards.map(c => ({ id: c.id, list_id: c.list_id, position: c.position }));
       await updateCardPositionsAction(updates);
+    }
+  };
+
+  const handleCreateWorkspace = async () => {
+    if (!newWorkspaceName.trim()) {
+      setIsCreatingWorkspace(false);
+      return;
+    }
+    const wf = await createWorkspaceAction(newWorkspaceName);
+    if (wf) {
+      setNewWorkspaceName('');
+      setIsCreatingWorkspace(false);
+      router.push(`/?workspace=${wf.id}`);
     }
   };
 
@@ -149,17 +169,26 @@ export default function Board({ initialLists, initialCards, userProfile, allUser
           <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
             <Layout className="w-5 h-5" />
           </div>
-          <div className="relative group/ws z-[100]">
+          <div className="relative group/ws z-[100] flex items-center gap-1.5">
             <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2 cursor-pointer hover:text-indigo-300 transition-colors">
-              {workspaces.find(w => w.id === currentWorkspaceId)?.name} <ChevronDown className="w-4 h-4 text-white/30" />
+              {workspaces.find(w => w.id === currentWorkspaceId)?.name || 'Default Workspace'} <ChevronDown className="w-4 h-4 text-white/30" />
             </h1>
+            <button onClick={() => setIsSettingsOpen(true)} className="text-white/30 hover:text-indigo-400 transition-colors p-1 hover:bg-white/5 rounded-lg opacity-0 group-hover/ws:opacity-100" title="Workspace Settings">
+               <Settings className="w-4 h-4" />
+            </button>
             <div className="absolute top-full left-0 mt-2 w-56 bg-[#1a1a1c] border border-white/10 rounded-xl shadow-xl opacity-0 invisible group-hover/ws:opacity-100 group-hover/ws:visible transition-all">
               <div className="p-2 space-y-1">
                 {workspaces.map(w => (
                   <a key={w.id} href={`/?workspace=${w.id}`} className={`block px-3 py-2 rounded-lg hover:bg-white/5 text-sm ${w.id === currentWorkspaceId ? 'text-indigo-400 bg-white/5' : 'text-white/80'}`}>{w.name}</a>
                 ))}
                 <div className="h-px bg-white/10 my-1"></div>
-                <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-indigo-500/20 text-sm text-indigo-400 font-medium transition-colors">+ Create Workspace</button>
+                {!isCreatingWorkspace ? (
+                  <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsCreatingWorkspace(true); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-indigo-500/20 text-sm text-indigo-400 font-medium transition-colors">+ Create Workspace</button>
+                ) : (
+                  <div onClick={e => e.stopPropagation()} className="px-2 py-1">
+                    <input autoFocus value={newWorkspaceName} onChange={e => setNewWorkspaceName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleCreateWorkspace(); if (e.key === 'Escape') setIsCreatingWorkspace(false); }} className="w-full bg-[#151515] text-white rounded-lg px-2 py-1.5 text-sm border border-indigo-500/50 focus:outline-none" placeholder="Workspace name..." />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -311,6 +340,12 @@ export default function Board({ initialLists, initialCards, userProfile, allUser
         onClose={() => setIsProfileOpen(false)}
         profile={profile}
         onProfileUpdated={setProfile}
+      />
+
+      <WorkspaceSettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        workspace={workspaces.find(w => w.id === currentWorkspaceId)} 
       />
     </>
   );
