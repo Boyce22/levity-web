@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Smile, Paperclip } from "lucide-react";
+import { Send, Smile, Paperclip, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import EmojiPicker, { Theme } from "emoji-picker-react";
 import { useMentions } from "@/modules/card/hooks/useMentions";
 
 interface CommentInputProps {
   avatarUrl: string;
-  onPost: (text: string, parentId?: string | null) => void;
+  onPost: (text: string, parentId?: string | null) => Promise<void> | void;
   replyingTo: any | null;
   onCancelReply: () => void;
   allUsers: any[];
@@ -15,6 +15,8 @@ interface CommentInputProps {
 export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, allUsers }: CommentInputProps) {
   const [text, setText] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const {
     mentionState,
@@ -30,12 +32,22 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
     }
   }, [replyingTo]);
 
-  const handleSubmit = () => {
-    if (!text.trim()) return;
-    onPost(text, replyingTo?.id || null);
+  const handleSubmit = async () => {
+    if (!text.trim() || isSubmitting) return;
+    const draft = text;
     setText("");
+    setSubmitError("");
     setMentionState({ active: false, query: "", target: null, index: 0, filteredUsers: [] });
     setShowEmojiPicker(false);
+    setIsSubmitting(true);
+    try {
+      await onPost(draft, replyingTo?.id || null);
+    } catch (err: any) {
+      setText(draft); // restore on failure
+      setSubmitError("Erro ao enviar. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -183,7 +195,7 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
 
           <button
             onClick={handleSubmit}
-            disabled={!text.trim()}
+            disabled={!text.trim() || isSubmitting}
             className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               background: text.trim() ? "var(--app-primary-muted)" : "var(--app-hover)",
@@ -191,9 +203,18 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
               color: text.trim() ? "var(--app-primary)" : "var(--app-text-muted)",
             }}
           >
-            Enviar <Send className="w-4 h-4" />
+            {isSubmitting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Enviando…</>
+            ) : (
+              <>Enviar <Send className="w-4 h-4" /></>
+            )}
           </button>
         </div>
+        {submitError && (
+          <p className="px-3 pb-2 text-[11px] font-medium" style={{ color: "#f87171" }}>
+            {submitError}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { DescriptionEditor } from "./DescriptionEditor";
 import { HistorySection } from "./HistorySection";
 
@@ -44,8 +46,31 @@ export function DescriptionTab({
               className="prose prose-invert prose-sm max-w-none"
               style={{ color: "var(--app-text-muted)" }}
             >
-              {/* Markdown rendering would go here */}
-              <div dangerouslySetInnerHTML={{ __html: description }} />
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  img: ({ src, alt }) => (
+                    <img
+                      src={src}
+                      alt={alt}
+                      className="rounded-xl max-w-full h-auto my-2"
+                      style={{ border: "1px solid var(--app-border-faint)" }}
+                    />
+                  ),
+                  a: ({ href, children }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--app-primary)" }}
+                    >
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {description}
+              </ReactMarkdown>
             </div>
           ) : (
             <p

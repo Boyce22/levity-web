@@ -29,7 +29,6 @@ export function CommentsTab({
 
   const handleReply = (parent: any, targetUser: any) => {
     setReplyingTo(parent);
-    // Focus input via ref? We'll handle in CommentInput via a prop.
   };
 
   const handleCancelReply = () => setReplyingTo(null);
@@ -43,40 +42,9 @@ export function CommentsTab({
     }
   });
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[0, 1].map((i) => (
-          <div key={i} className="flex gap-3 animate-pulse">
-            <div className="w-8 h-8 rounded-full shrink-0" style={{ background: "var(--app-border)" }} />
-            <div className="flex-1 space-y-2">
-              <div className="h-3 rounded" style={{ width: "30%", background: "var(--app-border)" }} />
-              <div className="h-12 rounded-lg" style={{ background: "var(--app-border-faint)" }} />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (comments.length === 0) {
-    return (
-      <div className="py-10 text-center">
-        <div
-          className="w-10 h-10 rounded-2xl mx-auto mb-3 flex items-center justify-center"
-          style={{ background: "var(--app-hover)", border: "1px solid var(--app-border)" }}
-        >
-          <MessageSquare className="w-5 h-5" style={{ color: "var(--app-text-muted)", opacity: 0.5 }} />
-        </div>
-        <p className="text-sm" style={{ color: "var(--app-text-muted)", opacity: 0.6 }}>
-          Sem comentários. Inicie a discussão.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
+      {/* Input sempre visível, independente de ter comentários */}
       <CommentInput
         avatarUrl={currentUserAvatar}
         onPost={onPostComment}
@@ -85,36 +53,63 @@ export function CommentsTab({
         allUsers={allUsers}
       />
 
-      <div className="space-y-5 max-h-[45vh] overflow-y-auto pr-2 pb-2" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--app-border) transparent" }}>
-        {rootComments.map((comment, i) => (
-          <CommentThread
-            key={comment.id}
-            comment={comment}
-            replies={repliesMap.get(comment.id) || []}
-            index={i}
-            onReply={handleReply}
-            allUsers={allUsers}
-          />
-        ))}
-        {hasMore && (
-          <button
-            onClick={onLoadMore}
-            disabled={isLoadingMore}
-            className="w-full py-2 text-xs font-semibold transition-colors rounded-xl flex justify-center items-center gap-1.5 disabled:opacity-50"
-            style={{ color: "var(--app-text-muted)", border: "1px solid var(--app-border-faint)" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--app-primary)";
-              e.currentTarget.style.borderColor = "var(--app-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--app-text-muted)";
-              e.currentTarget.style.borderColor = "var(--app-border-faint)";
-            }}
+      {/* Lista de comentários */}
+      {loading ? (
+        <div className="space-y-4">
+          {[0, 1].map((i) => (
+            <div key={i} className="flex gap-3 animate-pulse">
+              <div className="w-8 h-8 rounded-full shrink-0" style={{ background: "var(--app-border)" }} />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 rounded" style={{ width: "30%", background: "var(--app-border)" }} />
+                <div className="h-12 rounded-lg" style={{ background: "var(--app-border-faint)" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="py-6 text-center">
+          <div
+            className="w-10 h-10 rounded-2xl mx-auto mb-3 flex items-center justify-center"
+            style={{ background: "var(--app-hover)", border: "1px solid var(--app-border)" }}
           >
-            {isLoadingMore ? "Carregando…" : "Ver mais ⌄"}
-          </button>
-        )}
-      </div>
+            <MessageSquare className="w-5 h-5" style={{ color: "var(--app-text-muted)", opacity: 0.5 }} />
+          </div>
+          <p className="text-sm" style={{ color: "var(--app-text-muted)", opacity: 0.6 }}>
+            Sem comentários ainda. Seja o primeiro!
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-5 max-h-[45vh] overflow-y-auto pr-2 pb-2" style={{ scrollbarWidth: "thin", scrollbarColor: "var(--app-border) transparent" }}>
+          {rootComments.map((comment, i) => (
+            <CommentThread
+              key={comment.id}
+              comment={comment}
+              replies={repliesMap.get(comment.id) || []}
+              index={i}
+              onReply={handleReply}
+              allUsers={allUsers}
+            />
+          ))}
+          {hasMore && (
+            <button
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+              className="w-full py-2 text-xs font-semibold transition-colors rounded-xl flex justify-center items-center gap-1.5 disabled:opacity-50"
+              style={{ color: "var(--app-text-muted)", border: "1px solid var(--app-border-faint)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--app-primary)";
+                e.currentTarget.style.borderColor = "var(--app-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--app-text-muted)";
+                e.currentTarget.style.borderColor = "var(--app-border-faint)";
+              }}
+            >
+              {isLoadingMore ? "Carregando…" : "Ver mais ⌄"}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
-}
+}

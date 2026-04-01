@@ -194,7 +194,7 @@ export default function CardModal({
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--app-text)")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
               >
-                Descartar
+                Close
               </button>
               <button
                 onClick={() => {
@@ -216,7 +216,7 @@ export default function CardModal({
                   e.currentTarget.style.color = "var(--app-primary)";
                 }}
               >
-                Concluído
+                Done
               </button>
             </div>
           </div>
