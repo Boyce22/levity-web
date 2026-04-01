@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { LevityLogo } from '@/modules/shared/components/LevityLogo';
+import { api } from '@/lib/api';
 
 interface AuthFormProps {
   initialMode: 'login' | 'register';
@@ -38,11 +39,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
 
     try {
       const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+      const res = await api.post(endpoint, { username, password });
 
       if (res.ok) {
         if (!isRegister) {
