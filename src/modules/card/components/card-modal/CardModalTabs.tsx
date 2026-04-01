@@ -25,7 +25,7 @@ export function CardModalTabs({ activeTab, setActiveTab, commentsCount }: CardMo
   ];
 
   return (
-    <div className="flex mt-5" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
+    <div className="flex px-7 pt-4 mt-0" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
       {tabs.map((tab) => (
         <button
           key={tab.id}

@@ -56,7 +56,7 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
       <div
         className="flex-1 rounded-xl overflow-visible relative transition-all duration-300 focus-within:ring-2 z-20"
         style={{
-          background: "var(--app-hover)",
+          background: "var(--app-panel)",
           border: "1px solid var(--app-border)",
           ["--tw-ring-color" as string]: "var(--app-primary)",
         }}

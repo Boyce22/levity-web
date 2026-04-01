@@ -71,7 +71,7 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers }: Comm
         <div
           className="text-[13.5px] leading-relaxed rounded-xl rounded-tl-none px-4 py-3 min-w-0"
           style={{
-            background: "var(--app-hover)",
+            background: "var(--app-panel)",
             border: "1px solid var(--app-border-faint)",
             color: "var(--app-text-muted)",
             wordBreak: "break-word",

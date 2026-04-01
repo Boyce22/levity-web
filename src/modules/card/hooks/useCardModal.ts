@@ -28,7 +28,7 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
   // History
   const [history, setHistory] = useState<any[]>([]);
 
-  // Auto-save description
+  // Auto-save description — debounce aumentado para reduzir histórico excessivo
   useEffect(() => {
     if (!isEditingDesc || description === card?.description) return;
     setSavedStatus("saving");
@@ -36,7 +36,7 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
       await handleSave({ description });
       setSavedStatus("saved");
       setTimeout(() => setSavedStatus("idle"), 2000);
-    }, 1500);
+    }, 3000); // 3s para evitar múltiplas entradas de histórico
     return () => clearTimeout(timer);
   }, [description, isEditingDesc]);
 
@@ -56,8 +56,21 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
     load();
   }, [card]);
 
+  // handleSave com modo "partial" — quando overrides é passado sozinho,
+  // envia APENAS os campos do override para evitar histórico fantasma de
+  // campos que não mudaram (stale closure problem).
   const handleSave = useCallback(async (overrides?: Partial<CardType>) => {
     if (!card) return;
+
+    // Modo parcial: chamado por ações rápidas (label, priority, assignee, dueDate)
+    // Envia apenas o campo alterado para não gerar histórico falso dos demais.
+    if (overrides) {
+      onUpdate({ ...card, ...overrides });
+      await updateCardDetailsAction(card.id, overrides);
+      return;
+    }
+
+    // Modo completo: chamado pelo usuário via botão "Concluído" ou title blur
     const changes = {
       content,
       description,
@@ -66,7 +79,6 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
       due_date: dueDate,
       label: selectedLabel,
       priority: selectedPriority,
-      ...overrides,
     };
     onUpdate({ ...card, ...changes });
     await updateCardDetailsAction(card.id, changes);
@@ -81,13 +93,13 @@ export function useCardModal(card: CardType | null, onUpdate: (card: CardType) =
   const handleLabelSelect = useCallback(async (labelId: string) => {
     const next = selectedLabel === labelId ? null : labelId;
     setSelectedLabel(next as any);
-    await handleSave({ label: next  as any });
+    await handleSave({ label: next as any });
   }, [selectedLabel, handleSave]);
 
   const handlePrioritySelect = useCallback(async (pId: string) => {
     const next = selectedPriority === pId ? null : pId;
     setSelectedPriority(next as any);
-    await handleSave({ priority: next  as any });
+    await handleSave({ priority: next as any });
   }, [selectedPriority, handleSave]);
 
   const handleCoverUpload = useCallback(async (url: string) => {

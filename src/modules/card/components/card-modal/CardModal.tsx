@@ -98,8 +98,8 @@ export default function CardModal({
           className="relative w-full sm:max-w-195 sm:mx-4 flex flex-col z-10"
           style={{
             maxHeight: "92vh",
-            borderRadius: "20px",
-            background: "var(--app-elevated)",
+            borderRadius: "24px",
+            background: "var(--app-bg)",
             border: "1px solid var(--app-border)",
             boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
           }}
@@ -128,6 +128,7 @@ export default function CardModal({
             onToggleAssignee={toggleAssignee}
             onLabelSelect={handleLabelSelect}
             onPrioritySelect={handlePrioritySelect}
+            onCoverUpload={handleCoverUpload}
             onClose={onClose}
             allUsers={allUsers}
           />
@@ -184,8 +185,14 @@ export default function CardModal({
             <div className="flex items-center gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-1.5 text-sm font-medium transition-colors"
-                style={{ color: "var(--app-text-muted)" }}
+                className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all"
+                style={{
+                  color: "var(--app-text-muted)",
+                  background: "var(--app-panel)",
+                  border: "1px solid var(--app-border-faint)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--app-text)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
               >
                 Descartar
               </button>

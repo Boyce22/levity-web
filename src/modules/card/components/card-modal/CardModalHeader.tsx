@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Calendar, Flag, Tag, Users, ImagePlus } from "lucide-react";
+import { X, Calendar, Flag, Tag, Users, ImagePlus, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PriorityPicker } from "./pickers/PriorityPicker";
 import { LabelPicker } from "./pickers/LabelPicker";
 import { MemberPicker } from "./pickers/MemberPicker";
 import { DueDatePicker } from "./pickers/DueDatePicker";
+import { uploadImageAction } from "@/modules/shared/actions/upload";
 
 interface CardModalHeaderProps {
   content: string;
@@ -23,6 +24,7 @@ interface CardModalHeaderProps {
   onToggleAssignee: (userId: string) => void;
   onLabelSelect: (labelId: string) => void;
   onPrioritySelect: (priorityId: string) => void;
+  onCoverUpload: (url: string) => void;
   onClose: () => void;
   allUsers: any[];
 }
@@ -44,10 +46,12 @@ export function CardModalHeader({
   onToggleAssignee,
   onLabelSelect,
   onPrioritySelect,
+  onCoverUpload,
   onClose,
   allUsers,
 }: CardModalHeaderProps) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isEditingTitle && titleRef.current) {
@@ -72,9 +76,30 @@ export function CardModalHeader({
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isLabelsOpen, setIsLabelsOpen] = useState(false);
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const url = await uploadImageAction(fd);
+      onCoverUpload(url);
+    } catch (err) {
+      console.error("Cover upload failed", err);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   return (
-    <div className="shrink-0 px-7 pt-6 pb-0">
+    <div
+      className="shrink-0 px-7 pt-6 pb-5"
+      style={{ borderBottom: "1px solid var(--app-border-faint)" }}
+    >
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -170,19 +195,30 @@ export function CardModalHeader({
 
         <div className="flex items-center gap-2 shrink-0 mt-1 relative">
           {/* Cover upload button */}
-          <input type="file" accept="image/*" className="hidden" id="cover-upload" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            id="cover-upload"
+            onChange={handleFileChange}
+          />
           <label
             htmlFor="cover-upload"
             className="flex items-center justify-center w-9 h-9 rounded-xl transition-all cursor-pointer"
             style={{
-              background: "var(--app-hover)",
-              border: "1px solid var(--app-border)",
-              color: "var(--app-text-muted)",
+              background: isUploading ? "var(--app-primary-muted)" : "var(--app-hover)",
+              border: `1px solid ${isUploading ? "var(--app-primary)" : "var(--app-border)"}`,
+              color: isUploading ? "var(--app-primary)" : "var(--app-text-muted)",
+              pointerEvents: isUploading ? "none" : "auto",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--app-primary)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
+            onMouseEnter={(e) => { if (!isUploading) e.currentTarget.style.color = "var(--app-primary)"; }}
+            onMouseLeave={(e) => { if (!isUploading) e.currentTarget.style.color = "var(--app-text-muted)"; }}
+            title="Adicionar capa"
           >
-            <ImagePlus className="w-4 h-4" />
+            {isUploading
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <ImagePlus className="w-4 h-4" />}
           </label>
 
           <PriorityPicker
@@ -227,40 +263,6 @@ export function CardModalHeader({
             <X className="w-4 h-4" />
           </button>
         </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-2">
-        <label className="flex items-center gap-2 text-xs font-medium" style={{ color: "var(--app-text-muted)" }}>
-          <Calendar className="w-3.5 h-3.5" />
-          Prazo
-        </label>
-        <input
-          type="date"
-          value={dueDate ? dueDate.split("T")[0] : ""}
-          onChange={(e) => setDueDate(e.target.value)}
-          onBlur={() => onSave()}
-          className="rounded-lg px-2 py-1 text-xs font-medium focus:outline-none transition-colors"
-          style={{
-            background: "var(--app-hover)",
-            border: "1px solid var(--app-border)",
-            color: "var(--app-text)",
-            colorScheme: "dark",
-          }}
-        />
-        {dueDate && (
-          <button
-            onClick={() => {
-              setDueDate("");
-              onSave();
-            }}
-            className="text-xs transition-colors"
-            style={{ color: "var(--app-text-muted)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
-          >
-            Limpar
-          </button>
-        )}
       </div>
     </div>
   );
