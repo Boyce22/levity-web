@@ -182,27 +182,30 @@ export function BoardHeader({
         {/* Sprint progress pill */}
         {totalCards > 0 && (
           <div
-            className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold"
+            className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all"
             style={{
               background: "var(--app-hover)",
               border: "1px solid var(--app-border)",
             }}
           >
             <div
-              className="w-16 h-1.5 rounded-full overflow-hidden"
-              style={{ background: "var(--app-border)" }}
+              className="w-24 h-2 rounded-full overflow-hidden shadow-inner"
+              style={{ background: "var(--app-border-faint)" }}
             >
               <div
-                className="h-full rounded-full transition-all duration-700"
+                className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
                   width: `${progressPct}%`,
                   background:
-                    progressPct >= 80 ? "#34d399" : "var(--app-primary)",
+                    progressPct === 100
+                      ? "#10b981"
+                      : "linear-gradient(90deg, var(--app-primary) 0%, #a78bfa 100%)",
+                  boxShadow: "0 0 10px rgba(129, 140, 248, 0.3)",
                 }}
               />
             </div>
-            <span style={{ color: "var(--app-text-muted)" }}>
-              {progressPct}% concluído
+            <span style={{ color: "var(--app-text)", opacity: 0.9 }}>
+              {progressPct}%
             </span>
           </div>
         )}

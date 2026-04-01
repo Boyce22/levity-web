@@ -73,7 +73,7 @@ export default function List({
               : snapshot.isDragging
                 ? `1px solid ${accent}60`
                 : "1px solid var(--app-border-faint)",
-            borderRadius: "18px",
+            borderRadius: "0 0 18px 18px",
             boxShadow: snapshot.isDragging
               ? `0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px ${accent}40`
               : "0 2px 8px rgba(0,0,0,0.15)",
@@ -89,7 +89,7 @@ export default function List({
             style={{
               height: "3px",
               background: isWipExceeded ? "#f87171" : accent,
-              borderRadius: "18px 18px 0 0",
+              borderRadius: "0",
               opacity: isWipExceeded ? 1 : 0.7,
               transition: "background 0.3s",
             }}
