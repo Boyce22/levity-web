@@ -150,7 +150,7 @@ export default function ShareWorkspaceModal({
                 <input
                   readOnly
                   value={inviteUrl}
-                  className="bg-transparent flex-1 px-3 py-2 text-[14.5px] text-[var(--app-text)] focus:outline-none"
+                  className="bg-transparent flex-1 min-w-0 px-3 py-2 text-[13.5px] text-[var(--app-text)] focus:outline-none"
                 />
                 <button
                   onClick={handleCopy}
