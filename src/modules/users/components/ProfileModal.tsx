@@ -160,10 +160,10 @@ export default function ProfileModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: 10 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="relative w-full max-w-[480px] z-10 flex flex-col overflow-hidden"
+          className="relative w-full max-w-[400px] z-10 flex flex-col overflow-hidden"
           style={{
             background: "var(--app-bg)",
-            borderRadius: "24px",
+            borderRadius: "6px",
             border: "1px solid var(--app-border)",
             boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
           }}
@@ -171,14 +171,14 @@ export default function ProfileModal({
           <form onSubmit={handleSave} className="flex flex-col relative z-10 w-full h-full">
 
             {/* Header: Left-aligned profile info */}
-            <div className="px-8 pt-8 pb-6 flex items-center gap-5">
+            <div className="px-6 pt-6 pb-5 flex items-center gap-4">
               <div
                 className="relative group cursor-pointer shrink-0"
                 onClick={() => fileInputRef.current?.click()}
                 onMouseEnter={() => setAvatarHovered(true)}
                 onMouseLeave={() => setAvatarHovered(false)}
               >
-                <div className="w-[88px] h-[88px] rounded-full overflow-hidden bg-[var(--app-panel)] border border-[var(--app-border)] relative z-10 transition-colors shadow-sm ring-4 ring-[var(--app-panel)]/50">
+                <div className="w-[72px] h-[72px] rounded-lg overflow-hidden bg-[var(--app-panel)] border border-[var(--app-border)] relative z-10 transition-colors shadow-sm ring-4 ring-[var(--app-panel)]/50">
                   {avatarPreview ? (
                     <img
                       src={avatarPreview}
@@ -233,10 +233,7 @@ export default function ProfileModal({
             </div>
 
             {/* Form Fields */}
-            <div className="px-8 pb-4 flex flex-col">
-              <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[var(--app-text-muted)] mb-5 opacity-70">
-                Perfil
-              </h3>
+            <div className="px-6 pb-4 flex flex-col">
 
               <div className="flex flex-col gap-5">
                 <SimpleField label="Display Name" error={errors.displayName}>
@@ -244,7 +241,7 @@ export default function ProfileModal({
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Your full name"
-                    className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-xl px-4 py-3 text-[14.5px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm"
+                    className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-sm px-3 py-2 text-[14px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm"
                   />
                 </SimpleField>
 
@@ -254,44 +251,48 @@ export default function ProfileModal({
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="Tell us a bit about yourself"
                     rows={3}
-                    className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-xl px-4 py-3 text-[14.5px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all resize-none placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm leading-relaxed"
+                    className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-sm px-3 py-2 text-[14px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all resize-none placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm leading-relaxed"
                   />
                 </SimpleField>
               </div>
             </div>
 
             {/* Separator */}
-            <div className="mx-8 border-t border-[var(--app-border-faint)] my-5 opacity-50" />
+            <div className="mx-6 border-t border-[var(--app-border-faint)] my-4 opacity-50" />
 
-            <div className="px-8 flex flex-col mb-4">
+            <div className="px-6 flex flex-col mb-4">
               <SimpleField label="Avatar URL (opcional)" error={errors.avatarUrl}>
                 <input
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   placeholder="https://example.com/avatar.png"
-                  className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-xl px-4 py-3 text-[14.5px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm"
+                  className="w-full bg-[var(--app-panel)] text-[var(--app-text)] rounded-sm px-3 py-2 text-[14px] border border-[var(--app-border-faint)] focus:outline-none focus:border-[var(--app-primary)] focus:ring-[3px] focus:ring-[var(--app-primary)]/20 transition-all placeholder:text-[var(--app-text-muted)] placeholder:opacity-50 shadow-sm"
                 />
               </SimpleField>
             </div>
 
             {/* Footer */}
-            <div className="px-8 pt-5 pb-6 flex items-center justify-between mt-2 bg-[var(--app-panel)]/30 border-t border-[var(--app-border-faint)]">
+            <div className="px-6 pt-4 pb-5 flex items-center justify-between mt-2 bg-[var(--app-panel)]/30 border-t border-[var(--app-border-faint)]">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={saving}
-                className="px-3 py-2 text-[14px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)] bg-transparent hover:bg-[var(--app-panel)] rounded-lg transition-colors focus:outline-none"
+                className="px-3 py-2 text-[13.5px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)] bg-transparent hover:bg-[var(--app-panel)] rounded-sm transition-colors focus:outline-none"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || saved}
-                className="px-6 py-2.5 rounded-xl text-[14px] font-medium text-white transition-all flex items-center gap-2 shadow-sm focus:ring-[3px] focus:ring-[var(--app-primary)]/30"
-                style={{
-                  background: saved ? "#10b981" : "var(--app-primary)",
-                  opacity: saving ? 0.8 : 1,
-                }}
+                className="px-5 py-2 rounded-sm text-[13.5px] font-medium text-white transition-all flex items-center gap-2 shadow-sm focus:ring-[3px] focus:ring-[var(--app-primary)]/30"
+                style={
+                  saved
+                    ? { background: "#10b981", opacity: 1 }
+                    : {
+                        background: "linear-gradient(135deg, #4f46e5 0%, #312e81 100%)",
+                        opacity: saving ? 0.8 : 1,
+                      }
+                }
               >
                 {saved ? (
                   <>
@@ -325,7 +326,7 @@ function SimpleField({
   return (
     <div className="flex flex-col gap-[6px]">
       <div className="flex items-center justify-between">
-        <label className="text-[13.5px] text-[var(--app-text-muted)]">
+        <label className="text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider opacity-60 ml-1">
           {label}
         </label>
         {error && (

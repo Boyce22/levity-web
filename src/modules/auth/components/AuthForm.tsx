@@ -75,7 +75,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
     <motion.div
       layout
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="w-full max-w-[360px] p-7 rounded-[1.75rem] border shadow-[0_24px_60px_rgba(0,0,0,0.5)] overflow-hidden relative"
+      className="w-full max-w-[360px] p-7 rounded-sm border shadow-[0_24px_60px_rgba(0,0,0,0.5)] overflow-hidden relative"
       style={{
         background: 'rgba(28, 28, 30, 0.75)',
         backdropFilter: 'blur(20px)',
@@ -87,7 +87,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
           layoutId="auth-icon"
           className="flex justify-center mb-6"
         >
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 rounded-sm flex items-center justify-center">
             <LevityLogo size={48} />
           </div>
         </motion.div>
@@ -113,7 +113,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="mb-6 p-3.5 bg-red-400/10 border border-red-400/20 rounded-xl text-[12px] text-center text-red-400 font-semibold"
+            className="mb-6 p-3.5 bg-red-400/10 border border-red-400/20 rounded-sm text-[12px] text-center text-red-400 font-semibold"
           >
             {error}
           </motion.div>
@@ -126,7 +126,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
               id="user"
               type="text"
               autoFocus
-              className="w-full px-4 py-3 bg-[var(--app-bg)]/50 border border-[var(--app-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder:text-[var(--app-text-muted)]/20 transition-all text-[14px] text-[var(--app-text)] disabled:opacity-50"
+              className="w-full px-4 py-3 bg-[var(--app-bg)]/50 border border-[var(--app-border)] rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder:text-[var(--app-text-muted)]/20 transition-all text-[14px] text-[var(--app-text)] disabled:opacity-50"
               placeholder="e.g. spaceman"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -139,7 +139,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
               <input
                 id="pass"
                 type={showPassword ? 'text' : 'password'}
-                className="w-full px-4 pr-11 py-3 bg-[var(--app-bg)]/50 border border-[var(--app-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder:text-[var(--app-text-muted)]/20 transition-all text-[14px] text-[var(--app-text)] disabled:opacity-50"
+                className="w-full px-4 pr-11 py-3 bg-[var(--app-bg)]/50 border border-[var(--app-border)] rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder:text-[var(--app-text-muted)]/20 transition-all text-[14px] text-[var(--app-text)] disabled:opacity-50"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -168,7 +168,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
                   <input
                     id="confirm-pass"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    className="w-full px-4 pr-11 py-3 bg-[var(--app-bg)]/50 border border-[var(--app-border)] rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder:text-[var(--app-text-muted)]/20 transition-all text-[14px] text-[var(--app-text)]"
+                    className="w-full px-4 pr-11 py-3 bg-[var(--app-bg)]/50 border border-[var(--app-border)] rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 placeholder:text-[var(--app-text-muted)]/20 transition-all text-[14px] text-[var(--app-text)]"
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -190,7 +190,7 @@ export function AuthForm({ initialMode }: AuthFormProps) {
             layout
             type="submit"
             disabled={isLoading}
-            className="flex items-center justify-center gap-2 w-full py-3 px-6 mt-8 rounded-xl text-white font-bold transition-all text-[14px] focus:ring-2 focus:ring-indigo-500/20 shadow-lg shadow-indigo-950/20"
+            className="flex items-center justify-center gap-2 w-full py-3 px-6 mt-8 rounded-sm text-white font-bold transition-all text-[14px] focus:ring-2 focus:ring-indigo-500/20 shadow-lg shadow-indigo-950/20"
             style={{
               background: 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)',
             }}

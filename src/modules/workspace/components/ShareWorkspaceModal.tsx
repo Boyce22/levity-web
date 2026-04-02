@@ -59,24 +59,24 @@ export default function ShareWorkspaceModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[var(--app-bg)] w-full max-w-[400px] rounded-[24px] shadow-[0_32px_80px_rgba(0,0,0,0.6)] border border-[var(--app-border)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-[var(--app-border-faint)]">
-          <h2 className="text-md font-bold text-[var(--app-text)] tracking-tight flex items-center gap-3">
-            <Share2 className="w-5 h-5 text-[var(--app-primary)]" /> Share Workspace
+    <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-(--app-bg) w-full max-w-[380px] rounded-sm shadow-[0_32px_80px_rgba(0,0,0,0.6)] border border-(--app-border) flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between px-6 pt-6 pb-5 border-b border-(--app-border-faint)">
+          <h2 className="text-md font-bold text-(--app-text) tracking-tight flex items-center gap-3">
+            <Share2 className="w-5 h-5 text-(--app-primary)" /> Share Workspace
           </h2>
           <button
             onClick={onClose}
-            className="text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition-colors p-1.5 hover:bg-[var(--app-panel)] rounded-lg"
+            className="text-(--app-text-muted) hover:text-(--app-text) transition-colors p-1.5 hover:bg-(--app-panel) rounded-sm"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="px-8 pt-6 pb-8">
-          <p className="text-[14px] text-[var(--app-text-muted)] mb-6 leading-relaxed">
+        <div className="px-6 pt-5 pb-6">
+          <p className="text-[13.5px] text-(--app-text-muted) mb-5 leading-relaxed opacity-90">
             Invite colleagues to{" "}
-            <strong className="text-[var(--app-text)] font-semibold">
+            <strong className="text-(--app-text) font-semibold">
               {workspaceName || "this workspace"}
             </strong>
             . Anyone with this secure cryptographic link will be able to join as
@@ -84,7 +84,7 @@ export default function ShareWorkspaceModal({
           </p>
 
           {error && (
-            <div className="mb-5 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-[13.5px] flex items-start gap-2 text-red-400 font-medium">
+            <div className="mb-5 p-4 bg-red-500/10 border border-red-500/20 rounded-sm text-[13.5px] flex items-start gap-2 text-red-400 font-medium">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
@@ -94,13 +94,13 @@ export default function ShareWorkspaceModal({
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="text-[11px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
                     <Users className="w-3 h-3" /> Max Uses
                   </label>
                   <select
                     value={maxUses}
                     onChange={(e) => setMaxUses(Number(e.target.value))}
-                    className="w-full bg-[var(--app-panel)] border border-[var(--app-border-faint)] rounded-xl px-3 py-2 text-sm text-[var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[var(--app-primary)]/20 appearance-none cursor-pointer"
+                    className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-2 text-sm text-(--app-text) focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
                   >
                     <option value={1}>1 person</option>
                     <option value={5}>5 people</option>
@@ -111,13 +111,13 @@ export default function ShareWorkspaceModal({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="text-[11px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
                     <Clock className="w-3 h-3" /> Expiration
                   </label>
                   <select
                     value={duration}
                     onChange={(e) => setDuration(Number(e.target.value))}
-                    className="w-full bg-[var(--app-panel)] border border-[var(--app-border-faint)] rounded-xl px-3 py-2 text-sm text-[var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[var(--app-primary)]/20 appearance-none cursor-pointer"
+                    className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-2 text-sm text-(--app-text) focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
                   >
                     <option value={1}>1 hour</option>
                     <option value={24}>1 day</option>
@@ -131,7 +131,8 @@ export default function ShareWorkspaceModal({
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-[var(--app-primary)] shadow-md shadow-[var(--app-primary)]/10 focus:ring-4 focus:ring-[var(--app-primary)]/20 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all"
+                className="flex items-center justify-center gap-2 w-full px-6 py-3 shadow-lg shadow-indigo-950/20 focus:ring-4 focus:ring-indigo-500/20 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13.5px] font-bold rounded-sm transition-all"
+                style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)' }}
               >
                 {loading ? (
                   <>
@@ -146,15 +147,15 @@ export default function ShareWorkspaceModal({
             </div>
           ) : (
             <div className="space-y-5">
-              <div className="flex items-center gap-2 p-1.5 bg-[var(--app-panel)] border border-[var(--app-border-faint)] rounded-xl shadow-sm focus-within:ring-[3px] focus-within:ring-[var(--app-primary)]/20 transition-all">
+              <div className="flex items-center gap-2 p-1.5 bg-(--app-panel) border border-(--app-border-faint) rounded-sm shadow-sm focus-within:ring-[3px] focus-within:ring-(--app-primary)/20 transition-all">
                 <input
                   readOnly
                   value={inviteUrl}
-                  className="bg-transparent flex-1 min-w-0 px-3 py-2 text-[13.5px] text-[var(--app-text)] focus:outline-none"
+                  className="bg-transparent flex-1 min-w-0 px-3 py-2 text-[13.5px] text-(--app-text) focus:outline-none"
                 />
                 <button
                   onClick={handleCopy}
-                  className={`flex items-center gap-2 px-4 py-2 text-[14px] font-medium rounded-lg transition-colors shrink-0 ${copied ? "bg-[#10b981]/10 text-[#10b981]" : "bg-[var(--app-bg)] hover:bg-[var(--app-border-faint)] text-[var(--app-text)]"}`}
+                  className={`flex items-center gap-2 px-4 py-2 text-[14px] font-medium rounded-sm transition-colors shrink-0 ${copied ? "bg-[#10b981]/10 text-[#10b981]" : "bg-(--app-bg) hover:bg-(--app-border-faint) text-(--app-text)"}`}
                 >
                   {copied ? (
                     <>
@@ -167,7 +168,7 @@ export default function ShareWorkspaceModal({
                   )}
                 </button>
               </div>
-              <p className="text-[12px] text-center text-[var(--app-text-muted)] font-medium opacity-80 italic">
+              <p className="text-[12px] text-center text-(--app-text-muted) font-medium opacity-80 italic">
                 This link allows up to {maxUses} uses and expires in {duration >= 24 ? `${duration/24} day(s)` : `${duration} hour(s)`}.
               </p>
             </div>
