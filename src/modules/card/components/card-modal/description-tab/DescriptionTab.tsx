@@ -36,7 +36,7 @@ export function DescriptionTab({
       ) : (
         <div
           onClick={() => setIsEditing(true)}
-          className="group cursor-text rounded-xl p-4 transition-all"
+          className="group cursor-text rounded-sm p-4 transition-all"
           style={{ border: "1px dashed var(--app-border)" }}
           onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--app-primary)")}
           onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--app-border)")}
@@ -53,7 +53,7 @@ export function DescriptionTab({
                     <img
                       src={src}
                       alt={alt}
-                      className="rounded-xl max-w-full h-auto my-2"
+                      className="rounded-sm max-w-full h-auto my-2"
                       style={{ border: "1px solid var(--app-border-faint)" }}
                     />
                   ),

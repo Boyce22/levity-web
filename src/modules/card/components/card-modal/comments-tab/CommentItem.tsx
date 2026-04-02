@@ -56,8 +56,8 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers }: Comm
     >
       <img
         src={avatar}
-        className={`rounded-full object-cover shrink-0 ${isReply ? "w-6 h-6 mt-1" : "w-8 h-8 mt-0.5"}`}
-        style={{ border: "1.5px solid var(--app-border)" }}
+        className={`rounded-sm object-cover shrink-0 bg-[var(--app-panel)] ${isReply ? "w-6 h-6 mt-1" : "w-8 h-8 mt-0.5"}`}
+        style={{ border: "1.5px solid var(--app-border-faint)" }}
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline mb-1.5">
@@ -69,7 +69,7 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers }: Comm
           </span>
         </div>
         <div
-          className="text-[13.5px] leading-relaxed rounded-xl rounded-tl-none px-4 py-3 min-w-0"
+          className="text-[13.5px] leading-relaxed rounded-sm rounded-tl-none px-4 py-3 min-w-0"
           style={{
             background: "var(--app-panel)",
             border: "1px solid var(--app-border-faint)",

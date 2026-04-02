@@ -11,8 +11,8 @@ export function DescriptionEditor({ value, onChange, savedStatus, onClose }: Des
   return (
     <>
       <RichTextEditor initialValue={value} onChange={onChange} />
-      <div className="flex items-center justify-between">
-        <span className="text-[12px] font-mono">
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-[11px] font-bold uppercase tracking-widest opacity-50 px-1">
           {savedStatus === "saving" ? (
             <span className="animate-pulse" style={{ color: "#fbbf24" }}>
               Salvando…
@@ -20,17 +20,12 @@ export function DescriptionEditor({ value, onChange, savedStatus, onClose }: Des
           ) : savedStatus === "saved" ? (
             <span style={{ color: "#34d399" }}>✓ Salvo</span>
           ) : (
-            <span style={{ color: "var(--app-text-muted)" }}>
-              Markdown · auto-salva
-            </span>
+            <span>Markdown · Auto-save</span>
           )}
         </span>
         <button
           onClick={onClose}
-          className="px-4 py-1.5 text-sm font-medium transition-colors"
-          style={{ color: "var(--app-text-muted)" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--app-text)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
+          className="px-3 py-1 text-[12px] font-bold uppercase tracking-wider text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-panel)] rounded-sm transition-all focus:outline-none"
         >
           Fechar editor
         </button>

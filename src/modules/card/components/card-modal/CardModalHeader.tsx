@@ -103,43 +103,45 @@ export function CardModalHeader({
 
   return (
     <div
-      className="shrink-0 px-7 pt-6 pb-5"
+      className="shrink-0 px-6 pt-5 pb-4"
       style={{ borderBottom: "1px solid var(--app-border-faint)" }}
     >
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold tracking-wider uppercase"
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[10px] font-bold tracking-widest uppercase"
               style={{
-                background: "rgba(16,185,129,0.12)",
+                background: "rgba(16,185,129,0.08)",
                 color: "#34d399",
                 border: "1px solid rgba(16,185,129,0.2)",
               }}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-sm bg-emerald-400 animate-pulse" />
               Ativo
             </span>
 
             {currentLabel && (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[10px] font-bold tracking-widest uppercase"
                 style={{
-                  background: currentLabel.color + "20",
+                  background: currentLabel.color + "15",
                   color: currentLabel.color,
+                  border: "1px solid " + currentLabel.color + "25",
                 }}
               >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: currentLabel.color }} />
+                <span className="w-1.5 h-1.5 rounded-sm" style={{ background: currentLabel.color }} />
                 {currentLabel.label}
               </span>
             )}
 
             {currentPriority && (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[10px] font-bold tracking-widest uppercase"
                 style={{
-                  background: currentPriority.color + "20",
+                  background: currentPriority.color + "15",
                   color: currentPriority.color,
+                  border: "1px solid " + currentPriority.color + "25",
                 }}
               >
                 {currentPriority.icon} {currentPriority.label}
@@ -189,9 +191,9 @@ export function CardModalHeader({
                     assignedUser.avatar_url ||
                     `https://api.dicebear.com/7.x/avataaars/svg?seed=${assignedUser.username}`
                   }
-                  className="w-4 h-4 rounded-full object-cover"
+                  className="w-4 h-4 rounded-[4px] object-cover"
                 />
-                <span className="text-xs" style={{ color: "var(--app-text-muted)" }}>
+                <span className="text-[11px] font-medium" style={{ color: "var(--app-text-muted)", opacity: 0.7 }}>
                   {assignedUser.display_name || assignedUser.username}
                 </span>
               </div>
@@ -211,7 +213,7 @@ export function CardModalHeader({
           />
           <label
             htmlFor="cover-upload"
-            className="flex items-center justify-center w-9 h-9 rounded-xl transition-all cursor-pointer"
+            className="flex items-center justify-center w-9 h-9 rounded-sm transition-all cursor-pointer"
             style={{
               background: isUploading ? "var(--app-primary-muted)" : "var(--app-hover)",
               border: `1px solid ${isUploading ? "var(--app-primary)" : "var(--app-border)"}`,
@@ -261,7 +263,7 @@ export function CardModalHeader({
 
           <button
             onClick={onClose}
-            className="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
+            className="flex items-center justify-center w-9 h-9 rounded-sm transition-all"
             style={{
               background: "var(--app-hover)",
               border: "1px solid var(--app-border)",

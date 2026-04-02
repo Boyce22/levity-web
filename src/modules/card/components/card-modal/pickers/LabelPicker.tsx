@@ -46,7 +46,7 @@ export function LabelPicker({ isOpen, setIsOpen, selectedLabel, onSelect, tags, 
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
+        className="flex items-center justify-center w-9 h-9 rounded-sm transition-all"
         style={{
           background: isOpen ? "var(--app-border)" : "var(--app-hover)",
           border: "1px solid var(--app-border)",
@@ -65,10 +65,10 @@ export function LabelPicker({ isOpen, setIsOpen, selectedLabel, onSelect, tags, 
             transition={{ type: "spring", damping: 28, stiffness: 340 }}
             className="absolute top-11 right-0 w-56 p-1.5 z-50 flex flex-col gap-1.5"
             style={{
-              borderRadius: "14px",
+              borderRadius: "6px",
               background: "var(--app-panel)",
               border: "1px solid var(--app-border)",
-              boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
+              boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
             }}
           >
             <div className="max-h-48 overflow-y-auto space-y-0.5">
@@ -79,11 +79,11 @@ export function LabelPicker({ isOpen, setIsOpen, selectedLabel, onSelect, tags, 
                     onSelect(l.name);
                     setIsOpen(false);
                   }}
-                  className="group flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-colors"
+                  className="group flex items-center gap-2.5 px-3 py-2 rounded-sm cursor-pointer transition-colors"
                   onMouseEnter={(e) => (e.currentTarget.style.background = "var(--app-hover)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
-                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: l.color }} />
+                  <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: l.color }} />
                   <span className="flex-1 text-[13px]" style={{ color: "var(--app-text)" }}>
                     {l.name}
                   </span>
@@ -108,13 +108,13 @@ export function LabelPicker({ isOpen, setIsOpen, selectedLabel, onSelect, tags, 
             </div>
 
             <div className="pt-2 px-1 pb-1" style={{ borderTop: "1px solid var(--app-border-faint)" }}>
-               <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all duration-200 focus-within:ring-2 focus-within:ring-[var(--app-primary)]/20"
+               <div className="flex items-center gap-2 px-2.5 py-2 rounded-sm border transition-all duration-200 focus-within:ring-2 focus-within:ring-[var(--app-primary)]/20"
                     style={{ 
                       background: "var(--app-bg)",
                       borderColor: "var(--app-border)",
                     }}
                >
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[0] }} />
+                  <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: COLORS[0] }} />
                   <input 
                     type="text"
                     placeholder="Nova tag..."
@@ -126,7 +126,7 @@ export function LabelPicker({ isOpen, setIsOpen, selectedLabel, onSelect, tags, 
                   <button 
                     onClick={handleCreate}
                     disabled={isCreating || !newTagName.trim()}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 hover:bg-[var(--app-hover)] text-[var(--app-primary)] disabled:opacity-30 disabled:grayscale transition-all"
+                    className="flex items-center justify-center w-7 h-7 rounded-sm shrink-0 hover:bg-[var(--app-hover)] text-[var(--app-primary)] disabled:opacity-30 disabled:grayscale transition-all"
                   >
                     {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Plus className="w-4 h-4" />}
                   </button>

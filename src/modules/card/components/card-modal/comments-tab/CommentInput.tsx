@@ -102,11 +102,11 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
     <div className="flex gap-3 items-start">
       <img
         src={avatarUrl}
-        className="w-8 h-8 rounded-full object-cover shrink-0 mt-1"
-        style={{ border: "1.5px solid var(--app-border)" }}
+        className="w-8 h-8 rounded-sm object-cover shrink-0 mt-1 bg-[var(--app-panel)]"
+        style={{ border: "1.5px solid var(--app-border-faint)" }}
       />
       <div
-        className="flex-1 rounded-xl overflow-visible relative transition-all duration-300 focus-within:ring-2 z-20"
+        className="flex-1 rounded-sm overflow-visible relative transition-all duration-300 focus-within:ring-2 z-20"
         style={{
           background: "var(--app-panel)",
           border: "1px solid var(--app-border)",
@@ -128,10 +128,10 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
                   width: Math.max(menuPos.width, 220),
                   maxHeight: "30vh",
                   overflowY: "auto",
-                  borderRadius: "14px",
+                  borderRadius: "6px",
                   background: "var(--app-panel)",
                   border: "1px solid var(--app-border)",
-                  boxShadow: "0 24px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)",
+                  boxShadow: "0 24px 48px rgba(0,0,0,0.6)",
                 }}
               >
                 {mentionState.filteredUsers.map((u, i) => (
@@ -151,7 +151,7 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
                         u.avatar_url ||
                         `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`
                       }
-                      className="w-5 h-5 rounded-full object-cover"
+                      className="w-5 h-5 rounded-[4px] object-cover"
                     />
                     <span
                       className="text-xs font-medium"
@@ -254,7 +254,7 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
 
         <div className="px-3 pb-3 flex justify-between items-center relative">
           <div className="flex gap-1">
-            <button className="p-1.5 rounded-lg transition-colors" style={{ color: "var(--app-text-muted)" }} title="Sugerência: Use Win + . para emojis nativos">
+            <button className="p-1.5 rounded-sm transition-colors" style={{ color: "var(--app-text-muted)" }} title="Sugerência: Use Win + . para emojis nativos">
               <Paperclip className="w-4 h-4" />
             </button>
           </div>
@@ -262,12 +262,12 @@ export function CommentInput({ avatarUrl, onPost, replyingTo, onCancelReply, all
           <button
             onClick={handleSubmit}
             disabled={!text.trim() || isSubmitting}
-            className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              background: text.trim() ? "var(--app-primary-muted)" : "var(--app-hover)",
-              border: `1px solid ${text.trim() ? "var(--app-primary)" : "var(--app-border)"}`,
-              color: text.trim() ? "var(--app-primary)" : "var(--app-text-muted)",
-            }}
+            className="flex items-center justify-center gap-2 px-6 py-2 shadow-sm shadow-indigo-950/20 focus:ring-4 focus:ring-indigo-500/20 hover:brightness-110 text-white text-[13px] font-bold rounded-sm transition-all focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+            style={
+              text.trim()
+                ? { background: 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)' }
+                : { background: "var(--app-hover)", border: "1px solid var(--app-border)", color: "var(--app-text-muted)" }
+            }
           >
             {isSubmitting ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Enviando…</>

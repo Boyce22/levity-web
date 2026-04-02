@@ -104,10 +104,10 @@ export default function CardModal({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.97 }}
           transition={{ type: "spring", damping: 28, stiffness: 320 }}
-          className="relative w-full sm:max-w-195 sm:mx-4 flex flex-col z-10"
+          className="relative w-full sm:max-w-[700px] sm:mx-4 flex flex-col z-10"
           style={{
             maxHeight: "92vh",
-            borderRadius: "24px",
+            borderRadius: "6px",
             background: "var(--app-bg)",
             border: "1px solid var(--app-border)",
             boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
@@ -145,7 +145,7 @@ export default function CardModal({
             workspaceId={workspaceId}
           />
 
-          <div className="px-7 pt-2" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
+          <div className="px-6 pt-1" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
             <CardModalTabs
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -155,14 +155,14 @@ export default function CardModal({
 
           {/* Checklist progress bar */}
           {checklistCounts.total > 0 && (
-            <div className="px-7 py-3" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
+            <div className="px-6 py-2" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
               <div className="flex items-center gap-3">
                 <div
-                  className="flex-1 h-1.5 rounded-full overflow-hidden"
+                  className="flex-1 h-1.5 rounded-sm overflow-hidden"
                   style={{ background: "var(--app-border)" }}
                 >
                   <div
-                    className="h-full rounded-full transition-all duration-500"
+                    className="h-full rounded-sm transition-all duration-500"
                     style={{
                       width: `${Math.round((checklistCounts.done / checklistCounts.total) * 100)}%`,
                       background:
@@ -197,7 +197,7 @@ export default function CardModal({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="px-7 py-6"
+                  className="px-6 py-5"
                 >
                   <DescriptionTab
                     description={description}
@@ -216,7 +216,7 @@ export default function CardModal({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="px-7 py-6"
+                  className="px-6 py-5"
                 >
                   <CommentsTab
                     comments={comments}
@@ -234,30 +234,23 @@ export default function CardModal({
           </div>
 
           <div
-            className="shrink-0 px-7 py-4 flex items-center justify-between"
+            className="shrink-0 px-6 py-3.5 flex items-center justify-between"
             style={{ borderTop: "1px solid var(--app-border-faint)" }}
           >
             <div className="flex items-center gap-3">
               <img
                 src={currentUserAvatar}
-                className="w-6 h-6 rounded-full object-cover"
-                style={{ border: "1.5px solid var(--app-border)" }}
+                className="w-6 h-6 rounded-[5px] object-cover bg-[var(--app-panel)]"
+                style={{ border: "1.5px solid var(--app-border-faint)" }}
               />
-              <span className="text-xs" style={{ color: "var(--app-text-muted)" }}>
+              <span className="text-[12px]" style={{ color: "var(--app-text-muted)", opacity: 0.8 }}>
                 Você está editando esta tarefa
               </span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={onClose}
-                className="px-4 py-1.5 text-sm font-medium rounded-lg transition-all"
-                style={{
-                  color: "var(--app-text-muted)",
-                  background: "var(--app-panel)",
-                  border: "1px solid var(--app-border-faint)",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--app-text)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
+                className="px-4 py-2 text-[13.5px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-panel)] rounded-sm transition-colors focus:outline-none"
               >
                 Close
               </button>
@@ -266,20 +259,8 @@ export default function CardModal({
                   handleSave();
                   onClose();
                 }}
-                className="px-4 py-1.5 text-sm font-semibold rounded-xl transition-all"
-                style={{
-                  background: "var(--app-primary-muted)",
-                  border: "1px solid var(--app-primary)",
-                  color: "var(--app-primary)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--app-primary)";
-                  e.currentTarget.style.color = "#fff";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--app-primary-muted)";
-                  e.currentTarget.style.color = "var(--app-primary)";
-                }}
+                className="flex items-center justify-center gap-2 px-6 py-2 shadow-sm shadow-indigo-950/20 focus:ring-4 focus:ring-indigo-500/20 hover:brightness-110 text-white text-[13.5px] font-bold rounded-sm transition-all focus:outline-none"
+                style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)' }}
               >
                 Done
               </button>

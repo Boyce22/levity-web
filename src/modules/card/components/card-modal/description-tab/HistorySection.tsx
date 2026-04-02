@@ -16,7 +16,7 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
   );
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--app-border-faint)" }}>
+    <div className="rounded-sm overflow-hidden" style={{ border: "1px solid var(--app-border-faint)" }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-4 py-3 transition-colors group"
@@ -31,7 +31,7 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
           </span>
           {history.length > 0 && (
             <span
-              className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+              className="px-1.5 py-0.5 rounded-sm text-[10px] font-bold"
               style={{
                 background: "var(--app-border)",
                 color: "var(--app-text-muted)",
@@ -82,7 +82,7 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
                       >
                         <span className="absolute -left-8 top-1.25 w-5.5 flex justify-center">
                           <span
-                            className="w-2 h-2 rounded-full shrink-0"
+                            className="w-2 h-2 rounded-sm shrink-0"
                             style={{
                               background: meta?.dot ?? "#666",
                               boxShadow: `0 0 0 3px var(--app-elevated)`,
@@ -96,8 +96,8 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
                                 user.avatar_url ||
                                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
                               }
-                              className="w-5 h-5 rounded-full object-cover shrink-0 mt-0.5"
-                              style={{ border: "1px solid var(--app-border)" }}
+                              className="w-5 h-5 rounded-sm object-cover shrink-0 mt-0.5 bg-[var(--app-panel)]"
+                              style={{ border: "1px solid var(--app-border-faint)" }}
                             />
                           )}
                           <span className="text-[12.5px] font-semibold" style={{ color: "var(--app-text-muted)" }}>

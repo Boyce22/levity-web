@@ -38,7 +38,7 @@ export function CardModalCover({ coverUrl, isUploading, onUpload, onRemove }: Ca
         )}
         <button
           onClick={onRemove}
-          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
+          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold text-white"
           style={{
             background: "rgba(239,68,68,0.75)",
             backdropFilter: "blur(8px)",

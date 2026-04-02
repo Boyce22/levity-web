@@ -30,7 +30,7 @@ export function DueDatePicker({ dueDate, setDueDate, onSave }: DueDatePickerProp
       />
       <button
         onClick={() => inputRef.current?.showPicker ? inputRef.current.showPicker() : inputRef.current?.click()}
-        className="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
+        className="flex items-center justify-center w-9 h-9 rounded-sm transition-all"
         style={{
           background: "var(--app-hover)",
           border: "1px solid var(--app-border)",

@@ -55,7 +55,7 @@ export function CardModalTabs({ activeTab, setActiveTab, commentsCount }: CardMo
             {isActive && (
               <motion.div
                 layoutId="modal-tab-indicator"
-                className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                className="absolute bottom-0 left-0 right-0 h-0.5 rounded-sm"
                 style={{ background: "var(--app-primary)" }}
               />
             )}

@@ -58,10 +58,10 @@ export function CommentsTab({
         <div className="space-y-4">
           {[0, 1].map((i) => (
             <div key={i} className="flex gap-3 animate-pulse">
-              <div className="w-8 h-8 rounded-full shrink-0" style={{ background: "var(--app-border)" }} />
+              <div className="w-8 h-8 rounded-sm shrink-0" style={{ background: "var(--app-border)" }} />
               <div className="flex-1 space-y-2">
                 <div className="h-3 rounded" style={{ width: "30%", background: "var(--app-border)" }} />
-                <div className="h-12 rounded-lg" style={{ background: "var(--app-border-faint)" }} />
+                <div className="h-12 rounded-sm" style={{ background: "var(--app-border-faint)" }} />
               </div>
             </div>
           ))}
@@ -69,7 +69,7 @@ export function CommentsTab({
       ) : comments.length === 0 ? (
         <div className="py-6 text-center">
           <div
-            className="w-10 h-10 rounded-2xl mx-auto mb-3 flex items-center justify-center"
+            className="w-10 h-10 rounded-sm mx-auto mb-3 flex items-center justify-center"
             style={{ background: "var(--app-hover)", border: "1px solid var(--app-border)" }}
           >
             <MessageSquare className="w-5 h-5" style={{ color: "var(--app-text-muted)", opacity: 0.5 }} />
@@ -94,7 +94,7 @@ export function CommentsTab({
             <button
               onClick={onLoadMore}
               disabled={isLoadingMore}
-              className="w-full py-2 text-xs font-semibold transition-colors rounded-xl flex justify-center items-center gap-1.5 disabled:opacity-50"
+              className="w-full py-2 text-xs font-semibold transition-colors rounded-sm flex justify-center items-center gap-1.5 disabled:opacity-50"
               style={{ color: "var(--app-text-muted)", border: "1px solid var(--app-border-faint)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "var(--app-primary)";
