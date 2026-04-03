@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import type { INotificationRepository, NotificationRecord } from '../interfaces/notification.repository';
 
 export class SupabaseNotificationRepository implements INotificationRepository {
-  async insertMany(notifications: Omit<NotificationRecord, 'id'>[]): Promise<void> {
+  async insertMany(notifications: Omit<NotificationRecord, 'id' | 'created_at' | 'updated_at'>[]): Promise<void> {
     const { error } = await supabase
       .from('notifications')
       .insert(notifications);

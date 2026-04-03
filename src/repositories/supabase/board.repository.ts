@@ -9,46 +9,75 @@ export class SupabaseBoardRepository implements IBoardRepository {
       .eq('workspace_id', workspaceId)
       .order('position');
 
-    if (error) throw new Error(`Failed to load board lists: ${error.message}`);
+    if (error) {
+      console.error('[SupabaseBoardRepository.findListsWithCards] Error:', error);
+      throw new Error(`Failed to load board lists: ${error.message}`);
+    }
 
     const sortedLists: ListRecord[] = [];
     const sortedCards: CardRecord[] = [];
 
+    // 🛡️ Data Sanitization: Ensure lists and cards are properly mapped
     for (const list of lists || []) {
-      const listCards = list.cards || [];
-      listCards.sort((a: any, b: any) => a.position - b.position);
-      sortedCards.push(...listCards);
-
       const { cards, ...listData } = list;
       sortedLists.push(listData as ListRecord);
+
+      if (cards && Array.isArray(cards)) {
+        const listCards = [...cards];
+        listCards.sort((a, b) => (a.position || 0) - (b.position || 0));
+        sortedCards.push(...listCards);
+      }
     }
 
     return { lists: sortedLists, cards: sortedCards };
   }
 
-  async createList(data: { createdBy: string; title: string; position: number; workspaceId: string }): Promise<ListRecord> {
+  async createList(data: { createdBy: string; title: string; position: number; workspace_id: string }): Promise<ListRecord> {
     const { data: newList, error } = await supabase
       .from('lists')
       .insert({
         created_by: data.createdBy,
         title: data.title,
         position: data.position,
-        workspace_id: data.workspaceId,
+        workspace_id: data.workspace_id,
+        updated_at: new Date().toISOString(),
+        updated_by: data.createdBy
+      })
+      .select()
+      .single();
+ 
+    if (error || !newList) {
+      throw new Error(error?.message || 'Failed to create list');
+    }
+ 
+    return newList as ListRecord;
+  }
+
+  async createCard(data: { listId: string; content: string; position: number; createdBy: string }): Promise<CardRecord> {
+    const { data: newCard, error } = await supabase
+      .from('cards')
+      .insert({
+        list_id: data.listId,
+        content: data.content,
+        position: data.position,
+        created_by: data.createdBy,
+        updated_at: new Date().toISOString(),
+        updated_by: data.createdBy
       })
       .select()
       .single();
 
-    if (error || !newList) {
-      throw new Error(error?.message || 'Failed to create list');
+    if (error || !newCard) {
+      throw new Error(error?.message || 'Failed to create card');
     }
 
-    return newList;
+    return newCard as CardRecord;
   }
 
-  async renameList(listId: string, title: string): Promise<void> {
+  async renameList(listId: string, title: string, updatedBy: string): Promise<void> {
     const { error } = await supabase
       .from('lists')
-      .update({ title })
+      .update({ title, updated_by: updatedBy })
       .eq('id', listId);
 
     if (error) throw new Error(error.message);
@@ -63,32 +92,35 @@ export class SupabaseBoardRepository implements IBoardRepository {
     if (error) throw new Error(error.message);
   }
 
-  async updateListType(listId: string, listType: ListType | null): Promise<void> {
+  async updateListType(listId: string, listType: ListType | null, updatedBy: string): Promise<void> {
     const { error } = await supabase
       .from('lists')
-      .update({ list_type: listType })
+      .update({ list_type: listType, updated_by: updatedBy })
       .eq('id', listId);
 
     if (error) throw new Error(error.message);
   }
 
-  async updateListPositions(updates: { id: string; position: number }[]): Promise<void> {
-    // Note: This is done concurrently in the action, but the repo should handle single updates or we keep the loop in the repo
-    // To maintain compatibility with the current action's logic (which does Promise.all), I'll implement a single update here
-    // or better, a batch-like approach if possible, but Supabase doesn't have a clean batch update by ID for different values in one call.
-    // So we'll keep it simple: the repository defines the single operation, and the action handles parallelism.
-    
-    // Wait, the interface says `updateListPositions(updates: { id: string; position: number }[])`.
-    // I will implement it as a Promise.all here to centralize the implementation details.
-    
+  async updateListPositions(updates: { id: string; position: number }[], updatedBy: string): Promise<void> {
     await Promise.all(
       updates.map(async (update) => {
         const { error } = await supabase
           .from('lists')
-          .update({ position: update.position })
+          .update({ position: update.position, updated_by: updatedBy })
           .eq('id', update.id);
         if (error) throw new Error(error.message);
       })
     );
+  }
+
+  async findById(cardId: string): Promise<CardRecord | null> {
+    const { data, error } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', cardId)
+      .single();
+
+    if (error || !data) return null;
+    return data as CardRecord;
   }
 }

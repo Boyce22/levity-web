@@ -14,10 +14,17 @@ export class SupabaseCardRepository implements ICardRepository {
     return data;
   }
 
-  async createCard(data: { listId: string; content: string; position: number }): Promise<CardRecord> {
+  async createCard(data: { listId: string; content: string; position: number; createdBy: string }): Promise<CardRecord> {
     const { data: newCard, error } = await supabase
       .from('cards')
-      .insert({ list_id: data.listId, content: data.content, position: data.position })
+      .insert({ 
+        list_id: data.listId, 
+        content: data.content, 
+        position: data.position,
+        created_by: data.createdBy,
+        updated_at: new Date().toISOString(),
+        updated_by: data.createdBy
+      })
       .select()
       .single();
 
@@ -37,9 +44,13 @@ export class SupabaseCardRepository implements ICardRepository {
     if (error) throw new Error(error.message);
   }
 
-  async updateCard(cardId: string, payload: CardUpdatePayload): Promise<void> {
+  async updateCard(cardId: string, payload: CardUpdatePayload, updatedBy: string): Promise<void> {
     // 🛡️ Guard: Postgres/Supabase throws "valid input syntax" errors for empty strings in TIMESTAMPTZ or UUID columns.
-    const sanitizedPayload = { ...payload };
+    const sanitizedPayload = { 
+      ...payload, 
+      updated_by: updatedBy,
+      updated_at: new Date().toISOString()
+    };
     if (sanitizedPayload.due_date === '') sanitizedPayload.due_date = null;
     if (sanitizedPayload.assignee_id === '') sanitizedPayload.assignee_id = null;
 
@@ -51,7 +62,7 @@ export class SupabaseCardRepository implements ICardRepository {
     if (error) throw new Error(error.message);
   }
 
-  async updateCardPositions(updates: { id: string; listId: string; position: number }[]): Promise<void> {
+  async updateCardPositions(updates: { id: string; listId: string; position: number }[], updatedBy: string): Promise<void> {
     await Promise.all(
       updates.map(async (update) => {
         const { error } = await supabase
@@ -59,6 +70,7 @@ export class SupabaseCardRepository implements ICardRepository {
           .update({
             list_id: update.listId,
             position: update.position,
+            updated_by: updatedBy,
           })
           .eq('id', update.id);
         if (error) throw new Error(error.message);
@@ -71,7 +83,7 @@ export class SupabaseCardRepository implements ICardRepository {
       .from('card_history')
       .select(`
         *,
-        users ( id, username, display_name, avatar_url )
+        users!created_by ( id, username, display_name, avatar_url )
       `)
       .eq('card_id', cardId)
       .order('created_at', { ascending: false });

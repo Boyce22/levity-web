@@ -16,6 +16,7 @@ interface ListHeaderProps {
   onRename: (newTitle: string) => void;
   onDelete: () => void;
   onTypeChange?: (type: ListType) => void;
+  userRole: string;
 }
 
 export function ListHeader({
@@ -29,6 +30,7 @@ export function ListHeader({
   onRename,
   onDelete,
   onTypeChange,
+  userRole,
 }: ListHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
@@ -88,8 +90,14 @@ export function ListHeader({
             />
           ) : (
             <h2
-              onClick={() => setIsEditing(true)}
-              className="font-semibold text-[14px] truncate cursor-text transition-colors"
+              onClick={() => {
+                if (['owner', 'admin', 'member'].includes(userRole)) {
+                  setIsEditing(true);
+                }
+              }}
+              className={`font-semibold text-[14px] truncate transition-colors ${
+                ['owner', 'admin', 'member'].includes(userRole) ? "cursor-text" : "cursor-default"
+              }`}
               style={{ color: "var(--app-text)" }}
             >
               {title}
@@ -101,8 +109,14 @@ export function ListHeader({
           {/* List Type Badge/Dropdown */}
           <div className="relative">
             <button
-              onClick={() => setIsTypeOpen(!isTypeOpen)}
-              className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md transition-all hover:brightness-110"
+              onClick={() => {
+                if (['owner', 'admin', 'member'].includes(userRole)) {
+                  setIsTypeOpen(!isTypeOpen);
+                }
+              }}
+              className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${
+                ['owner', 'admin', 'member'].includes(userRole) ? "hover:brightness-110" : "cursor-default"
+              }`}
               style={{
                 background: `${LIST_TYPE_COLOR[listType]}20`,
                 color: LIST_TYPE_COLOR[listType],
@@ -110,7 +124,9 @@ export function ListHeader({
               }}
             >
               {LIST_TYPE_LABEL[listType]}
-              <ChevronDown className={`w-3 h-3 transition-transform ${isTypeOpen ? 'rotate-180' : ''}`} />
+              {['owner', 'admin', 'member'].includes(userRole) && (
+                <ChevronDown className={`w-3 h-3 transition-transform ${isTypeOpen ? 'rotate-180' : ''}`} />
+              )}
             </button>
 
             <AnimatePresence>
@@ -157,23 +173,25 @@ export function ListHeader({
             {wipLimit != null && `/${wipLimit}`}
           </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsDeleteModalOpen(true);
-            }}
-            className="p-1 rounded-md transition-all duration-150"
-            style={{
-              opacity: isHovered ? 1 : 0,
-              color: "var(--app-text-muted)",
-              pointerEvents: isHovered ? "auto" : "none",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
-            title="Deletar lista"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+           {['owner', 'admin', 'member'].includes(userRole) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDeleteModalOpen(true);
+              }}
+              className="p-1 rounded-md transition-all duration-150"
+              style={{
+                opacity: isHovered ? 1 : 0,
+                color: "var(--app-text-muted)",
+                pointerEvents: isHovered ? "auto" : "none",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
+              title="Deletar lista"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ interface ProfileModalProps {
   onClose: () => void;
   profile: any;
   onProfileUpdated: (p: any) => void;
+  currentWorkspaceId: string;
 }
 
 interface FormErrors {
@@ -23,6 +24,7 @@ export default function ProfileModal({
   onClose,
   profile,
   onProfileUpdated,
+  currentWorkspaceId,
 }: ProfileModalProps) {
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
@@ -110,7 +112,7 @@ export default function ProfileModal({
     try {
       let finalAvatarUrl = avatarUrl;
       if (avatarUrl.startsWith("data:")) {
-        finalAvatarUrl = await uploadAvatarAction(avatarUrl);
+        finalAvatarUrl = await uploadAvatarAction(avatarUrl, currentWorkspaceId);
         setAvatarUrl(finalAvatarUrl);
       }
       await updateUserProfile({
@@ -124,6 +126,7 @@ export default function ProfileModal({
         avatar_url: finalAvatarUrl,
         bio,
       });
+      setAvatarPreview(finalAvatarUrl);
       setSaved(true);
       setTimeout(() => {
         setSaved(false);

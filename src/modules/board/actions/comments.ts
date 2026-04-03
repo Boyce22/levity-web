@@ -11,10 +11,11 @@ export type Comment = {
   id: string; 
   card_id: string; 
   created_by: string; 
+  updated_by?: string | null;
   parent_id?: string | null;
   content: string; 
   created_at: string; 
-  updated_at?: string | null;
+  updated_at: string;
   users: { username: string; display_name?: string; avatar_url?: string } 
 };
 
@@ -92,7 +93,7 @@ export async function updateCommentAction(id: string, content: string) {
   const orphanUrls = oldUrls.filter(url => !newUrls.includes(url));
   orphanUrls.forEach(u => deleteFileAction(u));
 
-  const updated = await commentRepo.update(id, content);
+  const updated = await commentRepo.update(id, content, currentUserId);
   revalidatePath('/');
   return updated as Comment;
 }

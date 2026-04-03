@@ -20,7 +20,7 @@ export async function createTagAction(workspaceId: string, name: string, color: 
   const userId = await getUserId();
   await assertUserOwnsWorkspace(userId, workspaceId);
 
-  const data = await workspaceRepo.createTag(workspaceId, name, color);
+  const data = await workspaceRepo.createTag(workspaceId, name, color, userId);
 
   revalidatePath('/');
   return data;
@@ -40,7 +40,7 @@ export async function createPriorityAction(workspaceId: string, name: string, co
   const userId = await getUserId();
   await assertUserOwnsWorkspace(userId, workspaceId);
 
-  const data = await workspaceRepo.createPriority(workspaceId, name, color, icon);
+  const data = await workspaceRepo.createPriority(workspaceId, name, color, icon, userId);
 
   revalidatePath('/');
   return data;

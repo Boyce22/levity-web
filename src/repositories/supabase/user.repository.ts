@@ -60,4 +60,19 @@ export class SupabaseUserRepository implements IUserRepository {
 
     return newUser;
   }
+
+  async updateUserProfile(userId: string, data: { display_name?: string; avatar_url?: string; bio?: string }): Promise<void> {
+    const { error } = await supabase
+      .from('users')
+      .update({
+        ...data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('[SupabaseUserRepository.updateUserProfile] Error:', error);
+      throw new Error(error.message);
+    }
+  }
 }

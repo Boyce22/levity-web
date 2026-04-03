@@ -16,6 +16,7 @@ interface CardProps {
   onClick: () => void;
   allUsers: any[];
   commentCount?: number;
+  userRole: string;
 }
 
 export default function Card({
@@ -25,13 +26,18 @@ export default function Card({
   onClick,
   allUsers,
   commentCount = 0,
+  userRole,
 }: CardProps) {
   const assignedUser = card.assignee_id
     ? allUsers.find((u) => u.id === card.assignee_id)
     : null;
 
   return (
-    <Draggable draggableId={card.id} index={index}>
+    <Draggable 
+      draggableId={card.id} 
+      index={index}
+      isDragDisabled={userRole === 'viewer'}
+    >
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -76,20 +82,22 @@ export default function Card({
               >
                 {card.content}
               </p>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md -mt-0.5 -mr-0.5"
-                style={{ color: "var(--app-text-muted)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.color = "var(--app-text-muted)")
-                }
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {['owner', 'admin', 'member'].includes(userRole) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md -mt-0.5 -mr-0.5"
+                  style={{ color: "var(--app-text-muted)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "var(--app-text-muted)")
+                  }
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {card.progress != null && <CardProgress progress={card.progress} />}

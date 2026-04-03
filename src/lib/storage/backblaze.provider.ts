@@ -81,7 +81,10 @@ export class BackblazeProvider implements IStorageProvider {
   private buildFileName(options: UploadOptions): string {
     const originalFilename = options.filename || "";
     const extension = originalFilename.includes(".") ? originalFilename.split(".").pop() : "";
-    const safeFilename = crypto.randomUUID();
+    const uuid = crypto.randomUUID();
+    const safeFilename = options.keepOriginalName 
+      ? (options.filename?.split('.')[0] || uuid)
+      : (options.userId ? `${options.userId}_${uuid}` : uuid);
     const finalFilename = extension ? `${safeFilename}.${extension}` : safeFilename;
     
     return options.folder ? `${options.folder}/${finalFilename}` : finalFilename;

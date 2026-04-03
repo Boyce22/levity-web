@@ -3,6 +3,7 @@
 import { supabase } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 import { verifyJwtToken } from '@/lib/auth';
+import { userRepo } from '@/repositories';
 import { revalidatePath } from 'next/cache';
 import { BackblazeProvider } from '@/lib/storage/backblaze.provider';
 
@@ -33,19 +34,18 @@ export async function updateUserProfile(updates: {
   bio?: string;
 }) {
   const userId = await getUserId();
-  await supabase
-    .from('users')
-    .update({
-      display_name: updates.display_name,
-      avatar_url: updates.avatar_url,
-      bio: updates.bio ?? '',
-    })
-    .eq('id', userId);
+  await userRepo.updateUserProfile(userId, {
+    display_name: updates.display_name,
+    avatar_url: updates.avatar_url,
+    bio: updates.bio,
+  });
   revalidatePath('/');
 }
 
-export async function uploadAvatarAction(base64: string): Promise<string> {
+export async function uploadAvatarAction(base64: string, workspaceId: string): Promise<string> {
   const userId = await getUserId();
+
+  if (!workspaceId) throw new Error('Workspace context is required for profile storage');
 
   const commaIdx = base64.indexOf(',');
   const meta = commaIdx !== -1 ? base64.slice(0, commaIdx) : '';
@@ -58,11 +58,13 @@ export async function uploadAvatarAction(base64: string): Promise<string> {
   const buffer = Buffer.from(data, 'base64');
   const provider = new BackblazeProvider();
   const result = await provider.upload(buffer, {
-    folder: 'avatars',
+    folder: `${workspaceId}/profiles`,
     filename: `${userId}.${ext}`,
+    userId,
     maxWidth: 400,
     maxHeight: 400,
     quality: 85,
+    keepOriginalName: true,
   });
 
   return result.url;

@@ -27,6 +27,7 @@ interface SidebarProps {
   setIsCreatingWorkspace: (val: boolean) => void;
   activeView: string;
   onViewChange: (view: string) => void;
+  userRole: string;
 }
 
 export function Sidebar({
@@ -39,6 +40,7 @@ export function Sidebar({
   setIsCreatingWorkspace,
   activeView,
   onViewChange,
+  userRole,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isWsOpen, setIsWsOpen] = useState(false);
@@ -47,10 +49,11 @@ export function Sidebar({
     userProfile?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.username}`;
 
+  const isAdmin = ['owner', 'admin'].includes(userRole);
+
   const navItems = [
     { id: "board", label: "Project Board", icon: Layout },
-    { id: "members", label: "Members", icon: Users },
-    { id: "invites", label: "Active Invites", icon: Mail },
+    ...(isAdmin ? [{ id: "management", label: "Workspace Management", icon: Users }] : []),
     { id: "dashboard", label: "Analytics", icon: BarChart3, disabled: true },
   ];
 
@@ -141,26 +144,30 @@ export function Sidebar({
                   ))}
                 </div>
                 <div className="border-t border-(--app-border-faint) mt-1 pt-1">
-                  <button
-                    onClick={() => {
-                      setIsWsOpen(false);
-                      setIsCreatingWorkspace(true);
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium text-(--app-primary) hover:bg-(--app-primary-muted) transition-colors"
-                  >
-                    <Plus size={16} />
-                    <span>Create Workspace</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsWsOpen(false);
-                      onOpenSettings();
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium text-(--app-text-muted) hover:bg-(--app-hover) hover:text-(--app-text) transition-colors"
-                  >
-                    <Settings size={16} />
-                    <span>Settings</span>
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setIsWsOpen(false);
+                        setIsCreatingWorkspace(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium text-(--app-primary) hover:bg-(--app-primary-muted) transition-colors"
+                    >
+                      <Plus size={16} />
+                      <span>Create Workspace</span>
+                    </button>
+                  )}
+                  {userRole === 'owner' && (
+                    <button
+                      onClick={() => {
+                        setIsWsOpen(false);
+                        onOpenSettings();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium text-(--app-text-muted) hover:bg-(--app-hover) hover:text-(--app-text) transition-colors"
+                    >
+                      <Settings size={16} />
+                      <span>Settings</span>
+                    </button>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -221,8 +228,8 @@ export function Sidebar({
               <p className="text-sm font-bold text-(--app-text) truncate tracking-tight">
                 {userProfile?.display_name || userProfile?.username}
               </p>
-              <p className="text-[11px] text-(--app-text-muted) truncate opacity-60">
-                {userProfile?.email || "Workspace Member"}
+              <p className="text-[11px] text-(--app-text-muted) truncate opacity-60 capitalize">
+                {userRole}
               </p>
             </div>
           )}

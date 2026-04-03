@@ -41,5 +41,23 @@ export async function assertUserOwnsCard(currentUserId: string, cardId: string) 
   }
 
   const workspaceId = await assertUserOwnsList(currentUserId, list_id);
-  return { list_id, workspace_id: workspaceId };
+  
+  // Fetch card metadata for ownership check
+  const { boardRepo } = await import('@/repositories');
+  const card = await boardRepo.findById(cardId);
+  
+  return { list_id, workspace_id: workspaceId, created_by: card?.created_by };
+}
+/**
+ * 🛡️ Security Gateway: Asserts the user has one of the specific roles in the workspace.
+ * Returns the membership data including the role.
+ */
+export async function assertHasRole(currentUserId: string, workspaceId: string, allowedRoles: string[]) {
+  const member = await assertUserOwnsWorkspace(currentUserId, workspaceId);
+
+  if (!allowedRoles.includes(member.role)) {
+    throw new Error(`403 Forbidden: Insufficient permissions. Required one of: ${allowedRoles.join(', ')}`);
+  }
+
+  return member;
 }

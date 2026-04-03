@@ -23,14 +23,14 @@ export async function createWorkspaceAction(name: string) {
   }
 
   // 1. cria workspace
-  const workspace = await workspaceRepo.create(name);
+  const workspace = await workspaceRepo.create(name, currentUserId);
 
   try {
     // 2. cria membership (owner)
-    await workspaceRepo.addMember(workspace.id, currentUserId, 'owner');
+    await workspaceRepo.addMember(workspace.id, currentUserId, 'owner', currentUserId);
 
     // 3. Semear prioridades padrão
-    await workspaceRepo.seedDefaultPriorities(workspace.id);
+    await workspaceRepo.seedDefaultPriorities(workspace.id, currentUserId);
 
   } catch (error: any) {
     // Se falhar ao criar o membro, tentamos limpar o workspace para evitar lixo
@@ -56,7 +56,7 @@ export async function renameWorkspaceAction(id: string, newName: string) {
     throw new Error('403 Forbidden: Permission denied for renaming this workspace.');
   }
 
-  await workspaceRepo.rename(id, newName);
+  await workspaceRepo.rename(id, newName, currentUserId);
   revalidatePath('/');
 }
 

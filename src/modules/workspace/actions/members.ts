@@ -15,7 +15,7 @@ async function getUserId() {
   return payload.id as string;
 }
 
-async function createInviteRecord(workspaceId: string, userId: string, maxUses: number, expiresInHours: number) {
+async function createInviteRecord(workspaceId: string, userId: string, maxUses: number, expiresInHours: number, role: string) {
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
@@ -23,14 +23,16 @@ async function createInviteRecord(workspaceId: string, userId: string, maxUses: 
     workspaceId,
     createdBy: userId,
     maxUses,
-    expiresAt: expiresAt.toISOString()
+    expiresAt: expiresAt.toISOString(),
+    role
   });
 }
 
 export async function generateInviteAction(
   workspaceId: string, 
   maxUses: number = 100,
-  expiresInHours: number = 168 // 7 days default
+  expiresInHours: number = 168, // 7 days default
+  role: string = 'member'
 ) {
   const userId = await getUserId();
 
@@ -40,11 +42,16 @@ export async function generateInviteAction(
   // 1. RBAC: Verify explicitly
   const member = await assertUserOwnsWorkspace(userId, workspaceId);
 
+  // 🛡️ Security Check: Admins cannot invite Owners
+  if (role === 'owner' && member.role !== 'owner') {
+    throw new Error('403 Forbidden: Only the Workspace Owner can generate invitations for the Owner role.');
+  }
+
   if (!['owner', 'admin'].includes(member.role)) {
     throw new Error('403 Forbidden: You lack permission to generate invites for this workspace.');
   }
 
-  return await createInviteRecord(workspaceId, userId, maxUses, expiresInHours);
+  return await createInviteRecord(workspaceId, userId, maxUses, expiresInHours, role);
 }
 
 export async function getInviteDetailsAction(token: string) {
@@ -71,12 +78,12 @@ async function validateInviteToken(token: string) {
   return invite;
 }
 
-async function consumeInviteToken(token: string, currentUses: number, maxUses: number) {
-  return workspaceRepo.consumeInvite(token, currentUses, maxUses);
+async function consumeInviteToken(token: string, currentUses: number, maxUses: number, updatedBy: string) {
+  return workspaceRepo.consumeInvite(token, currentUses, maxUses, updatedBy);
 }
 
-async function bindUserToWorkspace(userId: string, workspaceId: string) {
-  await workspaceRepo.addMember(workspaceId, userId, 'member');
+async function bindUserToWorkspace(userId: string, workspace_id: string, role: string) {
+  await workspaceRepo.addMember(workspace_id, userId, role, userId);
 }
 
 export async function acceptInviteAction(token: string) {
@@ -86,9 +93,28 @@ export async function acceptInviteAction(token: string) {
   await rateLimit(`acc_inv_${userId}`, 10, 60000);
 
   const invite = await validateInviteToken(token);
-  await consumeInviteToken(token, invite.current_uses, invite.max_uses);
-  await bindUserToWorkspace(userId, invite.workspace_id);
+  await consumeInviteToken(token, invite.current_uses, invite.max_uses, userId);
+  await bindUserToWorkspace(userId, invite.workspace_id, invite.role);
 
   revalidatePath('/');
   return invite.workspace_id;
+}
+
+export async function getWorkspaceInvitesAction(workspaceId: string) {
+  const userId = await getUserId();
+  await assertUserOwnsWorkspace(userId, workspaceId);
+
+  return workspaceRepo.findInvitesByWorkspace(workspaceId);
+}
+
+export async function revokeInviteAction(workspaceId: string, token: string) {
+  const userId = await getUserId();
+  const member = await assertUserOwnsWorkspace(userId, workspaceId);
+
+  if (!['owner', 'admin'].includes(member.role)) {
+    throw new Error('403 Forbidden: Insufficient permissions to revoke invites.');
+  }
+
+  await workspaceRepo.revokeInvite(token, userId);
+  revalidatePath('/');
 }

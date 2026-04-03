@@ -5,7 +5,7 @@ export class SupabaseCommentRepository implements ICommentRepository {
   async findByCard(cardId: string, limit: number, cursor: string | null): Promise<CommentRecord[]> {
     let query = supabase
       .from('comments')
-      .select('*, users(username, display_name, avatar_url)')
+      .select('*, users!created_by(username, display_name, avatar_url)')
       .eq('card_id', cardId)
       .is('parent_id', null)
       .order('created_at', { ascending: false })
@@ -22,7 +22,7 @@ export class SupabaseCommentRepository implements ICommentRepository {
     const parentIds = parents.map(p => p.id);
     const { data: replies, error: repliesErr } = await supabase
       .from('comments')
-      .select('*, users(username, display_name, avatar_url)')
+      .select('*, users!created_by(username, display_name, avatar_url)')
       .in('parent_id', parentIds)
       .order('created_at', { ascending: true });
     
@@ -41,8 +41,10 @@ export class SupabaseCommentRepository implements ICommentRepository {
         created_by: data.created_by,
         content: data.content,
         parent_id: data.parentId,
+        updated_at: new Date().toISOString(),
+        updated_by: data.created_by
       })
-      .select('*, users(username, display_name, avatar_url)')
+      .select('*, users!created_by(username, display_name, avatar_url)')
       .single();
 
     if (error || !newComment) {
@@ -55,7 +57,7 @@ export class SupabaseCommentRepository implements ICommentRepository {
   async findById(id: string): Promise<CommentRecord | null> {
     const { data, error } = await supabase
       .from('comments')
-      .select('*, users(username, display_name, avatar_url)')
+      .select('*, users!created_by(username, display_name, avatar_url)')
       .eq('id', id)
       .single();
 
@@ -63,15 +65,16 @@ export class SupabaseCommentRepository implements ICommentRepository {
     return data as any;
   }
 
-  async update(id: string, content: string): Promise<CommentRecord> {
+  async update(id: string, content: string, updatedBy: string): Promise<CommentRecord> {
     const { data: updated, error } = await supabase
       .from('comments')
       .update({
         content,
+        updated_by: updatedBy,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
-      .select('*, users(username, display_name, avatar_url)')
+      .select('*, users!created_by(username, display_name, avatar_url)')
       .single();
 
     if (error || !updated) {

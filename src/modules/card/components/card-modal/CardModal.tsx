@@ -172,8 +172,8 @@ export default function CardModal({
                         checklistCounts.done === checklistCounts.total
                           ? "#34d399"
                           : checklistCounts.done / checklistCounts.total >= 0.4
-                          ? "var(--app-primary)"
-                          : "#fbbf24",
+                            ? "var(--app-primary)"
+                            : "#fbbf24",
                     }}
                   />
                 </div>
@@ -186,10 +186,10 @@ export default function CardModal({
 
           <div
             className="flex-1 overflow-y-auto relative"
-            style={{ 
-              scrollbarWidth: "thin", 
+            style={{
+              scrollbarWidth: "thin",
               scrollbarColor: "var(--app-border) transparent",
-              minHeight: "300px" 
+              minHeight: "300px"
             }}
           >
             <AnimatePresence mode="wait">

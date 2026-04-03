@@ -12,6 +12,7 @@ interface BoardHeaderProps {
   onOpenShare: () => void;
   onNotificationClick?: (cardId: string) => void;
   activeView: string;
+  userRole: string;
 }
 
 export function BoardHeader({
@@ -21,6 +22,7 @@ export function BoardHeader({
   onOpenShare,
   onNotificationClick,
   activeView,
+  userRole,
 }: BoardHeaderProps) {
   // Workspace progress calculation
   const totalCards = cards.length;
@@ -43,8 +45,7 @@ export function BoardHeader({
 
   const viewLabels: Record<string, string> = {
     board: "Project Board",
-    members: "Workspace Members",
-    invites: "Active Invites",
+    management: "Workspace Management",
     dashboard: "Analytics Dashboard",
   };
 
@@ -89,13 +90,15 @@ export function BoardHeader({
             onNotificationClick={(cardId) => onNotificationClick?.(cardId)}
           />
           <div className="w-[1px] h-4 bg-(--app-border-faint) mx-1" />
-          <button
-            onClick={onOpenShare}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-bold transition-all bg-(--app-primary) text-white hover:brightness-110 shadow-sm"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Share</span>
-          </button>
+          {['owner', 'admin'].includes(userRole) && (
+            <button
+              onClick={onOpenShare}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-bold transition-all bg-(--app-primary) text-white hover:brightness-110 shadow-sm"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Share</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

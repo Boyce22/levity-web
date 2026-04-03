@@ -17,6 +17,15 @@ export async function GET(
 ) {
   const params = await props.params;
   const { bucketName, fileName } = params;
+  
+  // 🛡️ Security Check: Prevent Path Traversal and invalid paths
+  const hasInvalidSegment = fileName.some(segment => 
+    segment === '..' || segment === '.' || segment === '' || segment.includes('/') || segment.includes('\\')
+  );
+  if (hasInvalidSegment) {
+    return new NextResponse("Invalid file path.", { status: 400 });
+  }
+
   const fileKey = fileName.join('/');
   
   // ─── SECURITY LAYER: IDOR PROTECTION ────────────────────────
@@ -28,15 +37,36 @@ export async function GET(
     if (!payload?.id) return new NextResponse("Unauthorized", { status: 401 });
     const userId = payload.id as string;
 
-    // A primeira parte do fileName DEVE ser o workspaceId para validação de IDOR
+    // O primeiro segmento é SEMPRE o workspaceId
     const workspaceId = fileName[0];
+    const destination = fileName[1]; // 'attachments', 'profiles', etc.
     
     const workspaceRepo = new SupabaseWorkspaceRepository();
-    const member = await workspaceRepo.findMember(workspaceId, userId);
     
-    if (!member) {
-      console.warn(`[Security] Unauthorized access attempt by ${userId} to workspace ${workspaceId}`);
-      return new NextResponse("Forbidden: You do not have access to this workspace's files.", { status: 403 });
+    // 📂 Caso especial: Imagens de Perfil (Profiles)
+    // Mesmo estando dentro de um workspace, permitimos acesso se houver qualquer 
+    // relação de workspace entre o visualizador e o dono da imagem.
+    if (destination === 'profiles') {
+       // O nome do arquivo pode ser userId.ext ou userId_uuid.ext
+       const rawFilename = fileName[2] || "";
+       const avatarOwnerId = rawFilename.split('.')[0]?.split('_')[0];
+       
+       if (!avatarOwnerId) return new NextResponse("Malformed profile request.", { status: 400 });
+       
+       if (userId !== avatarOwnerId) {
+         const isShared = await workspaceRepo.hasSharedWorkspace(userId, avatarOwnerId);
+         if (!isShared) {
+           console.warn(`[Security] Unauthorized profile access attempt by ${userId} to user ${avatarOwnerId}`);
+           return new NextResponse("Forbidden: You do not share a workspace with this user.", { status: 403 });
+         }
+       }
+    } else {
+      // 🛡️ Caso padrão (Ex: attachments): Apenas membros do workspaceId do primeiro segmento
+      const member = await workspaceRepo.findMember(workspaceId, userId);
+      if (!member) {
+        console.warn(`[Security] Unauthorized access attempt by ${userId} to workspace ${workspaceId}`);
+        return new NextResponse("Forbidden: You do not have access to this workspace's files.", { status: 403 });
+      }
     }
   } catch (authError) {
     console.error("Auth security check failed:", authError);

@@ -23,6 +23,7 @@ interface ListProps {
   commentCounts?: Record<string, number>;
   wipLimit?: number;
   onListTypeChange?: (listId: string, type: LType) => void;
+  userRole: string;
 }
 
 const COL_ACCENTS: string[] = [
@@ -42,6 +43,7 @@ export default function List({
   commentCounts = {},
   wipLimit,
   onListTypeChange,
+  userRole,
 }: ListProps) {
   const listType = getListType(list, index, totalLists);
   const accent = LIST_TYPE_COLOR[listType];
@@ -56,7 +58,11 @@ export default function List({
   };
 
   return (
-    <Draggable draggableId={list.id} index={index}>
+    <Draggable 
+      draggableId={list.id} 
+      index={index}
+      isDragDisabled={userRole === 'viewer'}
+    >
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -106,6 +112,7 @@ export default function List({
             onRename={handleRename}
             onDelete={onDeleteList}
             onTypeChange={(type) => onListTypeChange?.(list.id, type)}
+            userRole={userRole}
           />
 
           {/* Aviso de limite WIP */}
@@ -132,7 +139,11 @@ export default function List({
           </AnimatePresence>
 
           {/* Área de cards */}
-          <Droppable droppableId={list.id} type="card">
+          <Droppable 
+            droppableId={list.id} 
+            type="card"
+            isDropDisabled={userRole === 'viewer'}
+          >
             {(prov, snap) => (
               <div
                 ref={prov.innerRef}
@@ -156,6 +167,7 @@ export default function List({
                     onClick={() => onCardClick(card)}
                     allUsers={allUsers}
                     commentCount={commentCounts[card.id] ?? 0}
+                    userRole={userRole}
                   />
                 ))}
                 {prov.placeholder}
@@ -163,8 +175,10 @@ export default function List({
             )}
           </Droppable>
 
-          {/* Botão de adicionar card */}
-          <ListAddCard accentColor={accent} onAdd={handleAddCard} />
+          {/* Botão de adicionar card - Hidden for Editor and Viewer */}
+          {['owner', 'admin', 'member'].includes(userRole) && (
+            <ListAddCard accentColor={accent} onAdd={handleAddCard} />
+          )}
         </div>
       )}
     </Draggable>

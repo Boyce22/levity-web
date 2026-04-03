@@ -4,7 +4,10 @@ export interface UserRecord {
   password: string;
   display_name?: string | null;
   avatar_url?: string | null;
+  bio?: string | null;
+  email?: string | null;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface IUserRepository {
@@ -19,4 +22,7 @@ export interface IUserRepository {
 
   /** Cria um novo usuário. Retorna o registro criado. */
   create(data: { username: string; password: string }): Promise<UserRecord>;
+
+  /** Atualiza o perfil de um usuário. */
+  updateUserProfile(userId: string, data: { display_name?: string; avatar_url?: string; bio?: string }): Promise<void>;
 }

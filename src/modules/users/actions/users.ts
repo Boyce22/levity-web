@@ -14,7 +14,17 @@ export async function getAllUsersAction(workspaceId?: string) {
 
   const { data, error } = await supabase
     .from('workspace_members')
-    .select('users(id, username, display_name, avatar_url)')
+    .select(`
+      role,
+      created_at,
+      users!member_id (
+        id,
+        username,
+        display_name,
+        avatar_url,
+        email
+      )
+    `)
     .eq('workspace_id', workspaceId);
     
   if (error) {
@@ -22,7 +32,16 @@ export async function getAllUsersAction(workspaceId?: string) {
     return [];
   }
   
-  // Unwrap the joined users payload
-  const users = (data || []).map(m => Array.isArray(m.users) ? m.users[0] : m.users).filter(Boolean) as any[];
-  return users.sort((a: any, b: any) => a.username.localeCompare(b.username));
+  // Unwrap and flatten the joined payload
+  const members = (data || []).map(m => {
+    const user = Array.isArray(m.users) ? m.users[0] : m.users;
+    if (!user) return null;
+    return {
+      ...user,
+      role: m.role,
+      joined_at: m.created_at
+    };
+  }).filter(Boolean) as any[];
+
+  return members.sort((a, b) => (a.display_name || a.username).localeCompare(b.display_name || b.username));
 }

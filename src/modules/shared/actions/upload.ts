@@ -32,8 +32,9 @@ export async function uploadImageAction(formData: FormData, workspaceId?: string
   
   const result = await provider.upload(fileBuffer, {
     filename: file.name,
-    folder: workspaceId,
+    folder: `${workspaceId}/attachments`,
     mimeType: file.type,
+    userId: currentUserId,
   });
 
   return result.url;
@@ -50,7 +51,19 @@ export async function deleteFileAction(url: string) {
     const workspaceId = urlParts[3]; 
 
     if (workspaceId && workspaceId.length > 20) { // basic uuid length check
-      await assertUserOwnsWorkspace(currentUserId, workspaceId);
+      const member = await assertUserOwnsWorkspace(currentUserId, workspaceId);
+      
+      // 🛡️ Security Check: Extract creatorId from filename
+      // Format: .../WORKSPACE_ID/attachments/USERID_UUID.ext
+      const fileName = urlParts[urlParts.length - 1]; // "USERID_UUID.ext"
+      const creatorIdFromUrl = fileName.split('_')[0];
+      
+      const isCreator = currentUserId === creatorIdFromUrl;
+      const isAdminOrOwner = ['owner', 'admin'].includes(member.role);
+
+      if (!isCreator && !isAdminOrOwner) {
+        throw new Error('403 Forbidden: Insufficient permissions to delete this asset. You must be an Admin or the uploader.');
+      }
     }
 
     const provider = new BackblazeProvider();

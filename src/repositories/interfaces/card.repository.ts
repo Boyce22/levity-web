@@ -38,16 +38,16 @@ export interface ICardRepository {
   findById(cardId: string): Promise<CardRecord | null>;
 
   /** Cria um novo card. */
-  createCard(data: { listId: string; content: string; position: number }): Promise<CardRecord>;
+  createCard(data: { listId: string; content: string; position: number; createdBy: string }): Promise<CardRecord>;
 
   /** Deleta um card pelo id. */
   deleteCard(cardId: string): Promise<void>;
 
   /** Atualiza campos de um card (allowlist seguro). */
-  updateCard(cardId: string, payload: CardUpdatePayload): Promise<void>;
+  updateCard(cardId: string, payload: CardUpdatePayload, updatedBy: string): Promise<void>;
 
   /** Atualiza posições de múltiplos cards (list_id + position). */
-  updateCardPositions(updates: { id: string; listId: string; position: number }[]): Promise<void>;
+  updateCardPositions(updates: { id: string; listId: string; position: number }[], updatedBy: string): Promise<void>;
 
   /** Busca o histórico de alterações de um card. */
   getHistory(cardId: string): Promise<CardHistoryRecord[]>;

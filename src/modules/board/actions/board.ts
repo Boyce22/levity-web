@@ -15,6 +15,7 @@ import {
   assertUserOwnsWorkspace,
   assertUserOwnsList,
   assertUserOwnsCard,
+  assertHasRole,
 } from "@/modules/workspace/actions/assertions";
 import { extractStorageUrls } from "@/modules/shared/utils/attachments";
 import { deleteFileAction } from "@/modules/shared/actions/upload";
@@ -60,8 +61,8 @@ async function fetchUserWorkspaces(userId: string) {
 async function ensureDefaultWorkspace(userId: string, workspaces: any[]) {
   if (workspaces.length > 0) return workspaces;
 
-  const cw = await workspaceRepo.create("My Workspace");
-  await workspaceRepo.addMember(cw.id, userId, "owner");
+  const cw = await workspaceRepo.create("My Workspace", userId);
+  await workspaceRepo.addMember(cw.id, userId, "owner", userId);
   return [cw];
 }
 
@@ -82,7 +83,7 @@ export async function getBoardData(workspaceId?: string) {
   if (!currentWsId) throw new Error("Could not determine active workspace ID.");
 
   // 🛡️ Security Boundary: Explicitly verify membership for the active workspace
-  await assertUserOwnsWorkspace(userId, currentWsId);
+  const member = await assertUserOwnsWorkspace(userId, currentWsId);
 
   // Seamlessly migrate legacy lists missing a workspace_id mapping
   await workspaceRepo.migrateListsWithoutWorkspace(currentWsId, userId);
@@ -92,8 +93,14 @@ export async function getBoardData(workspaceId?: string) {
   // 4. Fetch dynamic settings
   const tags = await workspaceRepo.findTagsByWorkspace(currentWsId);
   const priorities = await workspaceRepo.findPrioritiesByWorkspace(currentWsId);
+  
+  // 5. Fetch invites if admin/owner
+  let invites: any[] = [];
+  if (['owner', 'admin'].includes(member.role)) {
+    invites = await workspaceRepo.findInvitesByWorkspace(currentWsId);
+  }
 
-  return { lists, cards, workspaces, tags, priorities };
+  return { lists, cards, workspaces, tags, priorities, userRole: member.role, invites };
 }
 export async function createListAction(
   title: string,
@@ -102,14 +109,14 @@ export async function createListAction(
 ) {
   const currentUserId = await getUserId();
 
-  // 🛡️ Security Boundary: BFLA / IDOR Check
-  await assertUserOwnsWorkspace(currentUserId, workspaceId);
+  // 🛡️ Security Boundary: BFLA / IDOR check with RBAC enforcement
+  await assertHasRole(currentUserId, workspaceId, ['owner', 'admin', 'member']);
 
   const data = await boardRepo.createList({
     createdBy: currentUserId,
     title,
     position,
-    workspaceId,
+    workspace_id: workspaceId,
   });
 
   revalidatePath("/");
@@ -118,15 +125,17 @@ export async function createListAction(
 
 export async function renameListAction(listId: string, title: string) {
   const userId = await getUserId();
-  await assertUserOwnsList(userId, listId);
+  const workspaceId = await assertUserOwnsList(userId, listId);
+  await assertHasRole(userId, workspaceId, ['owner', 'admin', 'member']);
 
-  await boardRepo.renameList(listId, title);
+  await boardRepo.renameList(listId, title, userId);
   revalidatePath("/");
 }
 
 export async function deleteListAction(id: string) {
   const userId = await getUserId();
-  await assertUserOwnsList(userId, id);
+  const workspaceId = await assertUserOwnsList(userId, id);
+  await assertHasRole(userId, workspaceId, ['owner', 'admin', 'member']);
 
   // Async Cleanup: Get all cards in the list to find their attachments
   const { cards } = await boardRepo.findListsWithCards(id); 
@@ -154,9 +163,10 @@ export async function deleteListAction(id: string) {
 
 export async function updateListTypeAction(listId: string, listType: ListType | null) {
   const userId = await getUserId();
-  await assertUserOwnsList(userId, listId);
+  const workspaceId = await assertUserOwnsList(userId, listId);
+  await assertHasRole(userId, workspaceId, ['owner', 'admin', 'member']);
 
-  await boardRepo.updateListType(listId, listType);
+  await boardRepo.updateListType(listId, listType, userId);
   revalidatePath("/");
 }
 
@@ -166,12 +176,14 @@ export async function createCardAction(
   position: number,
 ) {
   const userId = await getUserId();
-  await assertUserOwnsList(userId, listId);
+  const workspaceId = await assertUserOwnsList(userId, listId);
+  await assertHasRole(userId, workspaceId, ['owner', 'admin', 'member']);
 
   const data = await cardRepo.createCard({
     listId,
     content,
     position,
+    createdBy: userId,
   });
 
   revalidatePath("/");
@@ -180,7 +192,16 @@ export async function createCardAction(
 
 export async function deleteCardAction(id: string) {
   const userId = await getUserId();
-  await assertUserOwnsCard(userId, id);
+  const { workspace_id, created_by } = await assertUserOwnsCard(userId, id);
+  
+  // 🛡️ Security Check: Allow if Owner, Admin, OR the creator of the card
+  const member = await workspaceRepo.findMember(workspace_id, userId);
+  const isCreator = created_by === userId;
+  const isAdminOrOwner = member && ['owner', 'admin'].includes(member.role);
+
+  if (!isCreator && !isAdminOrOwner) {
+    throw new Error('403 Forbidden: Insufficient permissions to delete this card. You must be an Admin or the creator.');
+  }
 
   // Async Cleanup: Fetch content to find attachments
   const card = await cardRepo.findById(id);
@@ -235,7 +256,8 @@ export async function updateCardDetailsAction(
   updates: Partial<Card>,
 ) {
   const currentUserId = await getUserId();
-  await assertUserOwnsCard(currentUserId, id);
+  const { workspace_id } = await assertUserOwnsCard(currentUserId, id);
+  await assertHasRole(currentUserId, workspace_id, ['owner', 'admin', 'member', 'editor']);
 
   const oldCard = await cardRepo.findById(id);
 
@@ -256,7 +278,7 @@ export async function updateCardDetailsAction(
     ...(updates.due_date !== undefined && { due_date: updates.due_date || null }),
   };
 
-  await cardRepo.updateCard(id, safePayload);
+  await cardRepo.updateCard(id, safePayload, currentUserId);
 
   const logs = [];
   if (oldCard) {
@@ -318,10 +340,13 @@ export async function updateListPositionsAction(
 
   // 🛡️ Performance Boundary: Concurrency parallelism instead of O(N) sequential awaits
   await Promise.all(
-    updates.map((update) => assertUserOwnsList(userId, update.id))
+    updates.map(async (update) => {
+      const workspaceId = await assertUserOwnsList(userId, update.id);
+      await assertHasRole(userId, workspaceId, ['owner', 'admin', 'member']);
+    })
   );
 
-  await boardRepo.updateListPositions(updates);
+  await boardRepo.updateListPositions(updates, userId);
 }
 
 export async function updateCardPositionsAction(
@@ -338,10 +363,14 @@ export async function updateCardPositionsAction(
   // Execute massive card position changes concurrently
   // Note: We still need to verify ownership of each card before updating
   await Promise.all(
-    updates.map((update) => assertUserOwnsCard(userId, update.id))
+    updates.map(async (update) => {
+      const { workspace_id } = await assertUserOwnsCard(userId, update.id);
+      await assertHasRole(userId, workspace_id, ['owner', 'admin', 'member', 'editor']);
+    })
   );
 
   await cardRepo.updateCardPositions(
-    updates.map((u) => ({ id: u.id, listId: u.list_id, position: u.position }))
+    updates.map((u) => ({ id: u.id, listId: u.list_id, position: u.position })),
+    userId
   );
 }

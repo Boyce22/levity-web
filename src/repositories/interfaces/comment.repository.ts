@@ -2,10 +2,11 @@ export interface CommentRecord {
   id: string;
   card_id: string;
   created_by: string;
+  updated_by?: string | null;
   parent_id?: string | null;
   content: string;
   created_at: string;
-  updated_at?: string | null;
+  updated_at: string;
   users: {
     username: string;
     display_name?: string | null;
@@ -35,7 +36,7 @@ export interface ICommentRepository {
   findById(id: string): Promise<CommentRecord | null>;
 
   /** Atualiza o conteúdo de um comentário. */
-  update(id: string, content: string): Promise<CommentRecord>;
+  update(id: string, content: string, updatedBy: string): Promise<CommentRecord>;
 
   /** Exclui um comentário. */
   delete(id: string): Promise<void>;

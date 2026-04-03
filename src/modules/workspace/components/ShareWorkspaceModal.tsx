@@ -11,6 +11,7 @@ import {
   Loader2,
   Users,
   Clock,
+  Shield,
 } from "lucide-react";
 import { generateInviteAction } from "@/modules/workspace/actions/members";
 
@@ -34,6 +35,7 @@ export default function ShareWorkspaceModal({
   
   const [maxUses, setMaxUses] = useState(10);
   const [duration, setDuration] = useState(168); // 7 days in hours
+  const [role, setRole] = useState("member");
 
   if (!isOpen) return null;
 
@@ -41,7 +43,7 @@ export default function ShareWorkspaceModal({
     setLoading(true);
     setError("");
     try {
-      const token = await generateInviteAction(workspaceId, maxUses, duration);
+      const token = await generateInviteAction(workspaceId, maxUses, duration, role);
       const url = `${window.location.origin}/invite/${token}`;
       setInviteUrl(url);
     } catch (err: any) {
@@ -91,16 +93,16 @@ export default function ShareWorkspaceModal({
           )}
 
           {!inviteUrl ? (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
                     <Users className="w-3 h-3" /> Max Uses
                   </label>
                   <select
                     value={maxUses}
                     onChange={(e) => setMaxUses(Number(e.target.value))}
-                    className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-2 text-sm text-(--app-text) focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
+                    className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-1.5 text-[13px] text-(--app-text) focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
                   >
                     <option value={1}>1 person</option>
                     <option value={5}>5 people</option>
@@ -110,14 +112,14 @@ export default function ShareWorkspaceModal({
                   </select>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
                     <Clock className="w-3 h-3" /> Expiration
                   </label>
                   <select
                     value={duration}
                     onChange={(e) => setDuration(Number(e.target.value))}
-                    className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-2 text-sm text-(--app-text) focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
+                    className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-1.5 text-[13px] text-(--app-text) focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
                   >
                     <option value={1}>1 hour</option>
                     <option value={24}>1 day</option>
@@ -128,10 +130,32 @@ export default function ShareWorkspaceModal({
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
+                  <Shield className="w-3 h-3" /> Assign Role
+                </label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-2 text-[13px] text-(--app-text) font-medium focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
+                >
+                  <option value="member">Member (Full editing)</option>
+                  <option value="editor">Editor (Card updates only)</option>
+                  <option value="viewer">Viewer (Read-only)</option>
+                  <option value="admin">Admin (Workspace management)</option>
+                </select>
+                <p className="text-[10px] text-(--app-text-muted) italic px-0.5">
+                  {role === 'member' && "Ideal for regular team members."}
+                  {role === 'editor' && "Can edit details but cannot delete lists or cards."}
+                  {role === 'viewer' && "No editing permissions. Perfect for stakeholders."}
+                  {role === 'admin' && "Can manage members and workspace settings."}
+                </p>
+              </div>
+
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="flex items-center justify-center gap-2 w-full px-6 py-3 shadow-lg shadow-indigo-950/20 focus:ring-4 focus:ring-indigo-500/20 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13.5px] font-bold rounded-sm transition-all"
+                className="flex items-center justify-center gap-2 w-full mt-2 px-6 py-3 shadow-lg shadow-indigo-950/20 focus:ring-4 focus:ring-indigo-500/20 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[13.5px] font-bold rounded-sm transition-all"
                 style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)' }}
               >
                 {loading ? (

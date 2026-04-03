@@ -2,12 +2,15 @@ export type ListType = 'todo' | 'in_progress' | 'review' | 'done';
 
 export interface ListRecord {
   id: string;
-  created_by: string;
   title: string;
   position: number;
   wip_limit?: number | null;
   workspace_id: string;
   list_type?: ListType | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by?: string | null;
 }
 
 export interface CardRecord {
@@ -22,6 +25,10 @@ export interface CardRecord {
   label?: string | null;
   progress?: number | null;
   due_date?: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by?: string | null;
 }
 
 export interface IBoardRepository {
@@ -29,17 +36,23 @@ export interface IBoardRepository {
   findListsWithCards(workspaceId: string): Promise<{ lists: ListRecord[]; cards: CardRecord[] }>;
 
   /** Cria uma nova lista. */
-  createList(data: { createdBy: string; title: string; position: number; workspaceId: string }): Promise<ListRecord>;
+  createList(data: { createdBy: string; title: string; position: number; workspace_id: string }): Promise<ListRecord>;
+
+  /** Cria um novo card. */
+  createCard(data: { listId: string; content: string; position: number; createdBy: string }): Promise<CardRecord>;
 
   /** Renomeia uma lista. */
-  renameList(listId: string, title: string): Promise<void>;
+  renameList(listId: string, title: string, updatedBy: string): Promise<void>;
 
   /** Deleta uma lista (e suas cards, via cascade no banco). */
   deleteList(listId: string): Promise<void>;
 
   /** Atualiza o tipo de uma lista. */
-  updateListType(listId: string, listType: ListType | null): Promise<void>;
+  updateListType(listId: string, listType: ListType | null, updatedBy: string): Promise<void>;
 
   /** Atualiza a posição de múltiplas listas. */
-  updateListPositions(updates: { id: string; position: number }[]): Promise<void>;
+  updateListPositions(updates: { id: string; position: number }[], updatedBy: string): Promise<void>;
+
+  /** Busca um card pelo ID. */
+  findById(id: string): Promise<CardRecord | null>;
 }

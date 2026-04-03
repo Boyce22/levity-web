@@ -58,7 +58,7 @@ export function useBoardData({
         id: tempId,
         title,
         position,
-        user_id: userProfile?.id || "temp",
+        created_by: userProfile?.id || "temp",
         workspace_id: currentWorkspaceId,
       };
       setLists((prev) => [...prev, newList]);
