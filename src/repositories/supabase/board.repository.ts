@@ -113,6 +113,15 @@ export class SupabaseBoardRepository implements IBoardRepository {
     );
   }
 
+  async updateListWipLimit(listId: string, wipLimit: number | null, updatedBy: string): Promise<void> {
+    const { error } = await supabase
+      .from('lists')
+      .update({ wip_limit: wipLimit, updated_by: updatedBy })
+      .eq('id', listId);
+
+    if (error) throw new Error(error.message);
+  }
+
   async findById(cardId: string): Promise<CardRecord | null> {
     const { data, error } = await supabase
       .from('cards')

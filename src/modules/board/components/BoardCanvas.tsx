@@ -18,6 +18,7 @@ interface BoardCanvasProps {
   commentCounts: Record<string, number>;
   userAvatarUrl: string;
   onListTypeChange?: (listId: string, type: LType) => void;
+  onWipLimitChange?: (listId: string, wipLimit: number | null) => void;
   userRole: string;
 }
 
@@ -35,6 +36,7 @@ export function BoardCanvas({
   commentCounts,
   userAvatarUrl,
   onListTypeChange,
+  onWipLimitChange,
   userRole,
 }: BoardCanvasProps) {
   const [isAddingList, setIsAddingList] = useState(false);
@@ -83,8 +85,9 @@ export function BoardCanvas({
                   avatarUrl={userAvatarUrl}
                   allUsers={allUsers}
                   commentCounts={commentCounts}
-                  wipLimit={list.wip_limit ?? DEFAULT_WIP_LIMIT}
+                  wipLimit={list.wip_limit}
                   onListTypeChange={onListTypeChange}
+                  onWipLimitChange={onWipLimitChange}
                   userRole={userRole}
                 />
               );

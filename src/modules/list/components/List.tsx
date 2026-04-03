@@ -21,8 +21,9 @@ interface ListProps {
   avatarUrl: string;
   allUsers: any[];
   commentCounts?: Record<string, number>;
-  wipLimit?: number;
+  wipLimit?: number | null;
   onListTypeChange?: (listId: string, type: LType) => void;
+  onWipLimitChange?: (listId: string, wipLimit: number | null) => void;
   userRole: string;
 }
 
@@ -43,6 +44,7 @@ export default function List({
   commentCounts = {},
   wipLimit,
   onListTypeChange,
+  onWipLimitChange,
   userRole,
 }: ListProps) {
   const listType = getListType(list, index, totalLists);
@@ -78,7 +80,7 @@ export default function List({
               : snapshot.isDragging
                 ? `1px solid ${accent}60`
                 : "1px solid var(--app-border-faint)",
-            borderRadius: "0 0 18px 18px",
+            borderRadius: "0 0 12px 12px",
             boxShadow: snapshot.isDragging
               ? `0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px ${accent}40`
               : "0 2px 8px rgba(0,0,0,0.15)",
@@ -112,6 +114,7 @@ export default function List({
             onRename={handleRename}
             onDelete={onDeleteList}
             onTypeChange={(type) => onListTypeChange?.(list.id, type)}
+            onWipLimitChange={(val) => onWipLimitChange?.(list.id, val)}
             userRole={userRole}
           />
 

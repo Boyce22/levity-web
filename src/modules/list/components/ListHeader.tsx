@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Trash2, AlertTriangle, ChevronDown } from "lucide-react";
+import { Trash2, AlertTriangle, ChevronDown, Check, X, Infinity, LucideInfinity } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DeleteListModal from "./DeleteListModal";
-import { ListType, updateListTypeAction } from "@/modules/board/actions/board";
+import { ListType, updateListTypeAction, updateListWipLimitAction } from "@/modules/board/actions/board";
 import { LIST_TYPE_COLOR, LIST_TYPE_LABEL } from "@/modules/list/utils/listType";
 
 interface ListHeaderProps {
@@ -10,12 +10,13 @@ interface ListHeaderProps {
   listId: string;
   title: string;
   cardCount: number;
-  wipLimit?: number;
+  wipLimit?: number | null;
   accentColor: string;
   listType: ListType;
   onRename: (newTitle: string) => void;
   onDelete: () => void;
   onTypeChange?: (type: ListType) => void;
+  onWipLimitChange?: (val: number | null) => void;
   userRole: string;
 }
 
@@ -30,6 +31,7 @@ export function ListHeader({
   onRename,
   onDelete,
   onTypeChange,
+  onWipLimitChange,
   userRole,
 }: ListHeaderProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -37,6 +39,8 @@ export function ListHeader({
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isTypeOpen, setIsTypeOpen] = useState(false);
+  const [isEditingWip, setIsEditingWip] = useState(false);
+  const [newWip, setNewWip] = useState(wipLimit?.toString() || "");
 
   const LIST_TYPES: ListType[] = ['todo', 'in_progress', 'review', 'done'];
 
@@ -60,6 +64,18 @@ export function ListHeader({
   const handleCancel = () => {
     setTitle(initialTitle);
     setIsEditing(false);
+  };
+
+  const handleWipSubmit = async () => {
+    setIsEditingWip(false);
+    const val = newWip.trim() === "" ? null : parseInt(newWip, 10);
+    if (val === null || !isNaN(val)) {
+      // 🚀 Optimistic Update
+      onWipLimitChange?.(val);
+      await updateListWipLimitAction(listId, val);
+    } else {
+      setNewWip(wipLimit?.toString() || "");
+    }
   };
 
   return (
@@ -95,9 +111,8 @@ export function ListHeader({
                   setIsEditing(true);
                 }
               }}
-              className={`font-semibold text-[14px] truncate transition-colors ${
-                ['owner', 'admin', 'member'].includes(userRole) ? "cursor-text" : "cursor-default"
-              }`}
+              className={`font-semibold text-[14px] truncate transition-colors ${['owner', 'admin', 'member'].includes(userRole) ? "cursor-text" : "cursor-default"
+                }`}
               style={{ color: "var(--app-text)" }}
             >
               {title}
@@ -114,9 +129,8 @@ export function ListHeader({
                   setIsTypeOpen(!isTypeOpen);
                 }
               }}
-              className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${
-                ['owner', 'admin', 'member'].includes(userRole) ? "hover:brightness-110" : "cursor-default"
-              }`}
+              className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${['owner', 'admin', 'member'].includes(userRole) ? "hover:brightness-110" : "cursor-default"
+                }`}
               style={{
                 background: `${LIST_TYPE_COLOR[listType]}20`,
                 color: LIST_TYPE_COLOR[listType],
@@ -160,20 +174,72 @@ export function ListHeader({
             </AnimatePresence>
           </div>
 
-          <div
-            className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
-            style={{
-              background: isWipExceeded ? "rgba(248,113,113,0.15)" : "var(--app-hover)",
-              color: isWipExceeded ? "#f87171" : "var(--app-text-muted)",
-              border: isWipExceeded ? "1px solid rgba(248,113,113,0.3)" : "1px solid transparent",
-            }}
-          >
-            {isWipExceeded && <AlertTriangle className="w-3 h-3" />}
-            {cardCount}
-            {wipLimit != null && `/${wipLimit}`}
+          <div className="relative">
+            <div
+              className={`flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg transition-all ${['owner', 'admin', 'member'].includes(userRole) ? "cursor-pointer hover:bg-[var(--app-hover)]" : ""
+                }`}
+              style={{
+                background: isWipExceeded ? "rgba(248,113,113,0.15)" : "var(--app-hover)",
+                color: isWipExceeded ? "#f87171" : "var(--app-text-muted)",
+                border: isWipExceeded ? "1px solid rgba(248,113,113,0.3)" : "1px solid var(--app-border)",
+              }}
+              onClick={() => {
+                if (['owner', 'admin', 'member'].includes(userRole)) {
+                  setIsEditingWip(!isEditingWip);
+                }
+              }}
+            >
+              {isWipExceeded && <AlertTriangle className="w-3 h-3" />}
+              <span>{cardCount}</span>
+              <div className="flex items-center opacity-50 text-[11px]">
+                <span>/</span>
+                {wipLimit != null ? (
+                  <span>{wipLimit}</span>
+                ) : (
+                  <LucideInfinity className="!w-3.5 !h-3.5" />
+                )}
+              </div>
+            </div>
+
+            <AnimatePresence>
+              {isEditingWip && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  className="absolute top-full right-0 mt-2 w-max max-w-[240px] p-3 z-50 rounded-xl"
+                  style={{
+                    background: "var(--app-elevated)",
+                    border: "1px solid var(--app-border)",
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-[var(--app-text-muted)] mb-2">
+                    Set List Limit (WIP)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newWip}
+                      onChange={(e) => setNewWip(e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleWipSubmit();
+                        if (e.key === "Escape") setIsEditingWip(false);
+                      }}
+                      className="flex-1 bg-[var(--app-panel)] text-[12px] rounded-lg px-2 py-1.5 focus:outline-none border border-[var(--app-border)] focus:border-[var(--app-primary)] transition-all"
+                      placeholder="No limit"
+                    />
+                  </div>
+                  <p className="text-[9px] text-[var(--app-text-muted)] mt-2 italic">
+                    Leave empty to remove limit.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-           {['owner', 'admin', 'member'].includes(userRole) && (
+          {['owner', 'admin', 'member'].includes(userRole) && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

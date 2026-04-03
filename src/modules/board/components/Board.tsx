@@ -111,6 +111,7 @@ export default function Board({
     deleteCard,
     updateCard,
     updateListType,
+    updateListWipLimit,
   } = boardData;
 
   // Filters & search
@@ -251,6 +252,7 @@ export default function Board({
                     `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserProfile?.username}`
                   }
                   onListTypeChange={updateListType}
+                  onWipLimitChange={updateListWipLimit}
                   userRole={userRole}
                 />
               </DragDropContext>

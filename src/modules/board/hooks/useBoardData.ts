@@ -8,6 +8,7 @@ import {
   createCardAction,
   deleteListAction,
   deleteCardAction,
+  updateListWipLimitAction,
 } from "@/modules/board/actions/board";
 import { getCommentsAction } from "@/modules/board/actions/comments";
 
@@ -120,6 +121,14 @@ export function useBoardData({
     );
   }, []);
 
+  const updateListWipLimit = useCallback(async (listId: string, wipLimit: number | null) => {
+    // 🚀 Optimistic Update
+    setLists((prev) =>
+      prev.map((l) => (l.id === listId ? { ...l, wip_limit: wipLimit } : l)),
+    );
+    await updateListWipLimitAction(listId, wipLimit);
+  }, []);
+
   return {
     lists,
     setLists,
@@ -134,5 +143,6 @@ export function useBoardData({
     deleteCard,
     updateCard,
     updateListType,
+    updateListWipLimit,
   };
 }

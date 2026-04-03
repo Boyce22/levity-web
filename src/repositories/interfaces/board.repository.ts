@@ -53,6 +53,9 @@ export interface IBoardRepository {
   /** Atualiza a posição de múltiplas listas. */
   updateListPositions(updates: { id: string; position: number }[], updatedBy: string): Promise<void>;
 
+  /** Atualiza o limite WIP de uma lista. */
+  updateListWipLimit(listId: string, wipLimit: number | null, updatedBy: string): Promise<void>;
+
   /** Busca um card pelo ID. */
   findById(id: string): Promise<CardRecord | null>;
 }

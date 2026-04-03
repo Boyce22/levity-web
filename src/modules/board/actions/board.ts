@@ -170,6 +170,15 @@ export async function updateListTypeAction(listId: string, listType: ListType | 
   revalidatePath("/");
 }
 
+export async function updateListWipLimitAction(listId: string, wipLimit: number | null) {
+  const userId = await getUserId();
+  const workspaceId = await assertUserOwnsList(userId, listId);
+  await assertHasRole(userId, workspaceId, ['owner', 'admin', 'member']);
+
+  await boardRepo.updateListWipLimit(listId, wipLimit, userId);
+  revalidatePath("/");
+}
+
 export async function createCardAction(
   listId: string,
   content: string,
