@@ -1,55 +1,32 @@
-// modules/board/components/BoardHeader.tsx
 "use client";
 
-import { useState } from "react";
-import { Layout, ChevronDown, Settings, Share2, LogOut } from "lucide-react";
+import { Share2, ChevronRight, Layout } from "lucide-react";
 import NotificationBell from "@/modules/users/components/NotificationBell";
-import { logoutAction } from "@/modules/users/actions/users";
 import { Card as CardType, List as ListType } from "@/modules/board/actions/board";
 import { getListType, getCardEffectiveProgress } from "@/modules/list/utils/listType";
 
-import { LevityLogo } from "@/modules/shared/components/LevityLogo";
-
 interface BoardHeaderProps {
-  workspaces: any[];
-  currentWorkspaceId: string;
   currentWorkspaceName?: string;
-  userProfile: any;
-  allUsers: any[];
   lists: ListType[];
   cards: CardType[];
-  onOpenSettings: () => void;
   onOpenShare: () => void;
-  onOpenProfile: () => void;
   onNotificationClick?: (cardId: string) => void;
-  isCreatingWorkspace: boolean;
-  setIsCreatingWorkspace: (creating: boolean) => void;
+  activeView: string;
 }
 
 export function BoardHeader({
-  workspaces,
-  currentWorkspaceId,
   currentWorkspaceName,
-  userProfile,
-  allUsers,
   lists,
   cards,
-  onOpenSettings,
   onOpenShare,
-  onOpenProfile,
   onNotificationClick,
-  isCreatingWorkspace,
-  setIsCreatingWorkspace,
+  activeView,
 }: BoardHeaderProps) {
-  const displayAvatar =
-    userProfile?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.username}`;
-
-  // Workspace progress — média do progresso efetivo de todos os cards
-  // Combina card.progress (checklist) com tipo inferido da lista como fallback
+  // Workspace progress calculation
   const totalCards = cards.length;
   const sortedLists = [...lists].sort((a, b) => a.position - b.position);
   const listTypeMap = new Map<string, ReturnType<typeof getListType>>();
+  
   sortedLists.forEach((list, idx) => {
     listTypeMap.set(list.id, getListType(list, idx, sortedLists.length));
   });
@@ -64,216 +41,62 @@ export function BoardHeader({
         )
       : 0;
 
+  const viewLabels: Record<string, string> = {
+    board: "Project Board",
+    members: "Workspace Members",
+    invites: "Active Invites",
+    dashboard: "Analytics Dashboard",
+  };
+
   return (
     <header
-      className="px-5 py-3 flex flex-wrap gap-3 items-center justify-between shrink-0 z-60 sticky top-0"
-      style={{
-        background: "var(--app-header)",
-        borderBottom: "1px solid var(--app-border-faint)",
-      }}
+      className="h-16 px-6 flex items-center justify-between shrink-0 z-50 bg-(--app-header) border-b border-(--app-border-faint) sticky top-0"
     >
-      <div className="flex items-center gap-3">
-        {/* Logo */}
-        <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
-          style={{
-            background: "var(--app-primary-muted)",
-            border: "1px solid var(--app-border)",
-          }}
-        >
-          <LevityLogo size={24} />
+      <div className="flex items-center gap-2 overflow-hidden">
+        <span className="text-sm font-medium text-(--app-text-muted) truncate max-w-[150px]">
+          {currentWorkspaceName || "Workspace"}
+        </span>
+        <ChevronRight className="w-3.5 h-3.5 text-(--app-text-muted) opacity-40 shrink-0" />
+        <div className="flex items-center gap-2 px-2 py-1 rounded-sm bg-(--app-primary-muted)/30 border border-(--app-border-faint)">
+          <Layout className="w-3.5 h-3.5 text-(--app-primary)" />
+          <span className="text-sm font-bold text-(--app-text) whitespace-nowrap">
+            {viewLabels[activeView] || "Project Board"}
+          </span>
         </div>
+      </div>
 
-        {/* Workspace switcher */}
-        <div className="relative group/ws z-100 flex items-center gap-1.5">
-          <h1
-            className="text-[15px] font-bold tracking-tight flex items-center gap-1.5 cursor-pointer transition-colors"
-            style={{ color: "var(--app-text)" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = "var(--app-primary)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "var(--app-text)")
-            }
-          >
-            {currentWorkspaceName || "Workspace"}
-            <ChevronDown
-              className="w-3.5 h-3.5"
-              style={{ color: "var(--app-text-muted)" }}
-            />
-          </h1>
-          <button
-            onClick={onOpenSettings}
-            className="p-1 rounded-lg opacity-0 group-hover/ws:opacity-100 transition-all"
-            style={{ color: "var(--app-text-muted)" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = "var(--app-primary)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "var(--app-text-muted)")
-            }
-          >
-            <Settings className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Dropdown */}
+      <div className="flex items-center gap-4">
+        {/* Sprint progress pill - only show in board view */}
+        {activeView === "board" && totalCards > 0 && (
           <div
-            className="absolute top-full left-0 mt-2 w-52 p-1.5 opacity-0 invisible group-hover/ws:opacity-100 group-hover/ws:visible transition-all"
-            style={{
-              borderRadius: "14px",
-              background: "var(--app-elevated)",
-              border: "1px solid var(--app-border)",
-              boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
-            }}
+            className="hidden md:flex items-center gap-2.5 px-3 py-1.5 rounded-sm text-[11px] font-bold transition-all bg-(--app-hover) border border-(--app-border)"
           >
-            {workspaces.map((w) => (
-              <a
-                key={w.id}
-                href={`/?workspace=${w.id}`}
-                className="block px-3 py-2 rounded-lg text-sm transition-colors"
-                style={{
-                  color:
-                    w.id === currentWorkspaceId
-                      ? "var(--app-primary)"
-                      : "var(--app-text-muted)",
-                  background:
-                    w.id === currentWorkspaceId
-                      ? "var(--app-primary-muted)"
-                      : "transparent",
-                }}
-                onMouseEnter={(e) =>
-                  w.id !== currentWorkspaceId &&
-                  (e.currentTarget.style.background = "var(--app-hover)")
-                }
-                onMouseLeave={(e) =>
-                  w.id !== currentWorkspaceId &&
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                {w.name}
-              </a>
-            ))}
-            <div
-              style={{
-                height: "1px",
-                background: "var(--app-border-faint)",
-                margin: "4px 0",
-              }}
-            />
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsCreatingWorkspace(true);
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-              style={{ color: "var(--app-primary)" }}
-              onMouseEnter={(e) =>
-              (e.currentTarget.style.background =
-                "var(--app-primary-muted)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
-            >
-              + Criar workspace
-            </button>
-          </div>
-        </div>
-
-        {/* Sprint progress pill */}
-        {totalCards > 0 && (
-          <div
-            className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all"
-            style={{
-              background: "var(--app-hover)",
-              border: "1px solid var(--app-border)",
-            }}
-          >
-            <div
-              className="w-24 h-2 rounded-full overflow-hidden shadow-inner"
-              style={{ background: "var(--app-border-faint)" }}
-            >
+            <div className="w-20 h-1.5 rounded-full overflow-hidden bg-(--app-border-faint)">
               <div
-                className="h-full rounded-full transition-all duration-700 ease-out"
+                className="h-full transition-all duration-700 ease-out"
                 style={{
                   width: `${progressPct}%`,
-                  background:
-                    progressPct === 100
-                      ? "#10b981"
-                      : "linear-gradient(90deg, var(--app-primary) 0%, #a78bfa 100%)",
-                  boxShadow: "0 0 10px rgba(129, 140, 248, 0.3)",
+                  background: progressPct === 100 ? "#10b981" : "var(--app-primary)",
                 }}
               />
             </div>
-            <span style={{ color: "var(--app-text)", opacity: 0.9 }}>
-              {progressPct}%
-            </span>
+            <span className="text-(--app-text) opacity-90">{progressPct}%</span>
           </div>
         )}
-      </div>
 
-      {/* Right side */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <NotificationBell
-          onNotificationClick={(cardId) => onNotificationClick?.(cardId)}
-        />
-        <div
-          style={{
-            width: "1px",
-            height: "20px",
-            background: "var(--app-border)",
-          }}
-        />
-        <button
-          onClick={onOpenShare}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all"
-          style={{
-            background: "var(--app-primary-muted)",
-            border: "1px solid var(--app-primary)",
-            color: "var(--app-primary)",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background =
-              "var(--app-primary)";
-            (e.currentTarget as HTMLButtonElement).style.color = "#fff";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background =
-              "var(--app-primary-muted)";
-            (e.currentTarget as HTMLButtonElement).style.color =
-              "var(--app-primary)";
-          }}
-        >
-          <Share2 className="w-4 h-4" /> Share
-        </button>
-
-        <button
-          onClick={onOpenProfile}
-          className="flex items-center transition-transform hover:scale-105"
-        >
-          <img
-            src={displayAvatar}
-            alt="Perfil"
-            className="w-8 h-8 rounded-full object-cover"
-            style={{ border: "2px solid var(--app-border)" }}
+        <div className="flex items-center gap-2">
+          <NotificationBell
+            onNotificationClick={(cardId) => onNotificationClick?.(cardId)}
           />
-        </button>
-
-        <form action={logoutAction}>
+          <div className="w-[1px] h-4 bg-(--app-border-faint) mx-1" />
           <button
-            type="submit"
-            title="Sair"
-            className="flex items-center justify-center w-8 h-8 rounded-full transition-all"
-            style={{ color: "var(--app-text-muted)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "var(--app-text-muted)")
-            }
+            onClick={onOpenShare}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-bold transition-all bg-(--app-primary) text-white hover:brightness-110 shadow-sm"
           >
-            <LogOut className="w-4 h-4" />
+            <Share2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Share</span>
           </button>
-        </form>
+        </div>
       </div>
     </header>
   );

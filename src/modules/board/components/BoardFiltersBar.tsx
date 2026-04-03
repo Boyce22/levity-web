@@ -40,12 +40,7 @@ export function BoardFiltersBar({
 
   return (
     <div
-      className="px-6 shrink-0 sticky z-40 flex no-scrollbar"
-      style={{
-        top: "57px",
-        background: "var(--app-header)",
-        borderBottom: "1px solid var(--app-border-faint)",
-      }}
+      className="px-6 shrink-0 flex no-scrollbar bg-(--app-bg) border-b border-(--app-border-faint)"
     >
       <div className="flex items-center gap-6 text-[13px] font-medium w-full py-2">
         {/* Search input */}
