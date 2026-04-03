@@ -13,6 +13,7 @@ interface CommentsTabProps {
   onPostComment: (text: string, parentId?: string | null) => void;
   currentUserAvatar: string;
   allUsers: any[];
+  workspaceId: string;
 }
 
 export function CommentsTab({
@@ -24,6 +25,7 @@ export function CommentsTab({
   onPostComment,
   currentUserAvatar,
   allUsers,
+  workspaceId,
 }: CommentsTabProps) {
   const [replyingTo, setReplyingTo] = useState<any | null>(null);
 
@@ -51,6 +53,7 @@ export function CommentsTab({
         replyingTo={replyingTo}
         onCancelReply={handleCancelReply}
         allUsers={allUsers}
+        workspaceId={workspaceId}
       />
 
       {/* Lista de comentários */}

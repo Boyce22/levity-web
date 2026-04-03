@@ -6,6 +6,7 @@ export interface UploadOptions {
   quality?: number;
   thumbnailWidth?: number;
   thumbnailHeight?: number;
+  mimeType?: string;
 }
 
 export interface UploadResult {

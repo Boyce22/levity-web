@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -9,7 +9,8 @@ import { Markdown } from 'tiptap-markdown';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { uploadImageAction } from '@/modules/shared/actions/upload';
-import { ListTodo } from 'lucide-react';
+import { ListTodo, Paperclip, Loader2 } from 'lucide-react';
+import { extractStorageUrls, isImageUrl } from '@/modules/shared/utils/attachments';
 
 interface RichTextEditorProps {
   initialValue: string;
@@ -19,25 +20,49 @@ interface RichTextEditorProps {
 
 export default function RichTextEditor({ initialValue, onChange, onKeyDown }: RichTextEditorProps) {
   const isUpdatingRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDrop = (view: any, event: any, slice: any, moved: boolean) => {
     if (!moved && event.dataTransfer?.files?.[0]) {
       const file = event.dataTransfer.files[0];
-      if (file.type.startsWith('image/')) {
-        event.preventDefault();
-        const { schema } = view.state;
-        const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
-        
-        const fd = new FormData();
-        fd.append('file', file);
-        uploadImageAction(fd).then(url => {
-          const node = schema.nodes.image.create({ src: url, alt: file.name });
-          const transaction = view.state.tr.insert(coordinates ? coordinates.pos : view.state.selection.from, node);
-          view.dispatch(transaction);
-        }).catch((e: any) => alert('Upload failed: ' + e.message));
-        
+      event.preventDefault();
+      
+      const isImage = file.type.startsWith('image/');
+      const maxSize = isImage ? 3 * 1024 * 1024 : 10 * 1024 * 1024;
+
+      if (file.size > maxSize) {
+        alert(`Arquivo muito grande. Limite: ${isImage ? "3MB" : "10MB"}.`);
         return true;
       }
+
+      const { schema } = view.state;
+      const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+      const pos = coordinates ? coordinates.pos : view.state.selection.from;
+      
+      const fd = new FormData();
+      fd.append('file', file);
+      
+      setIsUploading(true);
+      uploadImageAction(fd).then(url => {
+        let node;
+        if (isImage) {
+          node = schema.nodes.image.create({ src: url, alt: file.name });
+        } else {
+          // Insere como link markdown se não for imagem
+          const linkText = `[Arquivo: ${file.name}](${url})`;
+          const textNode = schema.text(linkText);
+          const transaction = view.state.tr.insert(pos, textNode);
+          view.dispatch(transaction);
+          return;
+        }
+        const transaction = view.state.tr.insert(pos, node);
+        view.dispatch(transaction);
+      }).catch((e: any) => alert('Upload failed: ' + e.message))
+        .finally(() => setIsUploading(false));
+      
+      return true;
     }
     return false;
   };
@@ -46,18 +71,38 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
     const items = event.clipboardData?.items;
     if (!items) return false;
     for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
+        if (items[i].kind === 'file') {
             const file = items[i].getAsFile();
             if (file) {
                 event.preventDefault();
+                const isImage = file.type.startsWith('image/');
+                const maxSize = isImage ? 3 * 1024 * 1024 : 10 * 1024 * 1024;
+
+                if (file.size > maxSize) {
+                  alert(`Arquivo muito grande. Limite: ${isImage ? "3MB" : "10MB"}.`);
+                  return true;
+                }
+
                 const { schema } = view.state;
                 const fd = new FormData();
                 fd.append('file', file);
+                
+                setIsUploading(true);
                 uploadImageAction(fd).then(url => {
-                   const node = schema.nodes.image.create({ src: url, alt: file.name });
+                   let node;
+                   if (isImage) {
+                     node = schema.nodes.image.create({ src: url, alt: file.name });
+                   } else {
+                     const linkText = `[Arquivo: ${file.name}](${url})`;
+                     const textNode = schema.text(linkText);
+                     const transaction = view.state.tr.replaceSelectionWith(textNode);
+                     view.dispatch(transaction);
+                     return;
+                   }
                    const transaction = view.state.tr.replaceSelectionWith(node);
                    view.dispatch(transaction);
-                }).catch((e: any) => alert('Paste image failed: ' + e.message));
+                }).catch((e: any) => alert('Paste failed: ' + e.message))
+                  .finally(() => setIsUploading(false));
                 return true;
             }
         }
@@ -100,6 +145,39 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
     },
   });
 
+  const handleFileClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editor) return;
+
+    const isImage = file.type.startsWith('image/');
+    const maxSize = isImage ? 3 * 1024 * 1024 : 10 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      alert(`Arquivo muito grande. Limite: ${isImage ? "3MB" : "10MB"}.`);
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const url = await uploadImageAction(fd);
+
+      if (isImage) {
+        editor.chain().focus().setImage({ src: url, alt: file.name }).run();
+      } else {
+        editor.chain().focus().insertContent(`[Arquivo: ${file.name}](${url})`).run();
+      }
+    } catch (err: any) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div
       className="w-full rounded-xl transition-all relative group"
@@ -124,6 +202,29 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
           <ListTodo className="w-3.5 h-3.5" />
           Checklist
         </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        <button
+          type="button"
+          onClick={handleFileClick}
+          disabled={isUploading}
+          className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[12px] font-medium transition-all hover:bg-[var(--app-hover)] text-[var(--app-text-muted)] hover:text-[var(--app-text)] disabled:opacity-40"
+          title="Anexar arquivo"
+        >
+          {isUploading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Paperclip className="w-3.5 h-3.5" />
+          )}
+          Anexo
+        </button>
+
         <div
           style={{ width: '1px', height: '16px', background: 'var(--app-border-faint)', margin: '0 4px' }}
         />

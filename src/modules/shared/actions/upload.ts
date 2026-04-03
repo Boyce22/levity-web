@@ -15,7 +15,7 @@ async function checkAuth() {
   return payload.id as string;
 }
 
-export async function uploadImageAction(formData: FormData) {
+export async function uploadImageAction(formData: FormData, workspaceId?: string) {
   await checkAuth();
 
   const file = formData.get('file') as File;
@@ -24,10 +24,24 @@ export async function uploadImageAction(formData: FormData) {
   const fileBuffer = Buffer.from(await file.arrayBuffer());
   
   const provider = new BackblazeProvider();
+  if (!workspaceId) throw new Error('Workspace context is required for secure file storage');
+  const folder = workspaceId;
+  
   const result = await provider.upload(fileBuffer, {
     filename: file.name,
-    folder: 'levity'
+    folder,
+    mimeType: file.type,
   });
 
   return result.url;
+}
+
+export async function deleteFileAction(url: string) {
+  try {
+    await checkAuth();
+    const provider = new BackblazeProvider();
+    await provider.deleteByUrl(url);
+  } catch (error) {
+    console.error("Failed to delete file from storage:", url, error);
+  }
 }

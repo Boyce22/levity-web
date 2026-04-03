@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { Send, Paperclip, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMentions } from "@/modules/card/hooks/useMentions";
+import { uploadImageAction } from "@/modules/shared/actions/upload";
+import { AttachmentCard } from "../AttachmentCard";
 
 interface CommentInputProps {
   avatarUrl: string;
@@ -10,21 +12,25 @@ interface CommentInputProps {
   replyingTo: any | null;
   onCancelReply: () => void;
   allUsers: any[];
+  workspaceId: string;
 }
 
-// Serializa o conteúdo do contenteditable para texto plano,
-// preservando quebras de linha e lendo o data-value dos spans de menção.
+interface StagedFile {
+  name: string;
+  url: string;
+}
+
 function serializeContent(el: HTMLElement): string {
   let result = "";
   for (const node of Array.from(el.childNodes)) {
     if (node.nodeType === Node.TEXT_NODE) {
-      result += node.textContent ?? "";
+      const txt = node.textContent ?? "";
+      result += txt === "\u200B" ? "" : txt;
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const element = node as HTMLElement;
       if (element.tagName === "BR") {
         result += "\n";
       } else if (element.dataset.mention) {
-        // Span de menção — usa o valor canônico salvo no data-value
         result += element.dataset.value ?? element.textContent ?? "";
       } else if (element.tagName === "DIV" || element.tagName === "P") {
         result += "\n" + serializeContent(element);
@@ -36,23 +42,18 @@ function serializeContent(el: HTMLElement): string {
   return result;
 }
 
-// Renderiza texto plano de volta para nós do DOM dentro do contenteditable,
-// transformando tokens @menção em spans estilizados.
 function renderTokens(text: string, container: HTMLElement) {
-  // Salva o caret antes de apagar o conteúdo
   const sel = window.getSelection();
   let caretOffset = 0;
 
-  // Calcula o offset do caret no texto serializado atual
   if (sel && sel.rangeCount > 0) {
     const range = sel.getRangeAt(0);
     const preRange = document.createRange();
     preRange.selectNodeContents(container);
     preRange.setEnd(range.endContainer, range.endOffset);
-    caretOffset = preRange.toString().length;
+    caretOffset = preRange.toString().replace(/\u200B/g, "").length;
   }
 
-  // Limpa e reconstrói o conteúdo
   container.innerHTML = "";
 
   const parts = text.split(/(@\w+)/g);
@@ -68,27 +69,24 @@ function renderTokens(text: string, container: HTMLElement) {
       span.dataset.mention = "true";
       span.dataset.value = part;
       span.textContent = part;
-      span.style.cssText = `
-        color: var(--app-primary);
-        background: var(--app-primary-muted);
-        border-radius: 3px;
-        padding: 0 2px;
-        font-weight: 500;
-      `;
-      span.contentEditable = "false"; // Torna o span atômico (não editável internamente)
+      span.style.cssText = [
+        "color: var(--app-primary)",
+        "background: var(--app-primary-muted)",
+        "border-radius: 3px",
+        "padding: 0 2px",
+        "font-weight: 500",
+      ].join(";");
+      span.contentEditable = "false";
       container.appendChild(span);
 
-      // Após o span atômico, insere um espaço de texto para o caret poder "sair" do span
-      const spacer = document.createTextNode("\u200B"); // zero-width space como ancora
+      const spacer = document.createTextNode("\u200B");
       container.appendChild(spacer);
-
       charCount += part.length;
       if (caretOffset <= charCount && !caretNode) {
         caretNode = spacer;
         caretNodeOffset = 1;
       }
     } else {
-      // Divide o texto por quebras de linha
       const lines = part.split("\n");
       lines.forEach((line, li) => {
         if (li > 0) {
@@ -98,7 +96,6 @@ function renderTokens(text: string, container: HTMLElement) {
         if (line.length > 0) {
           const textNode = document.createTextNode(line);
           container.appendChild(textNode);
-
           if (caretOffset <= charCount + line.length && !caretNode) {
             caretNode = textNode;
             caretNodeOffset = caretOffset - charCount;
@@ -109,21 +106,27 @@ function renderTokens(text: string, container: HTMLElement) {
     }
   }
 
-  // Restaura o caret
   if (sel && caretNode) {
     try {
       const newRange = document.createRange();
-      newRange.setStart(
-        caretNode,
-        Math.min(caretNodeOffset, (caretNode as Text).length ?? 0),
-      );
+      newRange.setStart(caretNode, Math.min(caretNodeOffset, (caretNode as Text).length ?? 0));
       newRange.collapse(true);
       sel.removeAllRanges();
       sel.addRange(newRange);
     } catch {
-      // Silencia erros de range inválido
+      // range inválido, ignora
     }
   }
+}
+
+function focusAtEnd(el: HTMLElement) {
+  const range = document.createRange();
+  const sel = window.getSelection();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  sel?.removeAllRanges();
+  sel?.addRange(range);
+  el.focus();
 }
 
 export function CommentInput({
@@ -132,104 +135,42 @@ export function CommentInput({
   replyingTo,
   onCancelReply,
   allUsers,
+  workspaceId,
 }: CommentInputProps) {
   const [text, setText] = useState("");
+  const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [mounted, setMounted] = useState(false);
-  const [menuPos, setMenuPos] = useState({
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 0,
-  });
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
-  // Ref para o div contenteditable (substitui o textarea)
   const editableRef = useRef<HTMLDivElement>(null);
-  // Flag para evitar loop de renderização
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isComposingRef = useRef(false);
 
   const {
     mentionState,
     setMentionState,
     handleMentionTextChange,
-    handleMentionSelect: _handleMentionSelect,
     handleMentionKeyDown,
   } = useMentions(allUsers);
 
-  // Adapta handleMentionSelect para trabalhar com texto plain e atualizar o contenteditable
   const handleMentionSelect = useCallback(
     (user: any) => {
-      // Encontra a posição do @ no texto atual
-      const atIndex = text.lastIndexOf("@", text.length);
+      const atIndex = text.lastIndexOf("@");
       if (atIndex === -1) return;
 
-      const before = text.slice(0, atIndex);
-      const mention = `@${user.username}`;
-      const newText = before + mention + " ";
-
+      const newText = text.slice(0, atIndex) + `@${user.username} `;
       setText(newText);
-      setMentionState({
-        active: false,
-        query: "",
-        target: null,
-        index: 0,
-        filteredUsers: [],
-      });
+      setMentionState({ active: false, query: "", target: null, index: 0, filteredUsers: [] });
 
-      // Atualiza o DOM e move o caret para o fim
       if (editableRef.current) {
-        // Seta um caret offset para o fim
         renderTokens(newText, editableRef.current);
-        // Move caret para o final
-        const el = editableRef.current;
-        const range = document.createRange();
-        const sel = window.getSelection();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-        el.focus();
+        focusAtEnd(editableRef.current);
       }
     },
-    [text, setMentionState],
+    [text, setMentionState]
   );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Sincroniza posição do menu de menções
-  useEffect(() => {
-    const updatePos = () => {
-      const el = editableRef.current;
-      if (mentionState.active && el) {
-        const rect = el.getBoundingClientRect();
-        setMenuPos({
-          top: rect.top,
-          bottom: rect.bottom,
-          left: rect.left,
-          width: rect.width,
-        });
-      }
-    };
-
-    if (mentionState.active) {
-      updatePos();
-      window.addEventListener("resize", updatePos, { passive: true });
-      window.addEventListener("scroll", updatePos, {
-        capture: true,
-        passive: true,
-      });
-    }
-
-    return () => {
-      window.removeEventListener("resize", updatePos);
-      window.removeEventListener("scroll", updatePos, { capture: true } as any);
-    };
-  }, [mentionState.active]);
-
-  // Foca ao responder
   useEffect(() => {
     if (editableRef.current && replyingTo) {
       editableRef.current.focus();
@@ -241,19 +182,51 @@ export function CommentInput({
     const raw = serializeContent(editableRef.current);
     setText(raw);
 
-    // Obtém posição do cursor no texto plano
     const sel = window.getSelection();
     let cursorPos = raw.length;
-    if (sel && sel.rangeCount > 0) {
+    if (sel && sel.rangeCount > 0 && editableRef.current) {
       const range = sel.getRangeAt(0);
       const preRange = document.createRange();
       preRange.selectNodeContents(editableRef.current);
       preRange.setEnd(range.endContainer, range.endOffset);
-      cursorPos = preRange.toString().length;
+      cursorPos = preRange.toString().replace(/\u200B/g, "").length;
     }
 
     handleMentionTextChange(raw, "comment", cursorPos);
   }, [handleMentionTextChange]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    setSubmitError("");
+
+    if (file.size > 10 * 1024 * 1024) {
+      setSubmitError("O arquivo é muito grande. Limite: 10MB.");
+      setIsUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const url = await uploadImageAction(fd, workspaceId);
+
+      setStagedFiles(prev => [...prev, { name: file.name, url }]);
+    } catch (err) {
+      console.error("Upload failed", err);
+      setSubmitError("Erro ao carregar arquivo. Tente novamente.");
+    } finally {
+      setIsUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeStagedFile = (index: number) => {
+    setStagedFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -269,57 +242,69 @@ export function CommentInput({
         }
       }
 
-      // Envia com ⌘+Enter ou Ctrl+Enter
-      if (
-        !mentionState.active &&
-        e.key === "Enter" &&
-        (e.metaKey || e.ctrlKey)
-      ) {
+      if (e.key === "Backspace" && !mentionState.active) {
+        const sel = window.getSelection();
+        if (sel?.isCollapsed && sel.anchorNode) {
+          const { anchorNode: anchor, anchorOffset: offset } = sel;
+          const isSpacerOnly =
+            anchor.nodeType === Node.TEXT_NODE &&
+            offset <= 1 &&
+            (anchor.textContent === "\u200B" || anchor.textContent === "");
+          const prev = anchor.previousSibling;
+
+          if (isSpacerOnly && prev instanceof HTMLElement && (prev.dataset.mention)) {
+            e.preventDefault();
+            (anchor as ChildNode).remove();
+            prev.remove();
+            handleInput();
+            return;
+          }
+        }
+      }
+
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !mentionState.active) {
         e.preventDefault();
         handleSubmit();
         return;
       }
 
-      // Enter normal: insere \n em vez de novo div/p
-      if (
-        e.key === "Enter" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !mentionState.active
-      ) {
+      if (e.key === "Enter" && !e.metaKey && !e.ctrlKey && !mentionState.active) {
         e.preventDefault();
         document.execCommand("insertLineBreak");
       }
     },
-    [mentionState, handleMentionKeyDown, handleMentionSelect],
+    [mentionState, handleMentionKeyDown, handleMentionSelect]
   );
 
   const handleSubmit = async () => {
-    if (!text.trim() || isSubmitting) return;
-    const draft = text;
+    if ((!text.trim() && stagedFiles.length === 0) || isSubmitting) return;
+
+    const filesMarkdown = stagedFiles
+      .map(f => ` [Arquivo: ${f.name}](${f.url}?name=${encodeURIComponent(f.name)}) `)
+      .join("");
+
+    const finalDraft = (text + filesMarkdown).trim();
+
     setText("");
+    setStagedFiles([]);
     setSubmitError("");
-    setMentionState({
-      active: false,
-      query: "",
-      target: null,
-      index: 0,
-      filteredUsers: [],
-    });
+    setMentionState({ active: false, query: "", target: null, index: 0, filteredUsers: [] });
     if (editableRef.current) editableRef.current.innerHTML = "";
+
     setIsSubmitting(true);
     try {
-      await onPost(draft, replyingTo?.id || null);
-    } catch (err: any) {
-      setText(draft);
-      if (editableRef.current) renderTokens(draft, editableRef.current);
+      await onPost(finalDraft, replyingTo?.id ?? null);
+    } catch {
+      setText(text);
+      setStagedFiles(stagedFiles);
+      if (editableRef.current) renderTokens(text, editableRef.current);
       setSubmitError("Erro ao enviar. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isEmpty = text.trim().length === 0;
+  const isEmpty = text.trim().length === 0 && stagedFiles.length === 0;
 
   return (
     <div className="flex gap-3 items-start">
@@ -336,77 +321,58 @@ export function CommentInput({
           ["--tw-ring-color" as string]: "var(--app-primary)",
         }}
       >
-        {/* Portal do menu de menções */}
-        {mounted &&
-          createPortal(
-            <AnimatePresence>
-              {mentionState.active &&
-                mentionState.filteredUsers.length > 0 &&
-                menuPos.bottom > 0 && (
-                  <motion.div
-                    key="mention-list"
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                    className="fixed z-[99999] overflow-hidden py-1 mt-2"
-                    style={{
-                      top: menuPos.bottom + 8,
-                      left: menuPos.left,
-                      width: Math.max(menuPos.width, 220),
-                      maxHeight: "30vh",
-                      overflowY: "auto",
-                      borderRadius: "6px",
-                      background: "var(--app-panel)",
-                      border: "1px solid var(--app-border)",
-                      boxShadow: "0 24px 48px rgba(0,0,0,0.6)",
-                    }}
-                  >
-                    {mentionState.filteredUsers.map((u, i) => (
-                      <div
-                        key={u.id}
-                        onMouseDown={(e) => {
-                          // Usa mousedown para não perder o foco do contenteditable
-                          e.preventDefault();
-                          handleMentionSelect(u);
-                        }}
-                        onMouseEnter={() =>
-                          setMentionState((p) => ({ ...p, index: i }))
-                        }
-                        className="px-3 py-2.5 flex items-center gap-2.5 cursor-pointer transition-colors"
-                        style={{
-                          background:
-                            i === mentionState.index
-                              ? "var(--app-primary-muted)"
-                              : "transparent",
-                        }}
+        {createPortal(
+          <AnimatePresence>
+            {mentionState.active && mentionState.filteredUsers.length > 0 && editableRef.current && (() => {
+              const rect = editableRef.current.getBoundingClientRect();
+              return (
+                <motion.div
+                  key="mention-list"
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                  className="fixed z-[99999] py-1"
+                  style={{
+                    top: rect.bottom + 8,
+                    left: rect.left,
+                    width: Math.max(rect.width, 220),
+                    maxHeight: "30vh",
+                    overflowY: "auto",
+                    borderRadius: "6px",
+                    background: "var(--app-panel)",
+                    border: "1px solid var(--app-border)",
+                    boxShadow: "0 24px 48px rgba(0,0,0,0.6)",
+                  }}
+                >
+                  {mentionState.filteredUsers.map((u, i) => (
+                    <div
+                      key={u.id}
+                      onMouseDown={(e) => { e.preventDefault(); handleMentionSelect(u); }}
+                      onMouseEnter={() => setMentionState((p) => ({ ...p, index: i }))}
+                      className="px-3 py-2.5 flex items-center gap-2.5 cursor-pointer transition-colors"
+                      style={{
+                        background: i === mentionState.index ? "var(--app-primary-muted)" : "transparent",
+                      }}
+                    >
+                      <img
+                        src={u.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`}
+                        className="w-5 h-5 rounded-[4px] object-cover"
+                      />
+                      <span
+                        className="text-xs font-medium"
+                        style={{ color: i === mentionState.index ? "var(--app-primary)" : "var(--app-text)" }}
                       >
-                        <img
-                          src={
-                            u.avatar_url ||
-                            `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`
-                          }
-                          className="w-5 h-5 rounded-[4px] object-cover"
-                        />
-                        <span
-                          className="text-xs font-medium"
-                          style={{
-                            color:
-                              i === mentionState.index
-                                ? "var(--app-primary)"
-                                : "var(--app-text)",
-                          }}
-                        >
-                          {u.display_name || u.username}
-                        </span>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-            </AnimatePresence>,
-            document.body,
-          )}
+                        {u.display_name || u.username}
+                      </span>
+                    </div>
+                  ))}
+                </motion.div>
+              );
+            })()}
+          </AnimatePresence>,
+          document.body
+        )}
 
-        {/* Banner de resposta */}
         {replyingTo && (
           <div
             className="px-4 py-2 flex justify-between items-center text-[11px] rounded-t-xl"
@@ -418,10 +384,7 @@ export function CommentInput({
           >
             <span>
               Respondendo para{" "}
-              <span
-                className="font-medium"
-                style={{ color: "var(--app-text)" }}
-              >
+              <span className="font-medium" style={{ color: "var(--app-text)" }}>
                 @{replyingTo.users?.display_name || replyingTo.users?.username}
               </span>
             </span>
@@ -429,10 +392,8 @@ export function CommentInput({
           </div>
         )}
 
-        {/* Área editável — substitui o textarea + highlight layer */}
         <div className="relative min-h-[100px]">
-          {/* Placeholder customizado */}
-          {isEmpty && (
+          {(text.trim().length === 0) && (
             <div
               aria-hidden="true"
               className="absolute inset-0 pointer-events-none select-none"
@@ -455,15 +416,10 @@ export function CommentInput({
             suppressContentEditableWarning
             onInput={handleInput}
             onKeyDown={handleKeyDown}
-            onCompositionStart={() => {
-              isComposingRef.current = true;
-            }}
-            onCompositionEnd={() => {
-              isComposingRef.current = false;
-              handleInput();
-            }}
+            onCompositionStart={() => { isComposingRef.current = true; }}
+            onCompositionEnd={() => { isComposingRef.current = false; handleInput(); }}
             spellCheck={false}
-            className="w-full focus:outline-none max-h-[120px] overflow-y-auto"
+            className="w-full focus:outline-none max-h-[180px] overflow-y-auto"
             style={{
               font: "13px/20px var(--font-sans), system-ui, sans-serif",
               padding: "12px 16px 8px 16px",
@@ -478,52 +434,77 @@ export function CommentInput({
           />
         </div>
 
-        {/* Rodapé com ações */}
-        <div className="px-3 pb-3 flex justify-between items-center relative">
-          <div className="flex gap-1">
-            <button
-              className="p-1.5 rounded-sm transition-colors"
-              style={{ color: "var(--app-text-muted)" }}
-              title="Sugerência: Use Win + . para emojis nativos"
-            >
-              <Paperclip className="w-4 h-4" />
-            </button>
-          </div>
+        {/* Rodapé */}
+        <div
+          className="px-3 pb-3 flex flex-col gap-2"
+          style={{ borderTop: stagedFiles.length > 0 ? "1px solid var(--app-border-faint)" : undefined }}
+        >
+          {/* Arquivos anexados — inline no rodapé */}
+          {stagedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {stagedFiles.map((file, i) => (
+                <div key={i} className="w-full sm:w-[calc(50%-4px)] max-w-[240px]">
+                  <AttachmentCard
+                    url={file.url}
+                    name={file.name}
+                    onDelete={() => removeStagedFile(i)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
-          <button
-            onClick={handleSubmit}
-            disabled={isEmpty || isSubmitting}
-            className="flex items-center justify-center gap-2 px-6 py-2 shadow-sm shadow-indigo-950/20 focus:ring-4 focus:ring-indigo-500/20 hover:brightness-110 text-white text-[13px] font-bold rounded-sm transition-all focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
-            style={
-              !isEmpty
-                ? {
-                    background:
-                      "linear-gradient(135deg, #4f46e5 0%, #312e81 100%)",
-                  }
-                : {
+          <div className="flex justify-between items-center">
+            <div className="flex gap-1 items-center">
+              <input
+                ref={fileInputRef}
+                id="comment-file-input"
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                disabled={isUploadingFile}
+              />
+              <label
+                htmlFor="comment-file-input"
+                aria-disabled={isUploadingFile}
+                className="p-1.5 rounded-sm transition-colors hover:bg-[var(--app-hover)] aria-disabled:opacity-40 cursor-pointer"
+                style={{ color: "var(--app-text-muted)" }}
+                title="Anexar arquivo"
+              >
+                {isUploadingFile
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <Paperclip className="w-4 h-4" />}
+              </label>
+              {stagedFiles.length > 0 && (
+                <span className="text-[10px] text-[var(--app-text-muted)] opacity-50">
+                  {stagedFiles.length} arquivo{stagedFiles.length > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={isEmpty || isSubmitting}
+              className="flex items-center justify-center gap-2 px-6 py-2 shadow-sm shadow-indigo-950/20 focus:ring-4 focus:ring-indigo-500/20 hover:brightness-110 text-white text-[13px] font-bold rounded-sm transition-all focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+              style={
+                !isEmpty
+                  ? { background: "linear-gradient(135deg, #4f46e5 0%, #312e81 100%)" }
+                  : {
                     background: "var(--app-hover)",
                     border: "1px solid var(--app-border)",
                     color: "var(--app-text-muted)",
                   }
-            }
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Enviando…
-              </>
-            ) : (
-              <>
-                Enviar <Send className="w-4 h-4" />
-              </>
-            )}
-          </button>
+              }
+            >
+              {isSubmitting
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando…</>
+                : <>Enviar <Send className="w-4 h-4" /></>}
+            </button>
+          </div>
         </div>
 
         {submitError && (
-          <p
-            className="px-3 pb-2 text-[11px] font-medium"
-            style={{ color: "#f87171" }}
-          >
+          <p className="px-3 pb-2 text-[11px] font-medium" style={{ color: "#f87171" }}>
             {submitError}
           </p>
         )}

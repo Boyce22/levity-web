@@ -227,6 +227,7 @@ export default function CardModal({
                     onPostComment={handlePostComment}
                     currentUserAvatar={currentUserAvatar}
                     allUsers={allUsers}
+                    workspaceId={workspaceId}
                   />
                 </motion.div>
               )}

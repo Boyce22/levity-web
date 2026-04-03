@@ -1,5 +1,5 @@
 // modules/board/components/BoardFiltersBar.tsx
-import { Search, Flag, Tag, UserX } from "lucide-react";
+import { Search, Flag, Tag, UserX, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
@@ -62,8 +62,8 @@ export function BoardFiltersBar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             type="text"
-            placeholder="Search"
-            className="rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none w-35 sm:w-54 transition-all"
+            placeholder="Search tasks..."
+            className="rounded-sm py-2 pl-9 pr-4 text-[13px] focus:outline-none w-35 sm:w-54 transition-all"
             style={{
               background: "var(--app-bg)",
               border: `1px solid ${searchQuery ? "var(--app-primary)" : "var(--app-border)"}`,
@@ -75,21 +75,22 @@ export function BoardFiltersBar({
         <div
           style={{
             width: "1px",
-            height: "22px",
+            height: "18px",
             background: "var(--app-border-faint)",
             flexShrink: 0,
+            opacity: 0.5
           }}
         />
 
         {/* Member filters */}
-        <div className="flex items-center gap-3 py-2 shrink-0">
+        <div className="flex items-center gap-4 py-2 shrink-0">
           <span
-            className="text-[10px] uppercase tracking-[0.2em] font-bold"
-            style={{ color: "var(--app-text-muted)", opacity: 0.5 }}
+            className="text-[11px] font-bold uppercase tracking-wider opacity-60"
+            style={{ color: "var(--app-text-muted)" }}
           >
             Members
           </span>
-          <div className="flex items-center -space-x-2">
+          <div className="flex items-center -space-x-1.5">
             {/* Unassigned Filter */}
             <div className="relative flex items-center">
               <button
@@ -102,23 +103,23 @@ export function BoardFiltersBar({
                 }
                 onMouseEnter={() => setHoveredMember("unassigned")}
                 onMouseLeave={() => setHoveredMember(null)}
-                className="relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 border-2"
+                className="relative flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200 border"
                 style={{
                   background: isUnassignedActive ? "var(--app-primary)" : "var(--app-bg)",
                   borderColor: isUnassignedActive ? "var(--app-primary)" : "var(--app-border)",
                   zIndex: isUnassignedActive ? 21 : 5,
-                  transform: isUnassignedActive ? "scale(1.1)" : "scale(1)",
+                  transform: isUnassignedActive ? "scale(1.05)" : "scale(1)",
                 }}
               >
-                <UserX className={`w-4 h-4 ${isUnassignedActive ? 'text-white' : 'text-var(--app-text-muted)'}`} />
+                <UserX className={`w-3.5 h-3.5 ${isUnassignedActive ? 'text-white' : 'text-(--app-text-muted)'}`} />
               </button>
               <AnimatePresence>
                 {hoveredMember === "unassigned" && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                    initial={{ opacity: 0, y: 5, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-white text-[10px] font-bold rounded shadow-xl whitespace-nowrap z-[1000] pointer-events-none border border-white/5"
+                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                    className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1.5 bg-black/90 backdrop-blur-md text-white text-[11px] font-bold rounded-sm shadow-2xl whitespace-nowrap z-[1000] pointer-events-none border border-white/10"
                   >
                     Unassigned
                   </motion.div>
@@ -143,11 +144,7 @@ export function BoardFiltersBar({
                     className="relative flex items-center justify-center rounded-full transition-all duration-200"
                     style={{
                       zIndex: isActive ? 20 : 10,
-                      transform: isActive ? "scale(1.1)" : "scale(1)",
-                      outline: isActive
-                        ? `2px solid var(--app-primary)`
-                        : "none",
-                      outlineOffset: "1px",
+                      transform: isActive ? "scale(1.05)" : "scale(1)",
                     }}
                   >
                     <img
@@ -155,15 +152,15 @@ export function BoardFiltersBar({
                         user.avatar_url ||
                         `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
                       }
-                      className="w-8 h-8 rounded-full object-cover"
+                      className="w-7 h-7 rounded-full object-cover"
                       style={{
-                        border: "2px solid var(--app-header)",
-                        opacity: isActive ? 1 : 0.7,
+                        border: `1.5px solid ${isActive ? "var(--app-primary)" : "var(--app-header)"}`,
+                        opacity: isActive ? 1 : 0.85,
                       }}
                     />
                     {isActive && (
                       <div
-                        className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+                        className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-1.5"
                         style={{
                           background: "var(--app-primary)",
                           borderColor: "var(--app-header)",
@@ -174,10 +171,10 @@ export function BoardFiltersBar({
                   <AnimatePresence>
                     {hoveredMember === user.id && (
                       <motion.div
-                        initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                        initial={{ opacity: 0, y: 5, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.9 }}
-                        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-zinc-800 text-white text-[11px] font-bold rounded-lg shadow-2xl whitespace-nowrap z-[1000] pointer-events-none border border-white/5"
+                        exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                        className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1.5 bg-black/90 backdrop-blur-md text-white text-[11px] font-bold rounded-sm shadow-2xl whitespace-nowrap z-[1000] pointer-events-none border border-white/10"
                       >
                         {user.display_name || user.username}
                       </motion.div>
@@ -192,17 +189,18 @@ export function BoardFiltersBar({
         <div
           style={{
             width: "1px",
-            height: "22px",
+            height: "18px",
             background: "var(--app-border-faint)",
             flexShrink: 0,
+            opacity: 0.5
           }}
         />
 
         {/* Priority filter */}
         <div className="flex items-center gap-2 py-2 shrink-0">
           <Flag
-            className="w-3.5 h-3.5"
-            style={{ color: "var(--app-text-muted)", opacity: 0.5 }}
+            className="w-3.5 h-3.5 mr-1"
+            style={{ color: "var(--app-text-muted)", opacity: 0.4 }}
           />
           {priorities.map((p) => (
             <button
@@ -210,13 +208,14 @@ export function BoardFiltersBar({
               onClick={() =>
                 setPriorityFilter(priorityFilter === p.name ? null : p.name)
               }
-              className="text-[10px] font-bold px-2.5 py-1 rounded-full transition-all"
+              className="text-[10px] font-bold px-2 py-0.5 rounded-sm transition-all uppercase tracking-wider"
               style={{
                 background:
-                  priorityFilter === p.name ? (p.color || "var(--app-text)") + "25" : "transparent",
+                  priorityFilter === p.name ? (p.color || "var(--app-text)") + "15" : "transparent",
                 color:
                   priorityFilter === p.name ? (p.color || "var(--app-text)") : "var(--app-text-muted)",
-                border: `1px solid ${priorityFilter === p.name ? (p.color || "var(--app-text)") + "50" : "transparent"}`,
+                border: `1px solid ${priorityFilter === p.name ? (p.color || "var(--app-text)") + "30" : "transparent"}`,
+                opacity: priorityFilter && priorityFilter !== p.name ? 0.4 : 1
               }}
             >
               {p.icon} {p.name}
@@ -227,20 +226,21 @@ export function BoardFiltersBar({
         {/* Label filter */}
         <div className="flex items-center gap-2 py-2 shrink-0">
           <Tag
-            className="w-3.5 h-3.5"
-            style={{ color: "var(--app-text-muted)", opacity: 0.5 }}
+            className="w-3.5 h-3.5 mr-1"
+            style={{ color: "var(--app-text-muted)", opacity: 0.4 }}
           />
           {tags.map((l) => (
             <button
               key={l.id}
               onClick={() => setLabelFilter(labelFilter === l.name ? null : l.name)}
-              className="text-[10px] font-bold px-2.5 py-1 rounded-full transition-all"
+              className="text-[10px] font-bold px-2 py-0.5 rounded-sm transition-all uppercase tracking-wider"
               style={{
                 background:
-                  labelFilter === l.name ? (l.color || "var(--app-text)") + "25" : "transparent",
+                  labelFilter === l.name ? (l.color || "var(--app-text)") + "15" : "transparent",
                 color:
                   labelFilter === l.name ? (l.color || "var(--app-text)") : "var(--app-text-muted)",
-                border: `1px solid ${labelFilter === l.name ? (l.color || "var(--app-text)") + "50" : "transparent"}`,
+                border: `1px solid ${labelFilter === l.name ? (l.color || "var(--app-text)") + "30" : "transparent"}`,
+                opacity: labelFilter && labelFilter !== l.name ? 0.4 : 1
               }}
             >
               {l.name}
@@ -251,22 +251,23 @@ export function BoardFiltersBar({
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="ml-auto text-[11px] font-bold uppercase tracking-[0.15em] transition-colors shrink-0 px-3 py-1.5 rounded-xl flex items-center gap-2"
+            className="ml-auto text-[10px] font-bold uppercase tracking-wider transition-all shrink-0 px-2.5 py-1 rounded-sm flex items-center gap-1.5"
             style={{ 
-              color: "var(--app-text-muted)",
+              color: "#f87171",
               background: "rgba(248, 113, 113, 0.08)",
-              border: "1px solid rgba(248, 113, 113, 0.1)"
+              border: "1px solid rgba(248, 113, 113, 0.2)"
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#f87171";
               e.currentTarget.style.background = "rgba(248, 113, 113, 0.15)";
+              e.currentTarget.style.transform = "translateY(-1px)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--app-text-muted)";
               e.currentTarget.style.background = "rgba(248, 113, 113, 0.08)";
+              e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            Clear Filters ✕
+            Clear Filters
+            <X className="w-3 h-3" />
           </button>
         )}
       </div>

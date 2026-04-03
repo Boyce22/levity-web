@@ -33,12 +33,24 @@ export class BackblazeProvider implements IStorageProvider {
   async upload(buffer: Buffer, options: UploadOptions = {}): Promise<UploadResult> {
     await this.authorize();
 
-    const metadata = await sharp(buffer).metadata();
-    const processedBuffer = await this.processImage(buffer, options);
-    const fileName = this.buildFileName(options);
+    const isImage = options.mimeType?.startsWith('image/');
+    let metadata: any = { size: buffer.length };
+    let processedBuffer = buffer;
 
+    if (isImage) {
+      try {
+        metadata = await sharp(buffer).metadata();
+        processedBuffer = await this.processImage(buffer, options);
+      } catch (e) {
+        console.error('Sharp failed, uploading original:', e);
+      }
+    }
+
+    const fileName = this.buildFileName(options);
     const uploadUrl = await this.getUploadUrl();
-    const uploadResponse = await this.uploadFile(uploadUrl, fileName, processedBuffer, metadata);
+    const mime = options.mimeType || (metadata.format ? `image/${metadata.format}` : 'application/octet-stream');
+
+    const uploadResponse = await this.uploadFile(uploadUrl, fileName, processedBuffer, mime);
 
     const result: UploadResult = {
       url: this.buildPublicUrl(fileName),
@@ -67,8 +79,12 @@ export class BackblazeProvider implements IStorageProvider {
   }
 
   private buildFileName(options: UploadOptions): string {
-    const filename = options.filename || crypto.randomBytes(16).toString('hex');
-    return options.folder ? `${options.folder}/${filename}` : filename;
+    const originalFilename = options.filename || "";
+    const extension = originalFilename.includes(".") ? originalFilename.split(".").pop() : "";
+    const safeFilename = crypto.randomUUID();
+    const finalFilename = extension ? `${safeFilename}.${extension}` : safeFilename;
+    
+    return options.folder ? `${options.folder}/${finalFilename}` : finalFilename;
   }
 
   private buildPublicUrl(fileName: string): string {
@@ -80,13 +96,13 @@ export class BackblazeProvider implements IStorageProvider {
     return response.data;
   }
 
-  private async uploadFile(uploadUrl: any, fileName: string, buffer: Buffer, metadata: any) {
+  private async uploadFile(uploadUrl: any, fileName: string, buffer: Buffer, mime: string) {
     return this.b2.uploadFile({
       uploadUrl: uploadUrl.uploadUrl,
       uploadAuthToken: uploadUrl.authorizationToken,
       fileName,
       data: buffer,
-      mime: metadata.format ? `image/${metadata.format}` : 'application/octet-stream',
+      mime,
     });
   }
 
@@ -133,7 +149,37 @@ export class BackblazeProvider implements IStorageProvider {
 
     await this.b2.deleteFileVersion({
       fileId: publicId,
-      fileName: publicId, // Assuming publicId contains the fileName, though realistically fileId and fileName are different in B2 API. 
+      fileName: publicId, 
     });
+  }
+
+  async deleteByUrl(url: string): Promise<void> {
+    await this.authorize();
+
+    // Extract filename from URL (e.g. /file/bucketName/folder/filename)
+    // The bucketName is fixed, so we split and get everything after it.
+    const parts = url.split(`/${this.bucketName}/`);
+    if (parts.length < 2) return;
+    
+    const fileName = parts[1];
+
+    // List all versions of this file to delete them all
+    const response = await this.b2.listFileVersions({
+      bucketId: this.bucketId,
+      startFileName: fileName,
+      maxFileCount: 100,
+      prefix: fileName,
+      delimiter: '',
+    } as any); // Type cast if necessary for compatibility
+
+    const files = response.data.files;
+    for (const file of files) {
+      if (file.fileName === fileName) {
+        await this.b2.deleteFileVersion({
+          fileId: file.fileId,
+          fileName: file.fileName,
+        });
+      }
+    }
   }
 }

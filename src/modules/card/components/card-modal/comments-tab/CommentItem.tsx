@@ -2,6 +2,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { formatMentions, timeAgo } from "@/modules/shared/utils/date";
+import { AttachmentCard } from "../AttachmentCard";
+import { extractAttachments, isImageUrl } from "@/modules/shared/utils/attachments";
 
 interface CommentItemProps {
   comment: any;
@@ -11,8 +13,11 @@ interface CommentItemProps {
   allUsers: any[];
 }
 
-const markdownComponents = {
+const markdownComponents = (allUrls: string[]) => ({
   a: ({ href, children, ...props }: any) => {
+    const cleanHref = decodeURIComponent(href?.trim() || "");
+    if (allUrls.some(u => decodeURIComponent(u?.trim() || "") === cleanHref)) return null;
+
     if (href === "#mention") {
       return (
         <span
@@ -31,8 +36,7 @@ const markdownComponents = {
     return (
       <a
         href={href}
-        className="underline"
-        style={{ color: "var(--app-primary)" }}
+        className="underline text-indigo-400 hover:text-indigo-300 transition-colors"
         target="_blank"
         rel="noopener noreferrer"
         {...props}
@@ -41,11 +45,14 @@ const markdownComponents = {
       </a>
     );
   },
-};
+});
 
 export function CommentItem({ comment, index, isReply, onReply, allUsers }: CommentItemProps) {
   const user = comment.users || allUsers.find((u) => u.id === comment.user_id);
   const avatar = user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`;
+
+  const attachments = extractAttachments(comment.content);
+  const attachmentUrls = attachments.map(a => a.url);
 
   return (
     <motion.div
@@ -78,10 +85,24 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers }: Comm
           }}
         >
           <div className="prose prose-invert prose-sm max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents(attachmentUrls)}
+            >
               {formatMentions(comment.content)}
             </ReactMarkdown>
           </div>
+
+          {/* Seção de Anexos (Arquivos não-imagem) */}
+          {attachments.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-2">
+              {attachments.map((file, i) => (
+                <div key={i} className="w-full sm:w-[calc(50%-4px)] max-w-xs">
+                  <AttachmentCard url={file.url} name={file.name} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="mt-1 flex justify-end">
           <button

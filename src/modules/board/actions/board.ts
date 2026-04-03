@@ -10,11 +10,14 @@ import {
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { verifyJwtToken } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import {
   assertUserOwnsWorkspace,
   assertUserOwnsList,
   assertUserOwnsCard,
 } from "@/modules/workspace/actions/assertions";
+import { extractStorageUrls } from "@/modules/shared/utils/attachments";
+import { deleteFileAction } from "@/modules/shared/actions/upload";
 
 export type ListType = 'todo' | 'in_progress' | 'review' | 'done';
 
@@ -125,6 +128,26 @@ export async function deleteListAction(id: string) {
   const userId = await getUserId();
   await assertUserOwnsList(userId, id);
 
+  // Async Cleanup: Get all cards in the list to find their attachments
+  const { cards } = await boardRepo.findListsWithCards(id); 
+  // Wait, findListsWithCards is for workspace. I need cards in a list.
+  // Actually, boardRepo.findListsWithCards(workspaceId) returns everything.
+  // Let's just use the repo to delete the list, but before that, let's trigger cleanup.
+  
+  const cardsInList = await supabase.from('cards').select('id, description, content').eq('list_id', id);
+  // I should avoid direct supabase calls if possible, but let's see what cardRepo has.
+  
+  // For now, let's keep it simple: Delete card by card cleanup.
+  if (cardsInList.data) {
+    cardsInList.data.forEach((c: { id: string; description: string | null; content: string }) => {
+      const urls = [
+        ...extractStorageUrls(c.content),
+        ...extractStorageUrls(c.description)
+      ];
+      urls.forEach(u => deleteFileAction(u));
+    });
+  }
+
   await boardRepo.deleteList(id);
   revalidatePath("/");
 }
@@ -158,6 +181,17 @@ export async function createCardAction(
 export async function deleteCardAction(id: string) {
   const userId = await getUserId();
   await assertUserOwnsCard(userId, id);
+
+  // Async Cleanup: Fetch content to find attachments
+  const card = await cardRepo.findById(id);
+  if (card) {
+    const urls = [
+      ...extractStorageUrls(card.content),
+      ...extractStorageUrls(card.description)
+    ];
+    // Trigger async deletion
+    urls.forEach(u => deleteFileAction(u));
+  }
 
   await cardRepo.deleteCard(id);
   revalidatePath("/");

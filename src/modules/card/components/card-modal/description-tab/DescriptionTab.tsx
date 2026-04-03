@@ -2,6 +2,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { DescriptionEditor } from "./DescriptionEditor";
 import { HistorySection } from "./HistorySection";
+import { AttachmentCard } from "../AttachmentCard";
+import { extractStorageUrls, isImageUrl } from "@/modules/shared/utils/attachments";
+import { deleteFileAction } from "@/modules/shared/actions/upload";
 
 interface DescriptionTabProps {
   description: string;
@@ -22,6 +25,18 @@ export function DescriptionTab({
   history,
   allUsers,
 }: DescriptionTabProps) {
+  const urls = extractStorageUrls(description);
+  const attachments = urls.filter(url => !isImageUrl(url));
+
+  const handleDeleteAttachment = async (url: string) => {
+    // 1. Remover do texto (Markdown)
+    const newDescription = description.replace(new RegExp(`\\[.*?\\]\\(${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), '');
+    const finalDescription = newDescription.replace(new RegExp(`!?\\[.*?\\]\\(${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), '').trim();
+    setDescription(finalDescription);
+
+    // 2. Apagar do bucket (Async)
+    deleteFileAction(url);
+  };
   return (
     <div className="space-y-4">
       {isEditing ? (
@@ -86,6 +101,22 @@ export function DescriptionTab({
           >
             Clique para editar
           </p>
+        </div>
+      )}
+
+      {/* Seção de Anexos da Descrição */}
+      {!isEditing && attachments.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Anexos</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {attachments.map((url, i) => (
+              <AttachmentCard 
+                key={i} 
+                url={url} 
+                onDelete={() => handleDeleteAttachment(url)} 
+              />
+            ))}
+          </div>
         </div>
       )}
 
