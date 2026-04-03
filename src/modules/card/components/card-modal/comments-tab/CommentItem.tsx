@@ -4,6 +4,9 @@ import remarkGfm from "remark-gfm";
 import { formatMentions, timeAgo } from "@/modules/shared/utils/date";
 import { AttachmentCard } from "../AttachmentCard";
 import { extractAttachments, isImageUrl } from "@/modules/shared/utils/attachments";
+import { useState } from "react";
+import { Edit2, Trash2, X, Check, Loader2 } from "lucide-react";
+import { updateCommentAction, deleteCommentAction } from "@/modules/board/actions/comments";
 
 interface CommentItemProps {
   comment: any;
@@ -11,6 +14,7 @@ interface CommentItemProps {
   isReply?: boolean;
   onReply: (parent: any, targetUser: any) => void;
   allUsers: any[];
+  currentUserId?: string;
 }
 
 const markdownComponents = (allUrls: string[]) => ({
@@ -47,19 +51,58 @@ const markdownComponents = (allUrls: string[]) => ({
   },
 });
 
-export function CommentItem({ comment, index, isReply, onReply, allUsers }: CommentItemProps) {
-  const user = comment.users || allUsers.find((u) => u.id === comment.user_id);
-  const avatar = user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`;
+export function CommentItem({ comment, index, isReply, onReply, allUsers, currentUserId }: CommentItemProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const attachments = extractAttachments(comment.content);
+  const user = comment.users || allUsers.find((u) => u.id === comment.created_by);
+  const avatar = user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`;
+  const isOwner = currentUserId === comment.created_by;
+
+  const attachments = extractAttachments(isEditing ? editContent : comment.content);
   const attachmentUrls = attachments.map(a => a.url);
+
+  const handleSave = async () => {
+    if (!editContent.trim() || editContent === comment.content) {
+      setIsEditing(false);
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await updateCommentAction(comment.id, editContent);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update comment:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Tem certeza que deseja excluir este comentário?")) return;
+    setIsDeleting(true);
+    try {
+      await deleteCommentAction(comment.id);
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      setIsDeleting(false);
+    }
+  };
+
+  const removeAttachment = (url: string) => {
+    // Regex para encontrar o padrão exato [Arquivo: Nome](url)
+    const regex = new RegExp(`\\[Arquivo:.*?\\]\\(${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g');
+    setEditContent((prev: string) => prev.replace(regex, '').trim());
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
-      className="flex gap-3"
+      className={`flex gap-3 group ${isDeleting ? "opacity-50 grayscale pointer-events-none" : ""}`}
     >
       <img
         src={avatar}
@@ -67,54 +110,134 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers }: Comm
         style={{ border: "1.5px solid var(--app-border-faint)" }}
       />
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline mb-1.5">
-          <span className="text-sm font-semibold mr-2" style={{ color: "var(--app-text)" }}>
-            {user?.display_name || user?.username}
-          </span>
-          <span className="text-[11px]" style={{ color: "var(--app-text-muted)" }}>
-            {timeAgo(comment.created_at)}
-          </span>
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-baseline">
+            <span className="text-sm font-semibold mr-2" style={{ color: "var(--app-text)" }}>
+              {user?.display_name || user?.username}
+            </span>
+            <span className="text-[11px]" style={{ color: "var(--app-text-muted)" }}>
+              {timeAgo(comment.created_at)}
+            </span>
+            {comment.updated_at && (
+              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm" 
+                    style={{ background: "var(--app-hover)", color: "var(--app-primary)", opacity: 0.8 }}>
+                Editado
+              </span>
+            )}
+          </div>
+
+          {isOwner && !isEditing && (
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => {
+                  setIsEditing(true);
+                  setEditContent(comment.content);
+                }}
+                className="p-1 rounded hover:bg-[var(--app-panel)] transition-colors"
+                style={{ color: "var(--app-text-muted)" }}
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={handleDelete}
+                className="p-1 rounded hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                style={{ color: "var(--app-text-muted)" }}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
+
         <div
-          className="text-[13.5px] leading-relaxed rounded-sm rounded-tl-none px-4 py-3 min-w-0"
+          className={`text-[13.5px] leading-relaxed rounded-sm rounded-tl-none min-w-0 transition-all ${isEditing ? "p-1" : "px-4 py-3"}`}
           style={{
-            background: "var(--app-panel)",
-            border: "1px solid var(--app-border-faint)",
+            background: isEditing ? "transparent" : "var(--app-panel)",
+            border: isEditing ? "none" : "1px solid var(--app-border-faint)",
             color: "var(--app-text-muted)",
             wordBreak: "break-word",
           }}
         >
-          <div className="prose prose-invert prose-sm max-w-none">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={markdownComponents(attachmentUrls)}
-            >
-              {formatMentions(comment.content)}
-            </ReactMarkdown>
-          </div>
+          {isEditing ? (
+            <div className="space-y-2">
+              <textarea
+                autoFocus
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full bg-[var(--app-panel)] border border-[var(--app-primary)] rounded-sm p-3 text-[13.5px] focus:outline-none focus:ring-1 focus:ring-[var(--app-primary)] resize-none min-h-[80px]"
+                style={{ color: "var(--app-text)" }}
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  disabled={isSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors border border-[var(--app-border-faint)] hover:bg-[var(--app-hover)]"
+                  style={{ color: "var(--app-text-muted)" }}
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving || !editContent.trim()}
+                  className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-sm transition-all focus:outline-none shadow-sm shadow-indigo-950/20"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #4f46e5 0%, #312e81 100%)',
+                    color: "white" 
+                  }}
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
+                  Salvar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="prose prose-invert prose-sm max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={markdownComponents(attachmentUrls)}
+              >
+                {formatMentions(comment.content)}
+              </ReactMarkdown>
+            </div>
+          )}
 
-          {/* Seção de Anexos (Arquivos não-imagem) */}
+          {/* Seção de Anexos */}
           {attachments.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-2">
+            <div className={`mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-2 ${isEditing ? "opacity-80" : ""}`}>
               {attachments.map((file, i) => (
-                <div key={i} className="w-full sm:w-[calc(50%-4px)] max-w-xs">
+                <div key={i} className="relative w-full sm:w-[calc(50%-4px)] max-w-xs group/att">
                   <AttachmentCard url={file.url} name={file.name} />
+                  {isEditing && (
+                    <button
+                      onClick={() => removeAttachment(file.url)}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-[var(--app-bg)] hover:bg-red-600 transition-colors z-10"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
-        <div className="mt-1 flex justify-end">
-          <button
-            onClick={() => onReply(comment, user)}
-            className="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
-            style={{ color: "var(--app-text-muted)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--app-primary)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
-          >
-            Responder
-          </button>
-        </div>
+        {!isEditing && (
+          <div className="mt-1 flex justify-end">
+            <button
+              onClick={() => onReply(comment, user)}
+              className="text-[11px] font-medium px-2 py-0.5 rounded transition-colors"
+              style={{ color: "var(--app-text-muted)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--app-primary)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
+            >
+              Responder
+            </button>
+          </div>
+        )}
       </div>
     </motion.div>
   );

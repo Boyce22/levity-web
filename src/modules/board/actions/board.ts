@@ -23,7 +23,7 @@ export type ListType = 'todo' | 'in_progress' | 'review' | 'done';
 
 export type List = {
   id: string;
-  user_id: string;
+  created_by: string;
   title: string;
   position: number;
   wip_limit?: number | null;
@@ -100,13 +100,13 @@ export async function createListAction(
   position: number,
   workspaceId: string,
 ) {
-  const userId = await getUserId();
+  const currentUserId = await getUserId();
 
   // 🛡️ Security Boundary: BFLA / IDOR Check
-  await assertUserOwnsWorkspace(userId, workspaceId);
+  await assertUserOwnsWorkspace(currentUserId, workspaceId);
 
   const data = await boardRepo.createList({
-    userId,
+    createdBy: currentUserId,
     title,
     position,
     workspaceId,
@@ -212,7 +212,7 @@ async function extractNewMentions(
 
 async function notifyMentionedUsers(
   addedMentions: string[],
-  userId: string,
+  currentUserId: string,
   cardId: string,
 ) {
   if (addedMentions.length === 0) return;
@@ -221,8 +221,8 @@ async function notifyMentionedUsers(
   if (!users || users.length === 0) return;
 
   const notifications = users.map((u) => ({
-    user_id: u.id,
-    actor_id: userId,
+    recipient_id: u.id,
+    created_by: currentUserId,
     card_id: cardId,
     type: "mention_desc",
     content: "You were mentioned in a card description.",
@@ -234,8 +234,8 @@ export async function updateCardDetailsAction(
   id: string,
   updates: Partial<Card>,
 ) {
-  const userId = await getUserId();
-  await assertUserOwnsCard(userId, id);
+  const currentUserId = await getUserId();
+  await assertUserOwnsCard(currentUserId, id);
 
   const oldCard = await cardRepo.findById(id);
 
@@ -263,7 +263,7 @@ export async function updateCardDetailsAction(
     if (updates.content !== undefined && oldCard.content !== updates.content) {
       logs.push({
         card_id: id,
-        user_id: userId,
+        created_by: currentUserId,
         action_type: "updated",
         field: "title",
         old_val: oldCard.content,
@@ -276,7 +276,7 @@ export async function updateCardDetailsAction(
     ) {
       logs.push({
         card_id: id,
-        user_id: userId,
+        created_by: currentUserId,
         action_type: "updated",
         field: "description",
         old_val: oldCard.description ? "yes" : "no",
@@ -287,7 +287,7 @@ export async function updateCardDetailsAction(
         oldCard.description,
         updates.description,
       );
-      await notifyMentionedUsers(addedMentions, userId, id);
+      await notifyMentionedUsers(addedMentions, currentUserId, id);
     }
     if (
       updates.assignee_id !== undefined &&
@@ -295,7 +295,7 @@ export async function updateCardDetailsAction(
     ) {
       logs.push({
         card_id: id,
-        user_id: userId,
+        created_by: currentUserId,
         action_type: "assigned",
         field: "assignee_id",
         old_val: oldCard.assignee_id,

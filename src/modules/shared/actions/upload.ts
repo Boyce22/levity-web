@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { verifyJwtToken } from '@/lib/auth';
 
 import { BackblazeProvider } from '@/lib/storage/backblaze.provider';
+import { assertUserOwnsWorkspace } from '@/modules/workspace/actions/assertions';
 
 async function checkAuth() {
   const token = (await cookies()).get('token')?.value;
@@ -16,20 +17,22 @@ async function checkAuth() {
 }
 
 export async function uploadImageAction(formData: FormData, workspaceId?: string) {
-  await checkAuth();
+  const currentUserId = await checkAuth();
+
+  if (!workspaceId) throw new Error('Workspace context is required for secure file storage');
+  
+  // 🛡️ Security Gateway: IDOR Protection
+  await assertUserOwnsWorkspace(currentUserId, workspaceId);
 
   const file = formData.get('file') as File;
   if (!file) throw new Error('No file provided');
 
   const fileBuffer = Buffer.from(await file.arrayBuffer());
-  
   const provider = new BackblazeProvider();
-  if (!workspaceId) throw new Error('Workspace context is required for secure file storage');
-  const folder = workspaceId;
   
   const result = await provider.upload(fileBuffer, {
     filename: file.name,
-    folder,
+    folder: workspaceId,
     mimeType: file.type,
   });
 
@@ -38,7 +41,18 @@ export async function uploadImageAction(formData: FormData, workspaceId?: string
 
 export async function deleteFileAction(url: string) {
   try {
-    await checkAuth();
+    const currentUserId = await checkAuth();
+    
+    // 🛡️ Security Gateway: IDOR Protection
+    // Expected URL format: /file/bucket-name/WORKSPACE_ID/filename.ext
+    const urlParts = url.split('/');
+    // After split: ["", "file", "bucket-name", "WORKSPACE_ID", "filename.ext"]
+    const workspaceId = urlParts[3]; 
+
+    if (workspaceId && workspaceId.length > 20) { // basic uuid length check
+      await assertUserOwnsWorkspace(currentUserId, workspaceId);
+    }
+
     const provider = new BackblazeProvider();
     await provider.deleteByUrl(url);
   } catch (error) {

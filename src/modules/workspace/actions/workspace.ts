@@ -15,7 +15,7 @@ async function getUserId() {
 }
 
 export async function createWorkspaceAction(name: string) {
-  const userId = await getUserId();
+  const currentUserId = await getUserId();
 
   const trimmed = name?.trim();
   if (!trimmed || trimmed.length < 3) {
@@ -27,7 +27,7 @@ export async function createWorkspaceAction(name: string) {
 
   try {
     // 2. cria membership (owner)
-    await workspaceRepo.addMember(workspace.id, userId, 'owner');
+    await workspaceRepo.addMember(workspace.id, currentUserId, 'owner');
 
     // 3. Semear prioridades padrão
     await workspaceRepo.seedDefaultPriorities(workspace.id);
@@ -43,15 +43,15 @@ export async function createWorkspaceAction(name: string) {
 }
 
 export async function getUserWorkspacesAction() {
-  const userId = await getUserId();
-  return workspaceRepo.findAllByMember(userId);
+  const currentUserId = await getUserId();
+  return workspaceRepo.findAllByMember(currentUserId);
 }
 
 export async function renameWorkspaceAction(id: string, newName: string) {
-  const userId = await getUserId();
+  const currentUserId = await getUserId();
   
   // 🛡️ Security Gateway: Verify RBAC
-  const member = await assertUserOwnsWorkspace(userId, id);
+  const member = await assertUserOwnsWorkspace(currentUserId, id);
   if (!['owner', 'admin'].includes(member.role)) {
     throw new Error('403 Forbidden: Permission denied for renaming this workspace.');
   }
@@ -61,10 +61,10 @@ export async function renameWorkspaceAction(id: string, newName: string) {
 }
 
 export async function deleteWorkspaceAction(id: string) {
-  const userId = await getUserId();
+  const currentUserId = await getUserId();
   
   // 🛡️ Security Gateway: Only owners can delete the entire workspace
-  const member = await assertUserOwnsWorkspace(userId, id);
+  const member = await assertUserOwnsWorkspace(currentUserId, id);
   if (member.role !== 'owner') {
     throw new Error('403 Forbidden: Only the workspace owner can perform this irreversible action.');
   }

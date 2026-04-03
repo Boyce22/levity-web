@@ -1,7 +1,7 @@
 export interface NotificationRecord {
   id?: string;
-  user_id: string;
-  actor_id: string;
+  recipient_id: string;
+  created_by: string;
   card_id: string;
   type: string;
   content: string;

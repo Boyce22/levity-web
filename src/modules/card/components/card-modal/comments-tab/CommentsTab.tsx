@@ -11,6 +11,7 @@ interface CommentsTabProps {
   isLoadingMore: boolean;
   onLoadMore: () => void;
   onPostComment: (text: string, parentId?: string | null) => void;
+  currentUserId?: string;
   currentUserAvatar: string;
   allUsers: any[];
   workspaceId: string;
@@ -23,6 +24,7 @@ export function CommentsTab({
   isLoadingMore,
   onLoadMore,
   onPostComment,
+  currentUserId,
   currentUserAvatar,
   allUsers,
   workspaceId,
@@ -91,6 +93,7 @@ export function CommentsTab({
               index={i}
               onReply={handleReply}
               allUsers={allUsers}
+              currentUserId={currentUserId}
             />
           ))}
           {hasMore && (

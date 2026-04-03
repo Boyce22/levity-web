@@ -26,11 +26,11 @@ export class SupabaseBoardRepository implements IBoardRepository {
     return { lists: sortedLists, cards: sortedCards };
   }
 
-  async createList(data: { userId: string; title: string; position: number; workspaceId: string }): Promise<ListRecord> {
+  async createList(data: { createdBy: string; title: string; position: number; workspaceId: string }): Promise<ListRecord> {
     const { data: newList, error } = await supabase
       .from('lists')
       .insert({
-        user_id: data.userId,
+        created_by: data.createdBy,
         title: data.title,
         position: data.position,
         workspace_id: data.workspaceId,

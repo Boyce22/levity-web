@@ -5,12 +5,13 @@ interface DescriptionEditorProps {
   onChange: (val: string) => void;
   savedStatus: "idle" | "saving" | "saved";
   onClose: () => void;
+  workspaceId: string;
 }
 
-export function DescriptionEditor({ value, onChange, savedStatus, onClose }: DescriptionEditorProps) {
+export function DescriptionEditor({ value, onChange, savedStatus, onClose, workspaceId }: DescriptionEditorProps) {
   return (
     <>
-      <RichTextEditor initialValue={value} onChange={onChange} />
+      <RichTextEditor initialValue={value} onChange={onChange} workspaceId={workspaceId} />
       <div className="flex items-center justify-between mt-2">
         <span className="text-[11px] font-bold uppercase tracking-widest opacity-50 px-1">
           {savedStatus === "saving" ? (

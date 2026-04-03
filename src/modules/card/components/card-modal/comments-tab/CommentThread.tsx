@@ -8,9 +8,10 @@ interface CommentThreadProps {
   index: number;
   onReply: (parent: any, targetUser: any) => void;
   allUsers: any[];
+  currentUserId?: string;
 }
 
-export function CommentThread({ comment, replies, index, onReply, allUsers }: CommentThreadProps) {
+export function CommentThread({ comment, replies, index, onReply, allUsers, currentUserId }: CommentThreadProps) {
   const [showReplies, setShowReplies] = useState(false);
 
   return (
@@ -20,6 +21,7 @@ export function CommentThread({ comment, replies, index, onReply, allUsers }: Co
         index={index}
         onReply={onReply}
         allUsers={allUsers}
+        currentUserId={currentUserId}
       />
       <AnimatePresence>
         {showReplies && replies.length > 0 && (
@@ -38,6 +40,7 @@ export function CommentThread({ comment, replies, index, onReply, allUsers }: Co
                 isReply
                 onReply={onReply}
                 allUsers={allUsers}
+                currentUserId={currentUserId}
               />
             ))}
           </motion.div>

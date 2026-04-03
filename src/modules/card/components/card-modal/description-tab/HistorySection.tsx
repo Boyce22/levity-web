@@ -70,7 +70,7 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
                     style={{ background: "var(--app-border)" }}
                   />
                   {sortedHistory.map((item, i) => {
-                    const user = allUsers.find((u) => u.id === item.user_id) || item.users;
+                    const user = allUsers.find((u) => u.id === item.created_by) || item.users;
                     const meta = ACTION_META[item.action_type];
                     return (
                       <motion.li

@@ -16,19 +16,25 @@ interface RichTextEditorProps {
   initialValue: string;
   onChange: (val: string) => void;
   onKeyDown?: (e: React.KeyboardEvent) => void;
+  workspaceId: string;
 }
 
-export default function RichTextEditor({ initialValue, onChange, onKeyDown }: RichTextEditorProps) {
+export default function RichTextEditor({ initialValue, onChange, onKeyDown, workspaceId }: RichTextEditorProps) {
   const isUpdatingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const workspaceIdRef = useRef(workspaceId);
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    workspaceIdRef.current = workspaceId;
+  }, [workspaceId]);
   const [error, setError] = useState<string | null>(null);
 
   const handleDrop = (view: any, event: any, slice: any, moved: boolean) => {
     if (!moved && event.dataTransfer?.files?.[0]) {
       const file = event.dataTransfer.files[0];
       event.preventDefault();
-      
+
       const isImage = file.type.startsWith('image/');
       const maxSize = isImage ? 3 * 1024 * 1024 : 10 * 1024 * 1024;
 
@@ -40,12 +46,12 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
       const { schema } = view.state;
       const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
       const pos = coordinates ? coordinates.pos : view.state.selection.from;
-      
+
       const fd = new FormData();
       fd.append('file', file);
-      
+
       setIsUploading(true);
-      uploadImageAction(fd).then(url => {
+      uploadImageAction(fd, workspaceIdRef.current).then(url => {
         let node;
         if (isImage) {
           node = schema.nodes.image.create({ src: url, alt: file.name });
@@ -61,7 +67,7 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
         view.dispatch(transaction);
       }).catch((e: any) => alert('Upload failed: ' + e.message))
         .finally(() => setIsUploading(false));
-      
+
       return true;
     }
     return false;
@@ -71,41 +77,41 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
     const items = event.clipboardData?.items;
     if (!items) return false;
     for (let i = 0; i < items.length; i++) {
-        if (items[i].kind === 'file') {
-            const file = items[i].getAsFile();
-            if (file) {
-                event.preventDefault();
-                const isImage = file.type.startsWith('image/');
-                const maxSize = isImage ? 3 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (items[i].kind === 'file') {
+        const file = items[i].getAsFile();
+        if (file) {
+          event.preventDefault();
+          const isImage = file.type.startsWith('image/');
+          const maxSize = isImage ? 3 * 1024 * 1024 : 10 * 1024 * 1024;
 
-                if (file.size > maxSize) {
-                  alert(`Arquivo muito grande. Limite: ${isImage ? "3MB" : "10MB"}.`);
-                  return true;
-                }
+          if (file.size > maxSize) {
+            alert(`Arquivo muito grande. Limite: ${isImage ? "3MB" : "10MB"}.`);
+            return true;
+          }
 
-                const { schema } = view.state;
-                const fd = new FormData();
-                fd.append('file', file);
-                
-                setIsUploading(true);
-                uploadImageAction(fd).then(url => {
-                   let node;
-                   if (isImage) {
-                     node = schema.nodes.image.create({ src: url, alt: file.name });
-                   } else {
-                     const linkText = `[Arquivo: ${file.name}](${url})`;
-                     const textNode = schema.text(linkText);
-                     const transaction = view.state.tr.replaceSelectionWith(textNode);
-                     view.dispatch(transaction);
-                     return;
-                   }
-                   const transaction = view.state.tr.replaceSelectionWith(node);
-                   view.dispatch(transaction);
-                }).catch((e: any) => alert('Paste failed: ' + e.message))
-                  .finally(() => setIsUploading(false));
-                return true;
+          const { schema } = view.state;
+          const fd = new FormData();
+          fd.append('file', file);
+
+          setIsUploading(true);
+          uploadImageAction(fd, workspaceIdRef.current).then(url => {
+            let node;
+            if (isImage) {
+              node = schema.nodes.image.create({ src: url, alt: file.name });
+            } else {
+              const linkText = `[Arquivo: ${file.name}](${url})`;
+              const textNode = schema.text(linkText);
+              const transaction = view.state.tr.replaceSelectionWith(textNode);
+              view.dispatch(transaction);
+              return;
             }
+            const transaction = view.state.tr.replaceSelectionWith(node);
+            view.dispatch(transaction);
+          }).catch((e: any) => alert('Paste failed: ' + e.message))
+            .finally(() => setIsUploading(false));
+          return true;
         }
+      }
     }
     return false;
   };
@@ -163,7 +169,7 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown }: Ri
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const url = await uploadImageAction(fd);
+      const url = await uploadImageAction(fd, workspaceId);
 
       if (isImage) {
         editor.chain().focus().setImage({ src: url, alt: file.name }).run();

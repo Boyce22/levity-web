@@ -13,8 +13,8 @@ async function getUserId() {
 
 export type Notification = {
   id: string;
-  user_id: string;
-  actor_id: string;
+  recipient_id: string;
+  created_by: string;
   card_id: string;
   type: string;
   content: string;
@@ -28,17 +28,17 @@ export type Notification = {
 };
 
 export async function getNotificationsAction() {
-  const userId = await getUserId();
-  if (!userId) return [];
+  const currentUserId = await getUserId();
+  if (!currentUserId) return [];
   
   // Use inner join syntax
   const { data, error } = await supabase
     .from('notifications')
     .select(`
       *,
-      actor:users!actor_id(username, display_name, avatar_url)
+      actor:users!created_by(username, display_name, avatar_url)
     `)
-    .eq('user_id', userId)
+    .eq('recipient_id', currentUserId)
     .order('created_at', { ascending: false });
     
   if (error) {
@@ -49,7 +49,7 @@ export async function getNotificationsAction() {
 }
 
 export async function markNotificationsReadAction() {
-  const userId = await getUserId();
-  if (!userId) return;
-  await supabase.from('notifications').update({ read: true }).eq('user_id', userId);
+  const currentUserId = await getUserId();
+  if (!currentUserId) return;
+  await supabase.from('notifications').update({ read: true }).eq('recipient_id', currentUserId);
 }

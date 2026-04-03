@@ -5,7 +5,7 @@ export type { CardRecord };
 export interface CardHistoryRecord {
   id: string;
   card_id: string;
-  user_id: string;
+  created_by: string;
   action_type: string;
   field: string;
   old_val?: string | null;

@@ -47,12 +47,12 @@ export class SupabaseWorkspaceRepository implements IWorkspaceRepository {
   }
 
   // ─── Members ──────────────────────────────────────────────
-  async findMember(workspaceId: string, userId: string): Promise<Pick<WorkspaceMemberRecord, 'role'> | null> {
+  async findMember(workspaceId: string, memberId: string): Promise<Pick<WorkspaceMemberRecord, 'role'> | null> {
     const { data, error } = await supabase
       .from('workspace_members')
       .select('role')
       .eq('workspace_id', workspaceId)
-      .eq('user_id', userId)
+      .eq('member_id', memberId)
       .maybeSingle();
 
     if (error) {
@@ -63,21 +63,21 @@ export class SupabaseWorkspaceRepository implements IWorkspaceRepository {
     return data;
   }
 
-  async addMember(workspaceId: string, userId: string, role: string): Promise<void> {
+  async addMember(workspaceId: string, memberId: string, role: string): Promise<void> {
     const { error } = await supabase
       .from('workspace_members')
-      .insert({ workspace_id: workspaceId, user_id: userId, role });
+      .insert({ workspace_id: workspaceId, member_id: memberId, role });
 
     if (error && !error.message.includes('unique constraint')) {
       throw new Error(error.message);
     }
   }
 
-  async findAllByMember(userId: string): Promise<WorkspaceRecord[]> {
+  async findAllByMember(memberId: string): Promise<WorkspaceRecord[]> {
     const { data: members, error } = await supabase
       .from('workspace_members')
       .select('workspace_id, workspaces(*)')
-      .eq('user_id', userId);
+      .eq('member_id', memberId);
 
     if (error) {
       throw new Error(`Workspace logic failed: ${error.message}`);
@@ -285,11 +285,11 @@ export class SupabaseWorkspaceRepository implements IWorkspaceRepository {
   }
 
   // ─── Legacy migration ──────────────────────────────────────
-  async migrateListsWithoutWorkspace(workspaceId: string, userId: string): Promise<void> {
+  async migrateListsWithoutWorkspace(workspaceId: string, createdBy: string): Promise<void> {
     await supabase
       .from('lists')
       .update({ workspace_id: workspaceId })
       .is('workspace_id', null)
-      .eq('user_id', userId);
+      .eq('created_by', createdBy);
   }
 }

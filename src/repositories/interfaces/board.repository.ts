@@ -2,7 +2,7 @@ export type ListType = 'todo' | 'in_progress' | 'review' | 'done';
 
 export interface ListRecord {
   id: string;
-  user_id: string;
+  created_by: string;
   title: string;
   position: number;
   wip_limit?: number | null;
@@ -29,7 +29,7 @@ export interface IBoardRepository {
   findListsWithCards(workspaceId: string): Promise<{ lists: ListRecord[]; cards: CardRecord[] }>;
 
   /** Cria uma nova lista. */
-  createList(data: { userId: string; title: string; position: number; workspaceId: string }): Promise<ListRecord>;
+  createList(data: { createdBy: string; title: string; position: number; workspaceId: string }): Promise<ListRecord>;
 
   /** Renomeia uma lista. */
   renameList(listId: string, title: string): Promise<void>;

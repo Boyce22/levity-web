@@ -13,6 +13,7 @@ interface CardModalProps {
   card: CardType | null;
   onClose: () => void;
   onUpdate: (updatedCard: CardType) => void;
+  currentUserId?: string;
   currentUserAvatar: string;
   allUsers: any[];
   tags: any[];
@@ -40,6 +41,7 @@ export default function CardModal({
   card,
   onClose,
   onUpdate,
+  currentUserId,
   currentUserAvatar,
   allUsers,
   tags,
@@ -207,6 +209,7 @@ export default function CardModal({
                     savedStatus={savedStatus}
                     history={history}
                     allUsers={allUsers}
+                    workspaceId={workspaceId}
                   />
                 </motion.div>
               ) : (
@@ -225,6 +228,7 @@ export default function CardModal({
                     isLoadingMore={isLoadingMore}
                     onLoadMore={loadMoreComments}
                     onPostComment={handlePostComment}
+                    currentUserId={currentUserId}
                     currentUserAvatar={currentUserAvatar}
                     allUsers={allUsers}
                     workspaceId={workspaceId}

@@ -228,6 +228,7 @@ export default function Board({
           card={editingCard}
           onClose={() => setEditingCard(null)}
           onUpdate={updateCard}
+          currentUserId={userProfile?.id}
           currentUserAvatar={
             userProfile?.avatar_url ||
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.username}`

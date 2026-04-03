@@ -14,6 +14,7 @@ interface DescriptionTabProps {
   savedStatus: "idle" | "saving" | "saved";
   history: any[];
   allUsers: any[];
+  workspaceId: string;
 }
 
 export function DescriptionTab({
@@ -24,6 +25,7 @@ export function DescriptionTab({
   savedStatus,
   history,
   allUsers,
+  workspaceId,
 }: DescriptionTabProps) {
   const urls = extractStorageUrls(description);
   const attachments = urls.filter(url => !isImageUrl(url));
@@ -46,6 +48,7 @@ export function DescriptionTab({
             onChange={setDescription}
             savedStatus={savedStatus}
             onClose={() => setIsEditing(false)}
+            workspaceId={workspaceId}
           />
         </div>
       ) : (

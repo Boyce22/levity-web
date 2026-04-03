@@ -33,12 +33,12 @@ export class SupabaseCommentRepository implements ICommentRepository {
     return parents as any[];
   }
 
-  async create(data: { cardId: string; userId: string; content: string; parentId?: string | null }): Promise<CommentRecord> {
+  async create(data: { cardId: string; created_by: string; content: string; parentId?: string | null }): Promise<CommentRecord> {
     const { data: newComment, error } = await supabase
       .from('comments')
       .insert({
         card_id: data.cardId,
-        user_id: data.userId,
+        created_by: data.created_by,
         content: data.content,
         parent_id: data.parentId,
       })
@@ -50,5 +50,45 @@ export class SupabaseCommentRepository implements ICommentRepository {
     }
 
     return newComment as any;
+  }
+
+  async findById(id: string): Promise<CommentRecord | null> {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*, users(username, display_name, avatar_url)')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) return null;
+    return data as any;
+  }
+
+  async update(id: string, content: string): Promise<CommentRecord> {
+    const { data: updated, error } = await supabase
+      .from('comments')
+      .update({
+        content,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('*, users(username, display_name, avatar_url)')
+      .single();
+
+    if (error || !updated) {
+      throw new Error(error?.message || 'Failed to update comment');
+    }
+
+    return updated as any;
+  }
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
   }
 }

@@ -91,7 +91,7 @@ export function CardModalHeader({
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const url = await uploadImageAction(fd);
+      const url = await uploadImageAction(fd, workspaceId);
       onCoverUpload(url);
     } catch (err) {
       console.error("Cover upload failed", err);

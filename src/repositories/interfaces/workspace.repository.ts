@@ -6,7 +6,7 @@ export interface WorkspaceRecord {
 
 export interface WorkspaceMemberRecord {
   workspace_id: string;
-  user_id: string;
+  member_id: string;
   role: string;
 }
 
@@ -43,11 +43,11 @@ export interface IWorkspaceRepository {
   delete(id: string): Promise<void>;
 
   // ─── Members ──────────────────────────────────────────────
-  findMember(workspaceId: string, userId: string): Promise<Pick<WorkspaceMemberRecord, 'role'> | null>;
-  addMember(workspaceId: string, userId: string, role: string): Promise<void>;
+  findMember(workspaceId: string, memberId: string): Promise<Pick<WorkspaceMemberRecord, 'role'> | null>;
+  addMember(workspaceId: string, memberId: string, role: string): Promise<void>;
 
-  /** Retorna todos os workspaces onde o userId é membro, ordenados por created_at. */
-  findAllByMember(userId: string): Promise<WorkspaceRecord[]>;
+  /** Retorna todos os workspaces onde o memberId é membro, ordenados por created_at. */
+  findAllByMember(memberId: string): Promise<WorkspaceRecord[]>;
 
   // ─── Invites ──────────────────────────────────────────────
   createInvite(data: {
@@ -80,5 +80,5 @@ export interface IWorkspaceRepository {
   findCardListId(cardId: string): Promise<string | null>;
 
   // ─── Legacy migration ──────────────────────────────────────
-  migrateListsWithoutWorkspace(workspaceId: string, userId: string): Promise<void>;
+  migrateListsWithoutWorkspace(workspaceId: string, createdBy: string): Promise<void>;
 }
