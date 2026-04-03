@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card as CardType, updateCardDetailsAction } from "@/modules/board/actions/board";
-import { getCommentsAction, createCommentAction, Comment } from "@/modules/board/actions/comments";
+import { getCommentsAction, createCommentAction, deleteCommentAction, Comment } from "@/modules/board/actions/comments";
 import { getCardHistoryAction } from "@/modules/board/actions/history";
 import { parseProgress, parseChecklistCounts } from "@/modules/card/utils/parseProgress";
 
@@ -138,6 +138,18 @@ export function useCardModal(
     }
     setIsLoadingMore(false);
   }, [card, comments]);
+  
+  const handleDeleteComment = useCallback(async (commentId: string) => {
+    // Optimistic update: filter out the comment immediately
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    try {
+      await deleteCommentAction(commentId);
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+      // If it fails, we might want to reload comments or show an error, 
+      // but for now, the UI will reflect the change.
+    }
+  }, []);
 
   const checklistCounts = parseChecklistCounts(description);
 
@@ -165,6 +177,7 @@ export function useCardModal(
     isLoadingMore,
     loadMoreComments,
     handlePostComment,
+    handleDeleteComment,
     history,
     handleSave,
     toggleAssignee,

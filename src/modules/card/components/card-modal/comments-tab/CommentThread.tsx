@@ -9,9 +9,10 @@ interface CommentThreadProps {
   onReply: (parent: any, targetUser: any) => void;
   allUsers: any[];
   currentUserId?: string;
+  onDelete: (commentId: string) => void;
 }
 
-export function CommentThread({ comment, replies, index, onReply, allUsers, currentUserId }: CommentThreadProps) {
+export function CommentThread({ comment, replies, index, onReply, allUsers, currentUserId, onDelete }: CommentThreadProps) {
   const [showReplies, setShowReplies] = useState(false);
 
   return (
@@ -20,6 +21,7 @@ export function CommentThread({ comment, replies, index, onReply, allUsers, curr
         comment={comment}
         index={index}
         onReply={onReply}
+        onDelete={onDelete}
         allUsers={allUsers}
         currentUserId={currentUserId}
       />
@@ -39,6 +41,7 @@ export function CommentThread({ comment, replies, index, onReply, allUsers, curr
                 index={j}
                 isReply
                 onReply={onReply}
+                onDelete={onDelete}
                 allUsers={allUsers}
                 currentUserId={currentUserId}
               />

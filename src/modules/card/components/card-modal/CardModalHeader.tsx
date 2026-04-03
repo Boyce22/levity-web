@@ -118,7 +118,7 @@ export function CardModalHeader({
               }}
             >
               <span className="w-1.5 h-1.5 rounded-sm bg-emerald-400 animate-pulse" />
-              Ativo
+              Active
             </span>
 
             {currentLabel && (
@@ -177,7 +177,7 @@ export function CardModalHeader({
               <div className="flex items-center gap-1 text-xs">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>
-                  {new Date(dueDate).toLocaleDateString("pt-BR", {
+                  {new Date(dueDate).toLocaleDateString("en-US", {
                     day: "2-digit",
                     month: "short",
                   })}
@@ -222,7 +222,7 @@ export function CardModalHeader({
             }}
             onMouseEnter={(e) => { if (!isUploading) e.currentTarget.style.color = "var(--app-primary)"; }}
             onMouseLeave={(e) => { if (!isUploading) e.currentTarget.style.color = "var(--app-text-muted)"; }}
-            title="Adicionar capa"
+            title="Add cover"
           >
             {isUploading
               ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -261,7 +261,7 @@ export function CardModalHeader({
             onSave={onSave}
           />
 
-          <button
+          {/* <button
             onClick={onClose}
             className="flex items-center justify-center w-9 h-9 rounded-sm transition-all"
             style={{
@@ -273,7 +273,7 @@ export function CardModalHeader({
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
           >
             <X className="w-4 h-4" />
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

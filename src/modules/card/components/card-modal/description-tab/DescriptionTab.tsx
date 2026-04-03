@@ -95,22 +95,22 @@ export function DescriptionTab({
               className="text-sm italic opacity-40"
               style={{ color: "var(--app-text)" }}
             >
-              Adicione uma descrição… Suporta **Markdown**.
+              Add a description… Supports **Markdown**.
             </p>
           )}
           <p
             className="mt-3 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity"
             style={{ color: "var(--app-primary)" }}
           >
-            Clique para editar
+            Click to edit
           </p>
         </div>
       )}
 
-      {/* Seção de Anexos da Descrição */}
+      {/* Description Attachments Section */}
       {!isEditing && attachments.length > 0 && (
         <div className="space-y-2 pt-2">
-          <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Anexos</h4>
+          <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-40 px-1">Attachments</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {attachments.map((url, i) => (
               <AttachmentCard 

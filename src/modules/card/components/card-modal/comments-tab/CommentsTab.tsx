@@ -11,6 +11,7 @@ interface CommentsTabProps {
   isLoadingMore: boolean;
   onLoadMore: () => void;
   onPostComment: (text: string, parentId?: string | null) => void;
+  onDeleteComment: (commentId: string) => void;
   currentUserId?: string;
   currentUserAvatar: string;
   allUsers: any[];
@@ -24,6 +25,7 @@ export function CommentsTab({
   isLoadingMore,
   onLoadMore,
   onPostComment,
+  onDeleteComment,
   currentUserId,
   currentUserAvatar,
   allUsers,
@@ -92,6 +94,7 @@ export function CommentsTab({
               replies={repliesMap.get(comment.id) || []}
               index={i}
               onReply={handleReply}
+              onDelete={onDeleteComment}
               allUsers={allUsers}
               currentUserId={currentUserId}
             />

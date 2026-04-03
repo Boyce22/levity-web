@@ -7,6 +7,7 @@ import { extractAttachments, isImageUrl } from "@/modules/shared/utils/attachmen
 import { useState } from "react";
 import { Edit2, Trash2, X, Check, Loader2 } from "lucide-react";
 import { updateCommentAction, deleteCommentAction } from "@/modules/board/actions/comments";
+import { ConfirmationModal } from "@/modules/shared/components/ConfirmationModal";
 
 interface CommentItemProps {
   comment: any;
@@ -15,6 +16,7 @@ interface CommentItemProps {
   onReply: (parent: any, targetUser: any) => void;
   allUsers: any[];
   currentUserId?: string;
+  onDelete: (commentId: string) => void;
 }
 
 const markdownComponents = (allUrls: string[]) => ({
@@ -51,11 +53,11 @@ const markdownComponents = (allUrls: string[]) => ({
   },
 });
 
-export function CommentItem({ comment, index, isReply, onReply, allUsers, currentUserId }: CommentItemProps) {
+export function CommentItem({ comment, index, isReply, onReply, onDelete, allUsers, currentUserId }: CommentItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const user = comment.users || allUsers.find((u) => u.id === comment.created_by);
   const avatar = user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`;
@@ -81,14 +83,8 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers, curren
   };
 
   const handleDelete = async () => {
-    if (!confirm("Tem certeza que deseja excluir este comentário?")) return;
-    setIsDeleting(true);
-    try {
-      await deleteCommentAction(comment.id);
-    } catch (error) {
-      console.error("Failed to delete comment:", error);
-      setIsDeleting(false);
-    }
+    setIsDeleteModalOpen(false); // Close modal immediately
+    onDelete(comment.id); // Trigger optimistic update in parent
   };
 
   const removeAttachment = (url: string) => {
@@ -102,7 +98,7 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers, curren
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
-      className={`flex gap-3 group ${isDeleting ? "opacity-50 grayscale pointer-events-none" : ""}`}
+      className="flex gap-3 group relative"
     >
       <img
         src={avatar}
@@ -121,7 +117,7 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers, curren
             {comment.updated_at && (
               <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm" 
                     style={{ background: "var(--app-hover)", color: "var(--app-primary)", opacity: 0.8 }}>
-                Editado
+                Edited
               </span>
             )}
           </div>
@@ -139,7 +135,7 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers, curren
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={handleDelete}
+                onClick={() => setIsDeleteModalOpen(true)}
                 className="p-1 rounded hover:bg-red-500/10 hover:text-red-400 transition-colors"
                 style={{ color: "var(--app-text-muted)" }}
               >
@@ -175,7 +171,7 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers, curren
                   style={{ color: "var(--app-text-muted)" }}
                 >
                   <X className="w-3.5 h-3.5" />
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   onClick={handleSave}
@@ -191,7 +187,7 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers, curren
                   ) : (
                     <Check className="w-3.5 h-3.5" />
                   )}
-                  Salvar
+                  Save
                 </button>
               </div>
             </div>
@@ -206,7 +202,7 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers, curren
             </div>
           )}
 
-          {/* Seção de Anexos */}
+          {/* Attachments Section */}
           {attachments.length > 0 && (
             <div className={`mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-2 ${isEditing ? "opacity-80" : ""}`}>
               {attachments.map((file, i) => (
@@ -234,11 +230,22 @@ export function CommentItem({ comment, index, isReply, onReply, allUsers, curren
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--app-primary)")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-muted)")}
             >
-              Responder
+              Reply
             </button>
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Comment"
+        description="Are you sure you want to delete this comment? This action cannot be undone and will permanently remove this comment and its attachments."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
+
     </motion.div>
   );
 }

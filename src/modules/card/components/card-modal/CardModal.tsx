@@ -73,6 +73,7 @@ export default function CardModal({
     isLoadingMore,
     loadMoreComments,
     handlePostComment,
+    handleDeleteComment,
     history,
     handleSave,
     toggleAssignee,
@@ -228,6 +229,7 @@ export default function CardModal({
                     isLoadingMore={isLoadingMore}
                     onLoadMore={loadMoreComments}
                     onPostComment={handlePostComment}
+                    onDeleteComment={handleDeleteComment}
                     currentUserId={currentUserId}
                     currentUserAvatar={currentUserAvatar}
                     allUsers={allUsers}
