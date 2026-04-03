@@ -203,7 +203,7 @@ export function CommentInput({
     setSubmitError("");
 
     if (file.size > 10 * 1024 * 1024) {
-      setSubmitError("O arquivo é muito grande. Limite: 10MB.");
+      setSubmitError("File is too large. Limit: 10MB.");
       setIsUploadingFile(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
@@ -217,7 +217,7 @@ export function CommentInput({
       setStagedFiles(prev => [...prev, { name: file.name, url }]);
     } catch (err) {
       console.error("Upload failed", err);
-      setSubmitError("Erro ao carregar arquivo. Tente novamente.");
+      setSubmitError("Error uploading file. Please try again.");
     } finally {
       setIsUploadingFile(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -280,7 +280,7 @@ export function CommentInput({
     if ((!text.trim() && stagedFiles.length === 0) || isSubmitting) return;
 
     const filesMarkdown = stagedFiles
-      .map(f => ` [Arquivo: ${f.name}](${f.url}?name=${encodeURIComponent(f.name)}) `)
+      .map(f => ` [File: ${f.name}](${f.url}?name=${encodeURIComponent(f.name)}) `)
       .join("");
 
     const finalDraft = (text + filesMarkdown).trim();
@@ -298,7 +298,7 @@ export function CommentInput({
       setText(text);
       setStagedFiles(stagedFiles);
       if (editableRef.current) renderTokens(text, editableRef.current);
-      setSubmitError("Erro ao enviar. Tente novamente.");
+      setSubmitError("Error sending. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -383,7 +383,7 @@ export function CommentInput({
             }}
           >
             <span>
-              Respondendo para{" "}
+              Replying to{" "}
               <span className="font-medium" style={{ color: "var(--app-text)" }}>
                 @{replyingTo.users?.display_name || replyingTo.users?.username}
               </span>
@@ -405,8 +405,8 @@ export function CommentInput({
               }}
             >
               {replyingTo
-                ? "Escreva sua resposta… @ para mencionar (⌘↵ para enviar)"
-                : "Adicione um comentário… @ para mencionar (⌘↵ para enviar)"}
+                ? "Write your reply… @ to mention (⌘↵ to send)"
+                : "Add a comment… @ to mention (⌘↵ to send)"}
             </div>
           )}
 
@@ -469,7 +469,7 @@ export function CommentInput({
                 aria-disabled={isUploadingFile}
                 className="p-1.5 rounded-sm transition-colors hover:bg-[var(--app-hover)] aria-disabled:opacity-40 cursor-pointer"
                 style={{ color: "var(--app-text-muted)" }}
-                title="Anexar arquivo"
+                title="Attach file"
               >
                 {isUploadingFile
                   ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -477,7 +477,7 @@ export function CommentInput({
               </label>
               {stagedFiles.length > 0 && (
                 <span className="text-[10px] text-[var(--app-text-muted)] opacity-50">
-                  {stagedFiles.length} arquivo{stagedFiles.length > 1 ? "s" : ""}
+                  {stagedFiles.length} file{stagedFiles.length > 1 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -497,8 +497,8 @@ export function CommentInput({
               }
             >
               {isSubmitting
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando…</>
-                : <>Enviar <Send className="w-4 h-4" /></>}
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
+                : <>Send <Send className="w-4 h-4" /></>}
             </button>
           </div>
         </div>

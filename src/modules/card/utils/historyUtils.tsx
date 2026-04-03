@@ -3,22 +3,22 @@ export const ACTION_META: Record<
   { label: (f?: string) => string; color: string; dot: string }
 > = {
   updated: {
-    label: (f) => `editou ${f || "o card"}`,
+    label: (f) => `edited ${f || "the card"}`,
     color: "rgba(99,102,241,0.15)",
     dot: "#6366f1",
   },
   assigned: {
-    label: () => "alterou o responsável",
+    label: () => "changed the assignee",
     color: "rgba(245,158,11,0.15)",
     dot: "#f59e0b",
   },
   created: {
-    label: () => "criou este card",
+    label: () => "created this card",
     color: "rgba(16,185,129,0.15)",
     dot: "#10b981",
   },
   moved: {
-    label: (f) => `moveu para ${f || "…"}`,
+    label: (f) => `moved to ${f || "…"}`,
     color: "rgba(59,130,246,0.15)",
     dot: "#3b82f6",
   },

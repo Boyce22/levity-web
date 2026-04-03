@@ -13,12 +13,12 @@ export function CardModalTabs({ activeTab, setActiveTab, commentsCount }: CardMo
   const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
       id: "description",
-      label: "Descrição",
+      label: "Description",
       icon: <AlignLeft className="w-3.5 h-3.5" />,
     },
     {
       id: "comments",
-      label: "Comentários",
+      label: "Comments",
       icon: <MessageSquare className="w-3.5 h-3.5" />,
       badge: commentsCount,
     },

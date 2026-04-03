@@ -64,6 +64,9 @@ export interface IWorkspaceRepository {
   // ─── Members ──────────────────────────────────────────────
   findMember(workspaceId: string, memberId: string): Promise<Pick<WorkspaceMemberRecord, 'role'> | null>;
   addMember(workspaceId: string, memberId: string, role: string, createdBy: string): Promise<void>;
+  removeMember(workspaceId: string, memberId: string): Promise<void>;
+  updateMemberRole(workspaceId: string, memberId: string, role: string, updatedBy: string): Promise<void>;
+  countMembersByRole(workspaceId: string, role: string): Promise<number>;
 
   /** Retorna todos os workspaces onde o memberId é membro, ordenados por created_at. */
   findAllByMember(memberId: string): Promise<WorkspaceRecord[]>;

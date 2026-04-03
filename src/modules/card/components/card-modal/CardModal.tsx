@@ -251,7 +251,7 @@ export default function CardModal({
                 style={{ border: "1.5px solid var(--app-border-faint)" }}
               />
               <span className="text-[12px]" style={{ color: "var(--app-text-muted)", opacity: 0.8 }}>
-                Você está editando esta tarefa
+                You are editing this card
               </span>
             </div>
             <div className="flex items-center gap-2">

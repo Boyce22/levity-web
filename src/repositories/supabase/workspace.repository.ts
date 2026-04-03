@@ -78,6 +78,45 @@ export class SupabaseWorkspaceRepository implements IWorkspaceRepository {
     }
   }
 
+  async removeMember(workspaceId: string, memberId: string): Promise<void> {
+    const { error } = await supabase
+      .from('workspace_members')
+      .delete()
+      .eq('workspace_id', workspaceId)
+      .eq('member_id', memberId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async updateMemberRole(workspaceId: string, memberId: string, role: string, updatedBy: string): Promise<void> {
+    const { error } = await supabase
+      .from('workspace_members')
+      .update({ role, updated_by: updatedBy, updated_at: new Date().toISOString() })
+      .eq('workspace_id', workspaceId)
+      .eq('member_id', memberId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async countMembersByRole(workspaceId: string, role: string): Promise<number> {
+    const { count, error } = await supabase
+      .from('workspace_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .eq('role', role);
+
+    if (error) {
+      console.error('[SupabaseWorkspaceRepository.countMembersByRole] Error:', error);
+      return 0;
+    }
+
+    return count || 0;
+  }
+
   async findAllByMember(memberId: string): Promise<WorkspaceRecord[]> {
     const { data: members, error } = await supabase
       .from('workspace_members')

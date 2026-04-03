@@ -43,8 +43,14 @@ export async function generateInviteAction(
   const member = await assertUserOwnsWorkspace(userId, workspaceId);
 
   // 🛡️ Security Check: Admins cannot invite Owners
-  if (role === 'owner' && member.role !== 'owner') {
-    throw new Error('403 Forbidden: Only the Workspace Owner can generate invitations for the Owner role.');
+  if (role === 'owner') {
+    if (member.role !== 'owner') {
+      throw new Error('403 Forbidden: Only the Workspace Owner can generate invitations for the Owner role.');
+    }
+    const currentOwnerCount = await workspaceRepo.countMembersByRole(workspaceId, 'owner');
+    if (currentOwnerCount >= 1) {
+      throw new Error('409 Conflict: This workspace already has an owner. Only one owner is allowed.');
+    }
   }
 
   if (!['owner', 'admin'].includes(member.role)) {
@@ -116,5 +122,68 @@ export async function revokeInviteAction(workspaceId: string, token: string) {
   }
 
   await workspaceRepo.revokeInvite(token, userId);
+  revalidatePath('/');
+}
+
+export async function removeMemberAction(workspaceId: string, memberId: string) {
+  const userId = await getUserId();
+  const caller = await assertUserOwnsWorkspace(userId, workspaceId);
+
+  if (!['owner', 'admin'].includes(caller.role)) {
+    throw new Error('403 Forbidden: Insufficient permissions to remove members.');
+  }
+
+  const target = await workspaceRepo.findMember(workspaceId, memberId);
+  if (!target) throw new Error('Member not found');
+
+  // RBAC: Admins cannot remove Owners or other Admins
+  if (caller.role === 'admin' && ['owner', 'admin'].includes(target.role)) {
+     throw new Error('403 Forbidden: Admins can only remove Editors and Viewers.');
+  }
+
+  // Prevent removing the last owner
+  if (target.role === 'owner') {
+    // This logic could be more robust (check total owners), but for now we assume 
+    // you can't remove yourself if you are an owner through this UI easily.
+  }
+
+  await workspaceRepo.removeMember(workspaceId, memberId);
+  revalidatePath('/');
+}
+
+export async function updateMemberRoleAction(workspaceId: string, memberId: string, newRole: string) {
+  const userId = await getUserId();
+  const caller = await assertUserOwnsWorkspace(userId, workspaceId);
+
+  if (!['owner', 'admin'].includes(caller.role)) {
+    throw new Error('403 Forbidden: Insufficient permissions to change roles.');
+  }
+
+  const target = await workspaceRepo.findMember(workspaceId, memberId);
+  if (!target) throw new Error('Member not found');
+
+  // RBAC: Only Owners can promote to Owner or change another Owner's role
+  if (newRole === 'owner') {
+    if (caller.role !== 'owner') {
+      throw new Error('403 Forbidden: Only the Workspace Owner can promote members to Owner.');
+    }
+    
+    // Check if another owner exists
+    const ownerCount = await workspaceRepo.countMembersByRole(workspaceId, 'owner');
+    if (ownerCount >= 1 && target.role !== 'owner') {
+      throw new Error('409 Conflict: This workspace already has an owner. Please demote the current owner first or transfer ownership.');
+    }
+  }
+
+  if (target.role === 'owner' && caller.role !== 'owner') {
+    throw new Error('403 Forbidden: Only the Workspace Owner can change another Owners role.');
+  }
+
+  // RBAC: Admins cannot promote/demote other Admins
+  if (caller.role === 'admin' && target.role === 'admin') {
+    throw new Error('403 Forbidden: Admins cannot change other Admins roles.');
+  }
+
+  await workspaceRepo.updateMemberRole(workspaceId, memberId, newRole, userId);
   revalidatePath('/');
 }

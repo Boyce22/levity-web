@@ -75,11 +75,17 @@ export function Sidebar({
           <div className="w-8 h-8 rounded-sm bg-(--app-primary-muted)/30 border border-(--app-border-faint) flex items-center justify-center shrink-0 shadow-sm relative overflow-hidden">
             <LevityLogo size={22} />
           </div>
-          {!isCollapsed && (
-            <span className="font-bold text-lg tracking-tight text-(--app-text) truncate">
-              Levity
-            </span>
-          )}
+          <motion.span 
+            animate={{ 
+              opacity: isCollapsed ? 0 : 1,
+              width: isCollapsed ? 0 : 'auto',
+              marginLeft: isCollapsed ? 0 : 12
+            }}
+            transition={{ duration: 0.2 }}
+            className="font-bold text-lg tracking-tight text-(--app-text) whitespace-nowrap overflow-hidden"
+          >
+            Levity
+          </motion.span>
         </div>
       </div>
 
@@ -96,19 +102,25 @@ export function Sidebar({
             <div className="w-6 h-6 rounded-sm bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm">
               {currentWorkspaceName?.charAt(0).toUpperCase() || "W"}
             </div>
-            {!isCollapsed && (
-              <>
-                <span className="flex-1 text-left text-sm font-semibold truncate text-(--app-text)">
-                  {currentWorkspaceName || "Workspace"}
-                </span>
-                <ChevronDown
-                  size={14}
-                  className={`text-(--app-text-muted) transition-transform ${
-                    isWsOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </>
-            )}
+            <motion.div 
+              animate={{ 
+                opacity: isCollapsed ? 0 : 1,
+                width: isCollapsed ? 0 : 'auto',
+                marginLeft: isCollapsed ? 0 : 12
+              }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex items-center justify-between overflow-hidden whitespace-nowrap"
+            >
+              <span className="text-left text-sm font-semibold truncate text-(--app-text)">
+                {currentWorkspaceName || "Workspace"}
+              </span>
+              <ChevronDown
+                size={14}
+                className={`text-(--app-text-muted) transition-transform shrink-0 ${
+                  isWsOpen ? "rotate-180" : ""
+                }`}
+              />
+            </motion.div>
           </button>
 
           <AnimatePresence>
@@ -193,8 +205,18 @@ export function Sidebar({
             } ${item.disabled ? "opacity-40 cursor-not-allowed grayscale" : ""}`}
             title={isCollapsed ? item.label : ""}
           >
-            <item.icon size={isCollapsed ? 20 : 18} />
-            {!isCollapsed && <span className="text-sm tracking-tight">{item.label}</span>}
+            <item.icon size={isCollapsed ? 20 : 18} className="shrink-0" />
+            <motion.span 
+              animate={{ 
+                opacity: isCollapsed ? 0 : 1,
+                width: isCollapsed ? 0 : 'auto',
+                marginLeft: isCollapsed ? 0 : 12
+              }}
+              transition={{ duration: 0.2 }}
+              className="text-sm tracking-tight whitespace-nowrap overflow-hidden flex-1 text-left"
+            >
+              {item.label}
+            </motion.span>
             {activeView === item.id && (
               <motion.div
                 layoutId="activeNav"
@@ -223,17 +245,30 @@ export function Sidebar({
               className="w-8 h-8 rounded-sm object-cover border border-(--app-border-faint) shadow-sm"
             />
           </button>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-(--app-text) truncate tracking-tight">
-                {userProfile?.display_name || userProfile?.username}
-              </p>
-              <p className="text-[11px] text-(--app-text-muted) truncate opacity-60 capitalize">
-                {userRole}
-              </p>
-            </div>
-          )}
-          {!isCollapsed && (
+          <motion.div 
+            animate={{ 
+              opacity: isCollapsed ? 0 : 1,
+              width: isCollapsed ? 0 : 'auto',
+              marginLeft: isCollapsed ? 0 : 12
+            }}
+            transition={{ duration: 0.2 }}
+            className="flex-1 min-w-0 overflow-hidden whitespace-nowrap"
+          >
+            <p className="text-sm font-bold text-(--app-text) truncate tracking-tight">
+              {userProfile?.display_name || userProfile?.username}
+            </p>
+            <p className="text-[11px] text-(--app-text-muted) truncate opacity-60 capitalize">
+              {userRole}
+            </p>
+          </motion.div>
+          <motion.div
+             animate={{ 
+               opacity: isCollapsed ? 0 : 1,
+               width: isCollapsed ? 0 : 'auto'
+             }}
+             transition={{ duration: 0.2 }}
+             className="overflow-hidden whitespace-nowrap"
+          >
             <form action={logoutAction}>
               <button
                 type="submit"
@@ -243,7 +278,7 @@ export function Sidebar({
                 <LogOut size={16} />
               </button>
             </form>
-          )}
+          </motion.div>
         </div>
       </div>
     </motion.aside>

@@ -17,7 +17,8 @@ import {
   Plus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getWorkspaceInvitesAction, revokeInviteAction } from "../actions/members";
+import { getWorkspaceInvitesAction, revokeInviteAction, removeMemberAction, updateMemberRoleAction } from "../actions/members";
+import { Select } from "@/modules/shared/components/Select";
 
 const formatDate = (date: string | Date, pattern?: string) => {
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -55,13 +56,16 @@ interface Props {
   members: Member[];
   onOpenShare: () => void;
   initialInvites?: Invite[];
+  currentUserId?: string;
 }
 
-export function MembersManagement({ workspaceId, members, onOpenShare, initialInvites = [] }: Props) {
+export function MembersManagement({ workspaceId, members, onOpenShare, initialInvites = [], currentUserId }: Props) {
   const [activeTab, setActiveTab] = useState<"members" | "invites">("members");
   const [invites, setInvites] = useState<Invite[]>(initialInvites);
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
+  const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInvites();
@@ -88,6 +92,29 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
       console.error("Failed to revoke", err);
     } finally {
       setRevokingToken(null);
+    }
+  };
+
+  const handleUpdateRole = async (memberId: string, newRole: string) => {
+    setUpdatingMemberId(memberId);
+    try {
+      await updateMemberRoleAction(workspaceId, memberId, newRole);
+    } catch (err) {
+      console.error("Failed to update role", err);
+    } finally {
+      setUpdatingMemberId(null);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!confirm("Are you sure you want to remove this member?")) return;
+    setRemovingMemberId(memberId);
+    try {
+      await removeMemberAction(workspaceId, memberId);
+    } catch (err) {
+      console.error("Failed to remove member", err);
+    } finally {
+      setRemovingMemberId(null);
     }
   };
 
@@ -193,23 +220,41 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Shield size={14} className={
-                          member.role === 'owner' ? 'text-amber-400' : 
-                          member.role === 'admin' ? 'text-indigo-400' : 
-                          member.role === 'viewer' ? 'text-emerald-400' : 
-                          'text-slate-400'
-                        } />
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm ${
-                          member.role === 'owner' ? 'bg-amber-500/10 text-amber-400' : 
-                          member.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400' : 
-                          member.role === 'editor' ? 'bg-blue-500/10 text-blue-400' : 
-                          member.role === 'viewer' ? 'bg-emerald-500/10 text-emerald-400' : 
-                          'bg-slate-500/10 text-slate-400'
-                        }`}>
-                          {member.role}
-                        </span>
-                      </div>
+                      <Select
+                        value={member.role}
+                        disabled={member.role === 'owner' || member.id === currentUserId}
+                        onChange={(val) => handleUpdateRole(member.id, val)}
+                        isLoading={updatingMemberId === member.id}
+                        size="sm"
+                        triggerClassName="w-[120px] bg-(--app-hover)/10 border-(--app-border-faint) hover:bg-(--app-hover)/20 shadow-none border"
+                        options={[
+                          { 
+                            value: "owner", 
+                            label: "Owner", 
+                            icon: <Shield size={12} />, 
+                            color: "#fbbf24",
+                            disabled: member.role !== 'owner' // Only the current owner can have the owner role
+                          },
+                          { 
+                            value: "admin", 
+                            label: "Admin", 
+                            icon: <Shield size={12} />, 
+                            color: "#818cf8"
+                          },
+                          { 
+                            value: "editor", 
+                            label: "Editor", 
+                            icon: <Shield size={12} />, 
+                            color: "#6366f1"
+                          },
+                          { 
+                            value: "viewer", 
+                            label: "Viewer", 
+                            icon: <Shield size={12} />, 
+                            color: "#34d399"
+                          },
+                        ]}
+                      />
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-[13px] text-(--app-text-muted)">{member.email}</p>
@@ -221,9 +266,23 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 rounded-sm hover:bg-(--app-hover) text-(--app-text-muted) transition-colors opacity-0 group-hover:opacity-100">
-                        <MoreHorizontal size={16} />
-                      </button>
+                      {member.role !== 'owner' && member.id !== currentUserId && (
+                        <button 
+                          onClick={() => handleRemoveMember(member.id)}
+                          disabled={removingMemberId === member.id}
+                          className="p-2 rounded-sm hover:bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+                        >
+                          {removingMemberId === member.id ? <Clock size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                        </button>
+                      )}
+                      {member.id === currentUserId && member.role !== 'owner' && (
+                         <button 
+                            onClick={() => handleRemoveMember(member.id)}
+                            className="text-[10px] font-bold text-red-500 hover:underline uppercase tracking-tighter"
+                         >
+                           Leave Project
+                         </button>
+                      )}
                     </td>
                   </tr>
                 ))}

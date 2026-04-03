@@ -82,7 +82,7 @@ export function CommentsTab({
             <MessageSquare className="w-5 h-5" style={{ color: "var(--app-text-muted)", opacity: 0.5 }} />
           </div>
           <p className="text-sm" style={{ color: "var(--app-text-muted)", opacity: 0.6 }}>
-            Sem comentários ainda. Seja o primeiro!
+            No comments yet. Be the first!
           </p>
         </div>
       ) : (
@@ -114,7 +114,7 @@ export function CommentsTab({
                 e.currentTarget.style.borderColor = "var(--app-border-faint)";
               }}
             >
-              {isLoadingMore ? "Carregando…" : "Ver mais ⌄"}
+              {isLoadingMore ? "Loading…" : "Show more ⌄"}
             </button>
           )}
         </div>

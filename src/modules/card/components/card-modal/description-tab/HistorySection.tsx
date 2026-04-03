@@ -27,7 +27,7 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
         <div className="flex items-center gap-2.5">
           <Clock className="w-3.5 h-3.5" style={{ color: "var(--app-text-muted)" }} />
           <span className="text-[13px] font-semibold transition-colors" style={{ color: "var(--app-text-muted)" }}>
-            Histórico de edições
+            Edit History
           </span>
           {history.length > 0 && (
             <span
@@ -61,7 +61,7 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
             <div className="px-4 pb-4 pt-3">
               {sortedHistory.length === 0 ? (
                 <p className="text-[12px] py-3 text-center italic" style={{ color: "var(--app-text-muted)" }}>
-                  Sem edições registradas.
+                  No edit history recorded.
                 </p>
               ) : (
                 <ol className="relative pl-8 space-y-0 mt-1">
@@ -101,7 +101,7 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
                             />
                           )}
                           <span className="text-[12.5px] font-semibold" style={{ color: "var(--app-text-muted)" }}>
-                            {user?.display_name || user?.username || "Alguém"}
+                            {user?.display_name || user?.username || "Someone"}
                           </span>
                           <ActionPill type={item.action_type} field={item.field} />
                           {item.action_type === "updated" && item.old_value && item.new_value && (

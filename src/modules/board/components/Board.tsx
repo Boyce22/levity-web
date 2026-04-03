@@ -278,6 +278,7 @@ export default function Board({
                     members={allUsers}
                     onOpenShare={() => setIsShareOpen(true)}
                     initialInvites={initialInvites}
+                    currentUserId={currentUserProfile?.id}
                   />
                 </div>
               </div>

@@ -14,6 +14,7 @@ import {
   Shield,
 } from "lucide-react";
 import { generateInviteAction } from "@/modules/workspace/actions/members";
+import { Select, SelectOption } from "@/modules/shared/components/Select";
 
 interface Props {
   isOpen: boolean;
@@ -95,61 +96,93 @@ export default function ShareWorkspaceModal({
           {!inviteUrl ? (
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 flex flex-col">
                   <label className="text-[10px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
                     <Users className="w-3 h-3" /> Max Uses
                   </label>
-                  <select
+                  <Select
                     value={maxUses}
-                    onChange={(e) => setMaxUses(Number(e.target.value))}
-                    className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-1.5 text-[13px] text-(--app-text) focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
-                  >
-                    <option value={1}>1 person</option>
-                    <option value={5}>5 people</option>
-                    <option value={10}>10 people</option>
-                    <option value={25}>25 people</option>
-                    <option value={100}>100 people</option>
-                  </select>
+                    onChange={setMaxUses}
+                    className="w-full"
+                    triggerClassName="w-full"
+                    options={[
+                      { value: 1, label: "1 person" },
+                      { value: 5, label: "5 people" },
+                      { value: 10, label: "10 people" },
+                      { value: 25, label: "25 people" },
+                      { value: 100, label: "100 people" },
+                    ]}
+                  />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 flex flex-col">
                   <label className="text-[10px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
                     <Clock className="w-3 h-3" /> Expiration
                   </label>
-                  <select
+                  <Select
                     value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value))}
-                    className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-1.5 text-[13px] text-(--app-text) focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
-                  >
-                    <option value={1}>1 hour</option>
-                    <option value={24}>1 day</option>
-                    <option value={72}>3 days</option>
-                    <option value={168}>7 days</option>
-                    <option value={720}>30 days</option>
-                  </select>
+                    onChange={setDuration}
+                    className="w-full"
+                    triggerClassName="w-full"
+                    options={[
+                      { value: 1, label: "1 hour" },
+                      { value: 24, label: "1 day" },
+                      { value: 72, label: "3 days" },
+                      { value: 168, label: "7 days" },
+                      { value: 720, label: "30 days" },
+                    ]}
+                  />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 flex flex-col">
                 <label className="text-[10px] font-bold text-(--app-text-muted) uppercase tracking-wider flex items-center gap-1.5 opacity-60">
                   <Shield className="w-3 h-3" /> Assign Role
                 </label>
-                <select
+                <Select
                   value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-(--app-panel) border border-(--app-border-faint) rounded-sm px-3 py-2 text-[13px] text-(--app-text) font-medium focus:outline-none focus:ring-2 focus:ring-(--app-primary)/20 appearance-none cursor-pointer"
-                >
-                  <option value="member">Member (Full editing)</option>
-                  <option value="editor">Editor (Card updates only)</option>
-                  <option value="viewer">Viewer (Read-only)</option>
-                  <option value="admin">Admin (Workspace management)</option>
-                </select>
-                <p className="text-[10px] text-(--app-text-muted) italic px-0.5">
-                  {role === 'member' && "Ideal for regular team members."}
-                  {role === 'editor' && "Can edit details but cannot delete lists or cards."}
-                  {role === 'viewer' && "No editing permissions. Perfect for stakeholders."}
-                  {role === 'admin' && "Can manage members and workspace settings."}
-                </p>
+                  onChange={setRole}
+                  className="w-full"
+                  triggerClassName="w-full"
+                  options={[
+                    { 
+                      value: "member", 
+                      label: "Member", 
+                      icon: <Shield size={14} />, 
+                      color: "#6366f1",
+                      description: "Ideal for regular team members."
+                    },
+                    { 
+                      value: "editor", 
+                      label: "Editor", 
+                      icon: <Shield size={14} />, 
+                      color: "#60a5fa",
+                      description: "Can edit details but cannot delete lists or cards."
+                    },
+                    { 
+                      value: "viewer", 
+                      label: "Viewer", 
+                      icon: <Shield size={14} />, 
+                      color: "#34d399",
+                      description: "No editing permissions. Stakeholder mode."
+                    },
+                    { 
+                      value: "admin", 
+                      label: "Admin", 
+                      icon: <Shield size={14} />, 
+                      color: "#818cf8",
+                      description: "Can manage members and workspace settings."
+                    },
+                    { 
+                      value: "owner", 
+                      label: "Owner", 
+                      icon: <Shield size={14} />, 
+                      color: "#fbbf24",
+                      description: "Only one owner allowed. Invitations for this role are restricted.",
+                      disabled: true
+                    },
+                  ]}
+                />
               </div>
 
               <button
