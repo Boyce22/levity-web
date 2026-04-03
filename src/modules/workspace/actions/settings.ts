@@ -1,6 +1,6 @@
 'use server';
 
-import { supabase } from '@/lib/supabase';
+import { workspaceRepo } from '@/repositories';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { verifyJwtToken } from '@/lib/auth';
@@ -20,13 +20,8 @@ export async function createTagAction(workspaceId: string, name: string, color: 
   const userId = await getUserId();
   await assertUserOwnsWorkspace(userId, workspaceId);
 
-  const { data, error } = await supabase
-    .from('workspace_tags')
-    .insert({ workspace_id: workspaceId, name, color })
-    .select()
-    .single();
+  const data = await workspaceRepo.createTag(workspaceId, name, color);
 
-  if (error) throw new Error(error.message);
   revalidatePath('/');
   return data;
 }
@@ -35,13 +30,7 @@ export async function deleteTagAction(workspaceId: string, tagId: string) {
   const userId = await getUserId();
   await assertUserOwnsWorkspace(userId, workspaceId);
 
-  const { error } = await supabase
-    .from('workspace_tags')
-    .delete()
-    .eq('id', tagId)
-    .eq('workspace_id', workspaceId);
-
-  if (error) throw new Error(error.message);
+  await workspaceRepo.deleteTag(workspaceId, tagId);
   revalidatePath('/');
 }
 
@@ -51,13 +40,8 @@ export async function createPriorityAction(workspaceId: string, name: string, co
   const userId = await getUserId();
   await assertUserOwnsWorkspace(userId, workspaceId);
 
-  const { data, error } = await supabase
-    .from('workspace_priorities')
-    .insert({ workspace_id: workspaceId, name, color, icon })
-    .select()
-    .single();
+  const data = await workspaceRepo.createPriority(workspaceId, name, color, icon);
 
-  if (error) throw new Error(error.message);
   revalidatePath('/');
   return data;
 }
@@ -66,12 +50,6 @@ export async function deletePriorityAction(workspaceId: string, priorityId: stri
   const userId = await getUserId();
   await assertUserOwnsWorkspace(userId, workspaceId);
 
-  const { error } = await supabase
-    .from('workspace_priorities')
-    .delete()
-    .eq('id', priorityId)
-    .eq('workspace_id', workspaceId);
-
-  if (error) throw new Error(error.message);
+  await workspaceRepo.deletePriority(workspaceId, priorityId);
   revalidatePath('/');
 }

@@ -1,6 +1,12 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import {
+  boardRepo,
+  workspaceRepo,
+  cardRepo,
+  userRepo,
+  notificationRepo,
+} from "@/repositories";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { verifyJwtToken } from "@/lib/auth";
@@ -45,63 +51,19 @@ async function getUserId() {
 }
 
 async function fetchUserWorkspaces(userId: string) {
-  const { data: members, error } = await supabase
-    .from("workspace_members")
-    .select("workspace_id, workspaces(*)")
-    .eq("user_id", userId);
-
-  if (error) throw new Error(`Workspace logic failed: ${error.message}`);
-
-  const workspaces = (members || [])
-    .map((m) => (Array.isArray(m.workspaces) ? m.workspaces[0] : m.workspaces))
-    .filter(Boolean) as any[];
-
-  return workspaces.sort(
-    (a, b) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-  );
+  return workspaceRepo.findAllByMember(userId);
 }
 
 async function ensureDefaultWorkspace(userId: string, workspaces: any[]) {
   if (workspaces.length > 0) return workspaces;
 
-  const { data: cw, error } = await supabase
-    .from("workspaces")
-    .insert({ name: "My Workspace" })
-    .select()
-    .single();
-  if (error)
-    throw new Error(`Failed to generate default workspace: ${error.message}`);
-
-  await supabase
-    .from("workspace_members")
-    .insert({ workspace_id: cw.id, user_id: userId, role: "owner" });
+  const cw = await workspaceRepo.create("My Workspace");
+  await workspaceRepo.addMember(cw.id, userId, "owner");
   return [cw];
 }
 
 async function fetchBoardLists(workspaceId: string) {
-  // 🛡️ Performance Boundary: PostgREST Embedded Join (Fetches Lists + Cards in identical sub-second DB execution)
-  const { data: lists, error } = await supabase
-    .from("lists")
-    .select("*, cards(*)")
-    .eq("workspace_id", workspaceId)
-    .order("position");
-
-  if (error) throw new Error(`Failed to load board lists: ${error.message}`);
-
-  const flatLists: List[] = [];
-  const flatCards: Card[] = [];
-
-  for (const list of lists || []) {
-    const listCards = list.cards || [];
-    listCards.sort((a: any, b: any) => a.position - b.position);
-    flatCards.push(...listCards);
-
-    const { cards, ...listData } = list;
-    flatLists.push(listData as List);
-  }
-
-  return { lists: flatLists, cards: flatCards };
+  return boardRepo.findListsWithCards(workspaceId);
 }
 
 /**
@@ -120,27 +82,15 @@ export async function getBoardData(workspaceId?: string) {
   await assertUserOwnsWorkspace(userId, currentWsId);
 
   // Seamlessly migrate legacy lists missing a workspace_id mapping
-  await supabase
-    .from("lists")
-    .update({ workspace_id: currentWsId })
-    .is("workspace_id", null)
-    .eq("user_id", userId);
+  await workspaceRepo.migrateListsWithoutWorkspace(currentWsId, userId);
 
   const { lists, cards } = await fetchBoardLists(currentWsId);
 
   // 4. Fetch dynamic settings
-  const { data: tags } = await supabase
-    .from('workspace_tags')
-    .select('*')
-    .eq('workspace_id', currentWsId);
+  const tags = await workspaceRepo.findTagsByWorkspace(currentWsId);
+  const priorities = await workspaceRepo.findPrioritiesByWorkspace(currentWsId);
 
-  const { data: priorities } = await supabase
-    .from('workspace_priorities')
-    .select('*')
-    .eq('workspace_id', currentWsId)
-    .order('position');
-
-  return { lists, cards, workspaces, tags: tags || [], priorities: priorities || [] };
+  return { lists, cards, workspaces, tags, priorities };
 }
 export async function createListAction(
   title: string,
@@ -152,16 +102,13 @@ export async function createListAction(
   // 🛡️ Security Boundary: BFLA / IDOR Check
   await assertUserOwnsWorkspace(userId, workspaceId);
 
-  const { data, error } = await supabase
-    .from("lists")
-    .insert({ user_id: userId, title, position, workspace_id: workspaceId })
-    .select()
-    .single();
+  const data = await boardRepo.createList({
+    userId,
+    title,
+    position,
+    workspaceId,
+  });
 
-  if (error) {
-    console.error(error);
-    return null;
-  }
   revalidatePath("/");
   return data;
 }
@@ -170,7 +117,7 @@ export async function renameListAction(listId: string, title: string) {
   const userId = await getUserId();
   await assertUserOwnsList(userId, listId);
 
-  await supabase.from("lists").update({ title }).eq("id", listId);
+  await boardRepo.renameList(listId, title);
   revalidatePath("/");
 }
 
@@ -178,7 +125,7 @@ export async function deleteListAction(id: string) {
   const userId = await getUserId();
   await assertUserOwnsList(userId, id);
 
-  await supabase.from("lists").delete().eq("id", id);
+  await boardRepo.deleteList(id);
   revalidatePath("/");
 }
 
@@ -186,7 +133,7 @@ export async function updateListTypeAction(listId: string, listType: ListType | 
   const userId = await getUserId();
   await assertUserOwnsList(userId, listId);
 
-  await supabase.from("lists").update({ list_type: listType }).eq("id", listId);
+  await boardRepo.updateListType(listId, listType);
   revalidatePath("/");
 }
 
@@ -198,13 +145,12 @@ export async function createCardAction(
   const userId = await getUserId();
   await assertUserOwnsList(userId, listId);
 
-  const { data, error } = await supabase
-    .from("cards")
-    .insert({ list_id: listId, content, position })
-    .select()
-    .single();
+  const data = await cardRepo.createCard({
+    listId,
+    content,
+    position,
+  });
 
-  if (error) console.error(error);
   revalidatePath("/");
   return data;
 }
@@ -213,7 +159,7 @@ export async function deleteCardAction(id: string) {
   const userId = await getUserId();
   await assertUserOwnsCard(userId, id);
 
-  await supabase.from("cards").delete().eq("id", id);
+  await cardRepo.deleteCard(id);
   revalidatePath("/");
 }
 
@@ -237,10 +183,7 @@ async function notifyMentionedUsers(
 ) {
   if (addedMentions.length === 0) return;
 
-  const { data: users } = await supabase
-    .from("users")
-    .select("id, username")
-    .in("username", addedMentions);
+  const users = await userRepo.findManyByUsernames(addedMentions);
   if (!users || users.length === 0) return;
 
   const notifications = users.map((u) => ({
@@ -250,7 +193,7 @@ async function notifyMentionedUsers(
     type: "mention_desc",
     content: "You were mentioned in a card description.",
   }));
-  await supabase.from("notifications").insert(notifications);
+  await notificationRepo.insertMany(notifications);
 }
 
 export async function updateCardDetailsAction(
@@ -260,11 +203,7 @@ export async function updateCardDetailsAction(
   const userId = await getUserId();
   await assertUserOwnsCard(userId, id);
 
-  const { data: oldCard } = await supabase
-    .from("cards")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const oldCard = await cardRepo.findById(id);
 
   // 🛡️ Security Boundary: Mass Assignment Protection
   // Strict Allowlist: Dropping unpredictable metadata like list_id or ids.
@@ -283,7 +222,7 @@ export async function updateCardDetailsAction(
     ...(updates.due_date !== undefined && { due_date: updates.due_date }),
   };
 
-  await supabase.from("cards").update(safePayload).eq("id", id);
+  await cardRepo.updateCard(id, safePayload);
 
   const logs = [];
   if (oldCard) {
@@ -332,7 +271,7 @@ export async function updateCardDetailsAction(
   }
 
   if (logs.length > 0) {
-    await supabase.from("card_history").insert(logs);
+    await cardRepo.insertHistory(logs);
   }
 
   revalidatePath("/");
@@ -345,14 +284,10 @@ export async function updateListPositionsAction(
 
   // 🛡️ Performance Boundary: Concurrency parallelism instead of O(N) sequential awaits
   await Promise.all(
-    updates.map(async (update) => {
-      await assertUserOwnsList(userId, update.id);
-      await supabase
-        .from("lists")
-        .update({ position: update.position })
-        .eq("id", update.id);
-    }),
+    updates.map((update) => assertUserOwnsList(userId, update.id))
   );
+
+  await boardRepo.updateListPositions(updates);
 }
 
 export async function updateCardPositionsAction(
@@ -367,16 +302,12 @@ export async function updateCardPositionsAction(
   );
 
   // Execute massive card position changes concurrently
+  // Note: We still need to verify ownership of each card before updating
   await Promise.all(
-    updates.map(async (update) => {
-      await assertUserOwnsCard(userId, update.id);
-      await supabase
-        .from("cards")
-        .update({
-          list_id: update.list_id,
-          position: update.position,
-        })
-        .eq("id", update.id);
-    }),
+    updates.map((update) => assertUserOwnsCard(userId, update.id))
+  );
+
+  await cardRepo.updateCardPositions(
+    updates.map((u) => ({ id: u.id, listId: u.list_id, position: u.position }))
   );
 }

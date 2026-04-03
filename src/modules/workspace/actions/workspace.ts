@@ -1,6 +1,6 @@
 'use server';
 
-import { supabase } from '@/lib/supabase';
+import { workspaceRepo } from '@/repositories';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { verifyJwtToken } from '@/lib/auth';
@@ -23,46 +23,28 @@ export async function createWorkspaceAction(name: string) {
   }
 
   // 1. cria workspace
-  const { data: workspace, error: wsError } = await supabase
-    .from('workspaces')
-    .insert({ name })
-    .select()
-    .single();
+  const workspace = await workspaceRepo.create(name);
 
-  if (wsError) throw new Error(wsError.message);
+  try {
+    // 2. cria membership (owner)
+    await workspaceRepo.addMember(workspace.id, userId, 'owner');
 
-  // 2. cria membership (owner)
-  const { error: memberError } = await supabase
-    .from('workspace_members')
-    .insert({
-      workspace_id: workspace.id,
-      user_id: userId,
-      role: 'owner',
-    });
+    // 3. Semear prioridades padrão
+    await workspaceRepo.seedDefaultPriorities(workspace.id);
 
-  if (memberError) {
-    await supabase.from('workspaces').delete().eq('id', workspace.id);
-    throw new Error(memberError.message);
-  }
-
-  // 3. Semear prioridades padrão
-  const defaultPriorities = [
-    { workspace_id: workspace.id, name: 'Low', color: '#34d399', icon: '↓', position: 0 },
-    { workspace_id: workspace.id, name: 'Medium', color: '#fbbf24', icon: '→', position: 1 },
-    { workspace_id: workspace.id, name: 'High', color: '#f87171', icon: '↑', position: 2 },
-  ];
-
-  const { error: seedError } = await supabase
-    .from('workspace_priorities')
-    .insert(defaultPriorities);
-
-  if (seedError) {
-    console.error('Error seeding priorities:', seedError);
-    // Não paramos a criação por causa disso, mas logamos
+  } catch (error: any) {
+    // Se falhar ao criar o membro, tentamos limpar o workspace para evitar lixo
+    await workspaceRepo.delete(workspace.id);
+    throw new Error(error.message);
   }
 
   revalidatePath('/');
   return workspace;
+}
+
+export async function getUserWorkspacesAction() {
+  const userId = await getUserId();
+  return workspaceRepo.findAllByMember(userId);
 }
 
 export async function renameWorkspaceAction(id: string, newName: string) {
@@ -74,16 +56,7 @@ export async function renameWorkspaceAction(id: string, newName: string) {
     throw new Error('403 Forbidden: Permission denied for renaming this workspace.');
   }
 
-  const { error } = await supabase
-    .from('workspaces')
-    .update({ name: newName })
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error renaming workspace:', error);
-    throw new Error('Failed to update workspace name.');
-  }
-
+  await workspaceRepo.rename(id, newName);
   revalidatePath('/');
 }
 
@@ -96,15 +69,6 @@ export async function deleteWorkspaceAction(id: string) {
     throw new Error('403 Forbidden: Only the workspace owner can perform this irreversible action.');
   }
 
-  const { error } = await supabase
-    .from('workspaces')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error deleting workspace:', error);
-    throw new Error('Failed to delete workspace.');
-  }
-
+  await workspaceRepo.delete(id);
   revalidatePath('/');
 }

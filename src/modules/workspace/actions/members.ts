@@ -1,6 +1,6 @@
 'use server';
 
-import { supabase } from '@/lib/supabase';
+import { workspaceRepo } from '@/repositories';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { verifyJwtToken } from '@/lib/auth';
@@ -19,24 +19,12 @@ async function createInviteRecord(workspaceId: string, userId: string, maxUses: 
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
-  const { data, error } = await supabase
-    .from('workspace_invites')
-    .insert({
-      workspace_id: workspaceId,
-      created_by: userId,
-      max_uses: maxUses,
-      current_uses: 0,
-      expires_at: expiresAt.toISOString()
-    })
-    .select('token')
-    .single();
-
-  if (error || !data) {
-    console.error('Invite Generation DB error:', error);
-    throw new Error('Failed to generate invite token securely.');
-  }
-
-  return data.token;
+  return workspaceRepo.createInvite({
+    workspaceId,
+    createdBy: userId,
+    maxUses,
+    expiresAt: expiresAt.toISOString()
+  });
 }
 
 export async function generateInviteAction(
@@ -60,29 +48,16 @@ export async function generateInviteAction(
 }
 
 export async function getInviteDetailsAction(token: string) {
-  const { data: invite, error } = await supabase
-    .from('workspace_invites')
-    .select(`
-      id,
-      expires_at,
-      max_uses,
-      current_uses,
-      workspaces (
-        id,
-        name
-      )
-    `)
-    .eq('token', token)
-    .single();
+  const invite = await workspaceRepo.findInviteByToken(token);
 
-  if (error || !invite) return null;
+  if (!invite) return null;
 
   const isExpired = new Date() > new Date(invite.expires_at);
   const isFull = invite.current_uses >= invite.max_uses;
 
   return {
-    workspaceName: (invite.workspaces as any)?.name,
-    workspaceId: (invite.workspaces as any)?.id,
+    workspaceName: invite.workspaces?.name,
+    workspaceId: invite.workspaces?.id,
     isExpired,
     isFull,
     isValid: !isExpired && !isFull
@@ -90,35 +65,18 @@ export async function getInviteDetailsAction(token: string) {
 }
 
 async function validateInviteToken(token: string) {
-  const { data: invite, error } = await supabase.from('workspace_invites').select('*').eq('token', token).single();
-  if (error || !invite) throw new Error('Invalid or non-existent invitation token.');
+  const invite = await workspaceRepo.findInviteByTokenRaw(token);
+  if (!invite) throw new Error('Invalid or non-existent invitation token.');
   if (new Date() > new Date(invite.expires_at)) throw new Error('This invitation token has permanently expired.');
   return invite;
 }
 
 async function consumeInviteToken(token: string, currentUses: number, maxUses: number) {
-  const { data: updatedInvite, error } = await supabase
-    .from('workspace_invites')
-    .update({ current_uses: currentUses + 1 })
-    .eq('token', token)
-    .lt('current_uses', maxUses)
-    .select()
-    .single();
-
-  if (error || !updatedInvite) throw new Error('409 Conflict: Token limit exhausted or concurrent collision mitigated.');
-  return updatedInvite;
+  return workspaceRepo.consumeInvite(token, currentUses, maxUses);
 }
 
 async function bindUserToWorkspace(userId: string, workspaceId: string) {
-  const { error } = await supabase
-    .from('workspace_members')
-    .insert({ workspace_id: workspaceId, user_id: userId, role: 'member' });
-
-  // Disregard unique constraint alerts if the user is merely clicking the link twice
-  if (error && !error.message.includes('unique constraint')) {
-    console.error('Binding Error:', error);
-    throw new Error('Failed to securely join the workspace.');
-  }
+  await workspaceRepo.addMember(workspaceId, userId, 'member');
 }
 
 export async function acceptInviteAction(token: string) {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { userRepo } from '@/repositories';
 import { signJwtToken } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 
@@ -14,20 +14,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Password must be at least 5 characters' }, { status: 400 });
     }
 
-    const { data: existingUser } = await supabase.from('users').select('id').eq('username', username).single();
+    const existingUser = await userRepo.findByUsername(username);
     if (existingUser) {
       return NextResponse.json({ success: false, message: 'Username already taken.' }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const { data: newUser, error } = await supabase
-      .from('users')
-      .insert({ username, password: hashedPassword })
-      .select()
-      .single();
+    const newUser = await userRepo.create({ username, password: hashedPassword });
 
-    if (error || !newUser) {
+    if (!newUser) {
       return NextResponse.json({ success: false, message: 'Failed to create user.' }, { status: 500 });
     }
 

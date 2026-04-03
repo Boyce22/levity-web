@@ -1,23 +1,23 @@
 import { NextResponse } from 'next/server';
 import { signJwtToken } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { userRepo } from '@/repositories';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
     const { username, password } = await request.json();
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .single();
-
-    if (error) {
-      console.log('Supabase error fetching user:', error);
+    if (!username || !password) {
+      return NextResponse.json(
+        { success: false, message: 'Username and password are required' },
+        { status: 400 }
+      );
     }
 
+    const user = await userRepo.findByUsername(username);
+
     if (!user) {
+      console.warn(`[login] User not found: "${username}"`);
       return NextResponse.json(
         { success: false, message: 'Invalid credentials' },
         { status: 401 }
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
+      console.warn(`[login] Wrong password for user: "${username}"`);
       return NextResponse.json(
         { success: false, message: 'Invalid credentials' },
         { status: 401 }
@@ -47,10 +48,12 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch {
+  } catch (err) {
+    console.error('[login] Unexpected error:', err);
     return NextResponse.json(
       { success: false, message: 'Internal Server Error' },
       { status: 500 }
     );
   }
 }
+

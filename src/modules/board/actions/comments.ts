@@ -1,5 +1,5 @@
 'use server';
-import { supabase } from '@/lib/supabase';
+import { commentRepo, userRepo, notificationRepo } from '@/repositories';
 import { cookies } from 'next/headers';
 import { verifyJwtToken } from '@/lib/auth';
 import { assertUserOwnsCard } from '@/modules/workspace/actions/assertions';
@@ -28,34 +28,7 @@ export async function getCommentsAction(cardId: string, limit: number = 3, curso
   // 🛡️ Security Gateway: Verify access to the card
   await assertUserOwnsCard(userId, cardId);
 
-  let query = supabase
-    .from('comments')
-    .select('*, users(username, display_name, avatar_url)')
-    .eq('card_id', cardId)
-    .is('parent_id', null)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (cursor) {
-    query = query.lt('created_at', cursor);
-  }
-
-  const { data: parents, error: parentsErr } = await query;
-  
-  if (parentsErr || !parents || parents.length === 0) return [];
-  
-  const parentIds = parents.map(p => p.id);
-  const { data: replies, error: repliesErr } = await supabase
-    .from('comments')
-    .select('*, users(username, display_name, avatar_url)')
-    .in('parent_id', parentIds)
-    .order('created_at', { ascending: true });
-  
-  if (!repliesErr && replies) {
-     return [...(parents as Comment[]), ...(replies as Comment[])];
-  }
-  
-  return parents as Comment[];
+  return commentRepo.findByCard(cardId, limit, cursor) as Promise<Comment[]>;
 }
 
 export async function createCommentAction(cardId: string, content: string, parentId?: string | null) {
@@ -64,22 +37,18 @@ export async function createCommentAction(cardId: string, content: string, paren
   // 🛡️ Security Gateway: Verify access to the card
   await assertUserOwnsCard(userId, cardId);
 
-  const { data: newComment, error } = await supabase
-    .from('comments')
-    .insert({ card_id: cardId, user_id: userId, content, parent_id: parentId })
-    .select('*, users(username, display_name, avatar_url)')
-    .single();
+  const newComment = await commentRepo.create({
+    cardId,
+    userId,
+    content,
+    parentId,
+  });
   
-  if (error) throw new Error(error.message);
-
   // Mentions logic: find @usernames in content
   const matches = content.match(/@(\w+)/g);
   if (matches) {
     const usernames = matches.map(m => m.slice(1));
-    const { data: mentionedUsers } = await supabase
-      .from('users')
-      .select('id, username')
-      .in('username', usernames);
+    const mentionedUsers = await userRepo.findManyByUsernames(usernames);
       
     if (mentionedUsers && mentionedUsers.length > 0) {
       const notifications = mentionedUsers
@@ -91,7 +60,7 @@ export async function createCommentAction(cardId: string, content: string, paren
           content: content
         }));
       if (notifications.length > 0) {
-        await supabase.from('notifications').insert(notifications);
+        await notificationRepo.insertMany(notifications);
       }
     }
   }
