@@ -214,12 +214,12 @@ export async function updateCardDetailsAction(
     }),
     ...(updates.cover_url !== undefined && { cover_url: updates.cover_url }),
     ...(updates.assignee_id !== undefined && {
-      assignee_id: updates.assignee_id,
+      assignee_id: updates.assignee_id || null,
     }),
     ...(updates.priority !== undefined && { priority: updates.priority }),
     ...(updates.label !== undefined && { label: updates.label }),
     ...(updates.progress !== undefined && { progress: updates.progress }),
-    ...(updates.due_date !== undefined && { due_date: updates.due_date }),
+    ...(updates.due_date !== undefined && { due_date: updates.due_date || null }),
   };
 
   await cardRepo.updateCard(id, safePayload);

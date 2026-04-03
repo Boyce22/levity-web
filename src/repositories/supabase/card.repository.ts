@@ -38,9 +38,14 @@ export class SupabaseCardRepository implements ICardRepository {
   }
 
   async updateCard(cardId: string, payload: CardUpdatePayload): Promise<void> {
+    // 🛡️ Guard: Postgres/Supabase throws "valid input syntax" errors for empty strings in TIMESTAMPTZ or UUID columns.
+    const sanitizedPayload = { ...payload };
+    if (sanitizedPayload.due_date === '') sanitizedPayload.due_date = null;
+    if (sanitizedPayload.assignee_id === '') sanitizedPayload.assignee_id = null;
+
     const { error } = await supabase
       .from('cards')
-      .update(payload)
+      .update(sanitizedPayload)
       .eq('id', cardId);
 
     if (error) throw new Error(error.message);
