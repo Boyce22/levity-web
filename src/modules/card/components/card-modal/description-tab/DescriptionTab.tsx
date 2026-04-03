@@ -30,6 +30,23 @@ export function DescriptionTab({
   const urls = extractStorageUrls(description);
   const attachments = urls.filter(url => !isImageUrl(url));
 
+  const handleChecklistToggle = (targetIndex: number, checked: boolean) => {
+    let count = 0;
+    const lines = description.split("\n");
+    const newLines = lines.map((line) => {
+      const match = line.match(/^([\s]*[-*+]\s+\[)[ xX](\].*)/i);
+      if (match) {
+        if (count === targetIndex) {
+          count++;
+          return `${match[1]}${checked ? "x" : " "}${match[2]}`;
+        }
+        count++;
+      }
+      return line;
+    });
+    setDescription(newLines.join("\n"));
+  };
+
   const handleDeleteAttachment = async (url: string) => {
     // 1. Remover do texto (Markdown)
     const newDescription = description.replace(new RegExp(`\\[.*?\\]\\(${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), '');
@@ -85,6 +102,36 @@ export function DescriptionTab({
                       {children}
                     </a>
                   ),
+                  input: ({ checked, ...props }) => {
+                    if (props.type === "checkbox") {
+                      // We need a stable way to find the index.
+                      // Since we are in a functional render, we can't easily use a counter 
+                      // if the component tree is complex, but for a simple list it works.
+                      // However, ReactMarkdown might call this in ways that break a simple counter.
+                      // Let's use a trick: the 'index' is hidden in the parent's children or similar.
+                      // Actually, a simpler way is to just let the user edit the text if they want 
+                      // precision, but for the 'interactive' feel, we'll use a hacky counter 
+                      // that resets via a unique prop if needed.
+                      return (
+                        <input
+                          {...props}
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            // We'll calculate the index by finding all inputs in the parent container
+                            const inputs = Array.from(e.target.closest('.prose')?.querySelectorAll('input[type="checkbox"]') || []);
+                            const idx = inputs.indexOf(e.target as HTMLInputElement);
+                            if (idx !== -1) {
+                              handleChecklistToggle(idx, e.target.checked);
+                            }
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mr-2 cursor-pointer accent-[var(--app-primary)] w-3.5 h-3.5 mt-1 !opacity-100 !pointer-events-auto"
+                        />
+                      );
+                    }
+                    return <input {...props} />;
+                  },
                 }}
               >
                 {description}

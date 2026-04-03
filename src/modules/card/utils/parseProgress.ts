@@ -6,9 +6,10 @@
  */
 export function parseProgress(markdown: string): number {
   if (!markdown) return 0;
-  const total = (markdown.match(/- \[[ x]\]/gi) || []).length;
+  // Match - [ ] or * [ ] or + [ ] with optional leading spaces (GFM task lists)
+  const total = (markdown.match(/^[\s]*[-*+]\s+\[[ xX]\]/gim) || []).length;
   if (total === 0) return 0;
-  const done = (markdown.match(/- \[x\]/gi) || []).length;
+  const done = (markdown.match(/^[\s]*[-*+]\s+\[[xX]\]/gim) || []).length;
   return Math.round((done / total) * 100);
 }
 
@@ -17,7 +18,7 @@ export function parseProgress(markdown: string): number {
  */
 export function parseChecklistCounts(markdown: string): { total: number; done: number } {
   if (!markdown) return { total: 0, done: 0 };
-  const total = (markdown.match(/- \[[ x]\]/gi) || []).length;
-  const done = (markdown.match(/- \[x\]/gi) || []).length;
+  const total = (markdown.match(/^[\s]*[-*+]\s+\[[ xX]\]/gim) || []).length;
+  const done = (markdown.match(/^[\s]*[-*+]\s+\[[xX]\]/gim) || []).length;
   return { total, done };
 }

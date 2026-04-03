@@ -82,6 +82,7 @@ export function useCardModal(
     const changes = {
       content,
       description,
+      progress: parseProgress(description),
       cover_url: coverUrl,
       assignee_id: assigneeId,
       due_date: dueDate,
@@ -91,6 +92,25 @@ export function useCardModal(
     onUpdate({ ...card, ...changes });
     await updateCardDetailsAction(card.id, changes);
   }, [card, content, description, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority, onUpdate]);
+
+  // Sincronização local imediata para o Board (UX Reativa)
+  useEffect(() => {
+    if (!card || description === card.description) return;
+    
+    // Atualiza o estado local do Board sem esperar o debounce do DB
+    const progress = parseProgress(description);
+    onUpdate({ 
+      ...card, 
+      description, 
+      progress,
+      content,
+      cover_url: coverUrl,
+      assignee_id: assigneeId,
+      due_date: dueDate,
+      label: selectedLabel,
+      priority: selectedPriority
+    });
+  }, [description, content, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority]);
 
   const toggleAssignee = useCallback(async (userId: string) => {
     const next = assigneeId === userId ? null : userId;
