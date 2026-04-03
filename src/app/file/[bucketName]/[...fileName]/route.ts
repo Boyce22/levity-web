@@ -28,51 +28,50 @@ export async function GET(
 
   const fileKey = fileName.join('/');
   
-  // ─── SECURITY LAYER: IDOR PROTECTION ────────────────────────
-  try {
-    const token = (await cookies()).get('token')?.value;
-    if (!token) return new NextResponse("Unauthorized", { status: 401 });
-    
-    const payload = await verifyJwtToken(token);
-    if (!payload?.id) return new NextResponse("Unauthorized", { status: 401 });
-    const userId = payload.id as string;
+    // ─── SECURITY LAYER: IDOR PROTECTION ────────────────────────
+    try {
+      const token = (await cookies()).get('token')?.value;
+      if (!token) return new NextResponse("Unauthorized", { status: 401 });
+      
+      const payload = await verifyJwtToken(token);
+      if (!payload?.id) return new NextResponse("Unauthorized", { status: 401 });
+      const userId = payload.id as string;
 
-    // O primeiro segmento é SEMPRE o workspaceId
-    const workspaceId = fileName[0];
-    const destination = fileName[1]; // 'attachments', 'profiles', etc.
-    
-    const workspaceRepo = new SupabaseWorkspaceRepository();
-    
-    // 📂 Caso especial: Imagens de Perfil (Profiles)
-    // Mesmo estando dentro de um workspace, permitimos acesso se houver qualquer 
-    // relação de workspace entre o visualizador e o dono da imagem.
-    if (destination === 'profiles') {
-       // O nome do arquivo pode ser userId.ext ou userId_uuid.ext
-       const rawFilename = fileName[2] || "";
-       const avatarOwnerId = rawFilename.split('.')[0]?.split('_')[0];
-       
-       if (!avatarOwnerId) return new NextResponse("Malformed profile request.", { status: 400 });
-       
-       if (userId !== avatarOwnerId) {
-         const isShared = await workspaceRepo.hasSharedWorkspace(userId, avatarOwnerId);
-         if (!isShared) {
-           console.warn(`[Security] Unauthorized profile access attempt by ${userId} to user ${avatarOwnerId}`);
-           return new NextResponse("Forbidden: You do not share a workspace with this user.", { status: 403 });
+      const workspaceRepo = new SupabaseWorkspaceRepository();
+      
+      // 📂 Deteção de Imagens de Perfil (Avatars)
+      // Suporta tanto /avatars/userId.ext quanto /{workspaceId}/profiles/userId.ext
+      const isAvatarPath = fileName.includes('avatars') || fileName.includes('profiles');
+      
+      if (isAvatarPath) {
+         // O ID do dono da foto está sempre no nome do arquivo (como userId.ext ou userId_uuid.ext)
+         const rawFilename = fileName[fileName.length - 1];
+         const avatarOwnerId = rawFilename.split('.')[0]?.split('_')[0];
+         
+         if (!avatarOwnerId) return new NextResponse("Malformed profile request.", { status: 400 });
+         
+         if (userId !== avatarOwnerId) {
+           const isShared = await workspaceRepo.hasSharedWorkspace(userId, avatarOwnerId);
+           if (!isShared) {
+             console.warn(`[Security] Unauthorized profile access attempt by ${userId} to user ${avatarOwnerId}`);
+             return new NextResponse("Forbidden: You do not share a workspace with this user.", { status: 403 });
+           }
          }
-       }
-    } else {
-      // 🛡️ Caso padrão (Ex: attachments): Apenas membros do workspaceId do primeiro segmento
-      const member = await workspaceRepo.findMember(workspaceId, userId);
-      if (!member) {
-        console.warn(`[Security] Unauthorized access attempt by ${userId} to workspace ${workspaceId}`);
-        return new NextResponse("Forbidden: You do not have access to this workspace's files.", { status: 403 });
+      } else {
+        // 🛡️ Caso padrão (Ex: attachments): O primeiro segmento deve ser o workspaceId
+        const workspaceId = fileName[0];
+        const member = await workspaceRepo.findMember(workspaceId, userId);
+        
+        if (!member) {
+          console.warn(`[Security] Unauthorized access attempt by ${userId} to workspace ${workspaceId}`);
+          return new NextResponse("Forbidden: You do not have access to this workspace's files.", { status: 403 });
+        }
       }
+    } catch (authError) {
+      console.error("Auth security check failed:", authError);
+      return new NextResponse("Security Check Failed", { status: 500 });
     }
-  } catch (authError) {
-    console.error("Auth security check failed:", authError);
-    return new NextResponse("Security Check Failed", { status: 500 });
-  }
-  // ────────────────────────────────────────────────────────────
+    // ────────────────────────────────────────────────────────────
 
   try {
     if (!isB2Authorized) {
