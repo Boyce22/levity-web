@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { X, Calendar, Flag, Tag, Users, ImagePlus, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PriorityPicker } from "./pickers/PriorityPicker";
@@ -58,6 +58,15 @@ export function CardModalHeader({
 }: CardModalHeaderProps) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 📐 Auto-resize do textarea do título
+  useLayoutEffect(() => {
+    if (isEditingTitle && titleRef.current) {
+      titleRef.current.style.height = "0px";
+      const scrollHeight = titleRef.current.scrollHeight;
+      titleRef.current.style.height = `${scrollHeight}px`;
+    }
+  }, [content, isEditingTitle]);
 
   useEffect(() => {
     if (isEditingTitle && titleRef.current) {
@@ -157,13 +166,13 @@ export function CardModalHeader({
               onBlur={handleTitleBlur}
               onKeyDown={handleTitleKeyDown}
               rows={1}
-              className="w-full bg-transparent text-[22px] font-bold focus:outline-none resize-none leading-tight"
-              style={{ color: "var(--app-text)" }}
+              className="w-full bg-[var(--app-panel)] text-[18px] font-bold focus:outline-none resize-none leading-tight rounded-sm px-2 -mx-2 border border-[var(--app-primary)] transition-all"
+              style={{ color: "var(--app-text)", overflow: "hidden" }}
             />
           ) : (
             <h2
               onClick={() => setIsEditingTitle(true)}
-              className="text-[22px] font-bold leading-tight cursor-text truncate transition-opacity hover:opacity-80"
+              className="text-[18px] font-bold leading-tight cursor-text whitespace-pre-wrap break-words transition-opacity hover:opacity-80"
               style={{ color: "var(--app-text)" }}
             >
               {content || (

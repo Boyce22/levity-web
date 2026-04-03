@@ -77,7 +77,7 @@ export default function Card({
 
             <div className="flex items-start justify-between gap-2">
               <p
-                className="text-[13px] font-medium leading-[1.45] flex-1"
+                className="text-[13px] font-medium leading-[1.45] flex-1 min-w-0 break-all"
                 style={{ color: "var(--app-text)", opacity: 0.85 }}
               >
                 {card.content}
