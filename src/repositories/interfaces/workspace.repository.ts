@@ -99,7 +99,7 @@ export interface IWorkspaceRepository {
   seedDefaultPriorities(workspaceId: string, createdBy: string): Promise<void>;
 
   // ─── Lists (meta — para assertions) ───────────────────────
-  findListWorkspaceId(listId: string): Promise<string | null>;
+  findListWorkspaceId(listId: string): Promise<{ workspace_id: string | null; created_by: string } | null>;
 
   // ─── Cards (meta — para assertions) ───────────────────────
   findCardListId(cardId: string): Promise<string | null>;

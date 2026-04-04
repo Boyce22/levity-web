@@ -326,16 +326,16 @@ export class SupabaseWorkspaceRepository implements IWorkspaceRepository {
   }
 
   // ─── Lists (meta — para assertions) ───────────────────────
-  async findListWorkspaceId(listId: string): Promise<string | null> {
+  async findListWorkspaceId(listId: string): Promise<{ workspace_id: string | null; created_by: string } | null> {
     const { data, error } = await supabase
       .from('lists')
-      .select('workspace_id')
+      .select('workspace_id, created_by')
       .eq('id', listId)
       .maybeSingle();
 
     if (error || !data) return null;
 
-    return data.workspace_id;
+    return { workspace_id: data.workspace_id, created_by: data.created_by };
   }
 
   // ─── Cards (meta — para assertions) ───────────────────────

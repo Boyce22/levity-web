@@ -4,6 +4,7 @@ import { SupabaseBoardRepository } from './supabase/board.repository';
 import { SupabaseCardRepository } from './supabase/card.repository';
 import { SupabaseCommentRepository } from './supabase/comment.repository';
 import { SupabaseNotificationRepository } from './supabase/notification.repository';
+import { SupabaseDiagramRepository } from './supabase/diagram.repository';
 
 import type { IUserRepository } from './interfaces/user.repository';
 import type { IWorkspaceRepository } from './interfaces/workspace.repository';
@@ -11,6 +12,7 @@ import type { IBoardRepository } from './interfaces/board.repository';
 import type { ICardRepository } from './interfaces/card.repository';
 import type { ICommentRepository } from './interfaces/comment.repository';
 import type { INotificationRepository } from './interfaces/notification.repository';
+import type { IDiagramRepository } from './interfaces/diagram.repository';
 
 // Singletons
 export const userRepo: IUserRepository = new SupabaseUserRepository();
@@ -19,6 +21,7 @@ export const boardRepo: IBoardRepository = new SupabaseBoardRepository();
 export const cardRepo: ICardRepository = new SupabaseCardRepository();
 export const commentRepo: ICommentRepository = new SupabaseCommentRepository();
 export const notificationRepo: INotificationRepository = new SupabaseNotificationRepository();
+export const diagramRepo: IDiagramRepository = new SupabaseDiagramRepository();
 
 // Re-export interfaces for convenience
 export * from './interfaces/user.repository';
@@ -27,3 +30,4 @@ export * from './interfaces/board.repository';
 export * from './interfaces/card.repository';
 export * from './interfaces/comment.repository';
 export * from './interfaces/notification.repository';
+export * from './interfaces/diagram.repository';

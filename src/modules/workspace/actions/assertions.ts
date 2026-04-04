@@ -20,14 +20,23 @@ export async function assertUserOwnsWorkspace(currentUserId: string, workspaceId
  * 🛡️ Security Gateway: Asserts the list belongs to a workspace the user is a member of.
  */
 export async function assertUserOwnsList(currentUserId: string, listId: string): Promise<string> {
-  const workspaceId = await workspaceRepo.findListWorkspaceId(listId);
+  const result = await workspaceRepo.findListWorkspaceId(listId);
 
-  if (!workspaceId) {
-    throw new Error('404 Not Found: Target list is completely missing or inaccessible.');
+  if (!result) {
+    throw new Error(`404 Not Found: Target list ${listId} is completely missing or inaccessible.`);
   }
 
-  await assertUserOwnsWorkspace(currentUserId, workspaceId);
-  return workspaceId;
+  // 🛡️ Legacy Fallback: If list has no workspace (orphaned), allow access if the user is the owner
+  if (!result.workspace_id) {
+    if (result.created_by === currentUserId) {
+      console.warn(`[Security] Accessible legacy list ${listId} (orphaned) accessed by owner.`);
+      return ''; // No workspace context to return, but access granted
+    }
+    throw new Error(`403 Forbidden: Legacy list ${listId} has no workspace context and you are not the owner.`);
+  }
+
+  await assertUserOwnsWorkspace(currentUserId, result.workspace_id);
+  return result.workspace_id;
 }
 
 /**

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card as CardType, updateCardDetailsAction } from "@/modules/board/actions/board";
 import { getCommentsAction, createCommentAction, deleteCommentAction, Comment } from "@/modules/board/actions/comments";
 import { getCardHistoryAction } from "@/modules/board/actions/history";
+import { getDiagramAction, saveDiagramAction } from "@/modules/diagram/actions/diagram";
 import { parseProgress, parseChecklistCounts } from "@/modules/card/utils/parseProgress";
 
 export function useCardModal(
@@ -9,7 +10,7 @@ export function useCardModal(
   onUpdate: (card: CardType) => void, 
   tags: any[], 
   priorities: any[],
-  initialTab: "description" | "comments" = "description"
+  initialTab: "description" | "comments" | "diagram" = "description"
 ) {
   // Card fields
   const [content, setContent] = useState(card?.content || "");
@@ -23,8 +24,13 @@ export function useCardModal(
   // UI states
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
-  const [activeTab, setActiveTab] = useState<"description" | "comments">(initialTab);
+  const [activeTab, setActiveTab] = useState<"description" | "comments" | "diagram">(initialTab);
   const [savedStatus, setSavedStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  // Diagram
+  const [diagramData, setDiagramData] = useState<any>(undefined);
+  const [loadingDiagram, setLoadingDiagram] = useState(false);
+  const [isSavingDiagram, setIsSavingDiagram] = useState(false);
 
   // Comments
   const [comments, setComments] = useState<Comment[]>([]);
@@ -171,6 +177,29 @@ export function useCardModal(
     }
   }, []);
 
+  const fetchDiagram = useCallback(async () => {
+    if (!card) return;
+    setLoadingDiagram(true);
+    const data = await getDiagramAction(card.id);
+    setDiagramData(data?.data || null);
+    setLoadingDiagram(false);
+  }, [card]);
+
+  const handleSaveDiagram = useCallback(async (data: any) => {
+    if (!card) return;
+    setIsSavingDiagram(true);
+    await saveDiagramAction(card.id, data);
+    setDiagramData(data);
+    setIsSavingDiagram(false);
+  }, [card]);
+
+  // Lazy load diagram when tab becomes active
+  useEffect(() => {
+    if (activeTab === "diagram" && diagramData === undefined && !loadingDiagram) {
+      fetchDiagram();
+    }
+  }, [activeTab, diagramData, loadingDiagram, fetchDiagram]);
+
   const checklistCounts = parseChecklistCounts(description);
 
   return {
@@ -206,5 +235,10 @@ export function useCardModal(
     handleCoverUpload,
     handleRemoveCover,
     checklistCounts,
+    diagramData,
+    loadingDiagram,
+    isSavingDiagram,
+    handleSaveDiagram,
   };
-}
+}
+

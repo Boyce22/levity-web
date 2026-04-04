@@ -8,6 +8,7 @@ import { CardModalHeader } from "./CardModalHeader";
 import { CardModalTabs } from "./CardModalTabs";
 import { DescriptionTab } from "./description-tab/DescriptionTab";
 import { CommentsTab } from "./comments-tab/CommentsTab";
+import { DiagramTab } from "./diagram-tab/DiagramTab";
 
 interface CardModalProps {
   card: CardType | null;
@@ -19,7 +20,7 @@ interface CardModalProps {
   tags: any[];
   priorities: any[];
   workspaceId: string;
-  initialTab?: "description" | "comments";
+  initialTab?: "description" | "comments" | "diagram";
 }
 
 // Constants for labels and priorities (could be moved to a shared file)
@@ -82,6 +83,10 @@ export default function CardModal({
     handleCoverUpload,
     handleRemoveCover,
     checklistCounts,
+    diagramData,
+    loadingDiagram,
+    isSavingDiagram,
+    handleSaveDiagram,
   } = useCardModal(card, onUpdate, tags, priorities, initialTab);
 
   if (!card) return null;
@@ -107,7 +112,7 @@ export default function CardModal({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.97 }}
           transition={{ type: "spring", damping: 28, stiffness: 320 }}
-          className="relative w-full sm:max-w-[700px] sm:mx-4 flex flex-col z-10"
+          className="relative w-full sm:max-w-4xl sm:mx-4 flex flex-col z-10"
           style={{
             maxHeight: "92vh",
             borderRadius: "6px",
@@ -213,7 +218,7 @@ export default function CardModal({
                     workspaceId={workspaceId}
                   />
                 </motion.div>
-              ) : (
+              ) : activeTab === "comments" ? (
                 <motion.div
                   key="comments"
                   initial={{ opacity: 0 }}
@@ -234,6 +239,22 @@ export default function CardModal({
                     currentUserAvatar={currentUserAvatar}
                     allUsers={allUsers}
                     workspaceId={workspaceId}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="diagram"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="px-6 py-5"
+                >
+                  <DiagramTab
+                    initialData={diagramData}
+                    onSave={handleSaveDiagram}
+                    loading={loadingDiagram}
+                    isSaving={isSavingDiagram}
                   />
                 </motion.div>
               )}

@@ -108,3 +108,9 @@ input:-webkit-autofill:active {
   caret-color: var(--app-text);
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* Architecture Canvas Specific Reset */
+.diagram-canvas-bg {
+  position: relative;
+  background-color: var(--app-bg);
+}

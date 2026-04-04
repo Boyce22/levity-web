@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { AlignLeft, MessageSquare } from "lucide-react";
+import { AlignLeft, MessageSquare, Paintbrush } from "lucide-react";
 
-type Tab = "description" | "comments";
+type Tab = "description" | "comments" | "diagram";
 
 interface CardModalTabsProps {
   activeTab: Tab;
@@ -21,6 +21,11 @@ export function CardModalTabs({ activeTab, setActiveTab, commentsCount }: CardMo
       label: "Comments",
       icon: <MessageSquare className="w-3.5 h-3.5" />,
       badge: commentsCount,
+    },
+    {
+      id: "diagram",
+      label: "Diagram",
+      icon: <Paintbrush className="w-3.5 h-3.5" />,
     },
   ];
 
