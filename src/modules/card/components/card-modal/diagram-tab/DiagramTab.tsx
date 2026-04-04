@@ -5,6 +5,7 @@ import { DiagramCanvas } from '../../../../diagram/components/DiagramCanvas';
 import { DiagramEditor } from '../../../../diagram/components/DiagramEditor';
 import { Loader2, Maximize2, Trash2 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
+import { ConfirmationModal } from '@/modules/shared/components/ConfirmationModal';
 
 interface DiagramTabProps {
   initialData: any;
@@ -20,6 +21,7 @@ export function DiagramTab({
   isSaving,
 }: DiagramTabProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
 
   if (loading) {
     return (
@@ -93,7 +95,7 @@ export function DiagramTab({
 
         {hasData && (
           <button
-            onClick={() => onSave({ elements: [] })}
+            onClick={() => setIsClearConfirmOpen(true)}
             className="text-[11px] text-red-400 hover:text-red-300 font-medium transition-colors flex items-center gap-1.5"
           >
             <Trash2 size={12} /> Clear Diagram
@@ -116,6 +118,19 @@ export function DiagramTab({
           />
         )}
       </AnimatePresence>
+
+      <ConfirmationModal
+        isOpen={isClearConfirmOpen}
+        onClose={() => setIsClearConfirmOpen(false)}
+        onConfirm={async () => {
+          await onSave({ elements: [] });
+          setIsClearConfirmOpen(false);
+        }}
+        title="Clear Diagram"
+        description="Are you sure you want to clear this entire diagram? This will permanently delete all architecture elements and cannot be undone."
+        confirmText="Clear Everything"
+        variant="danger"
+      />
     </div>
   );
 }
