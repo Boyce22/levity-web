@@ -1,5 +1,8 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { AlignLeft, MessageSquare, Paintbrush } from "lucide-react";
+import React from "react";
 
 type Tab = "description" | "comments" | "diagram";
 
@@ -10,58 +13,42 @@ interface CardModalTabsProps {
 }
 
 export function CardModalTabs({ activeTab, setActiveTab, commentsCount }: CardModalTabsProps) {
-  const tabs: { id: Tab; label: string; icon: React.ReactNode; badge?: number }[] = [
-    {
-      id: "description",
-      label: "Description",
-      icon: <AlignLeft className="w-3.5 h-3.5" />,
-    },
-    {
-      id: "comments",
-      label: "Comments",
-      icon: <MessageSquare className="w-3.5 h-3.5" />,
-      badge: commentsCount,
-    },
-    {
-      id: "diagram",
-      label: "Diagram",
-      icon: <Paintbrush className="w-3.5 h-3.5" />,
-    },
+  const tabs: { id: Tab; label: string; icon: React.ElementType; badge?: number }[] = [
+    { id: "description", label: "Description", icon: AlignLeft },
+    { id: "comments", label: "Comments", icon: MessageSquare, badge: commentsCount },
+    { id: "diagram", label: "Diagram", icon: Paintbrush },
   ];
 
   return (
-    <div className="flex gap-4" style={{ position: "relative" }}>
+    <div className="flex items-center gap-6 border-b border-(--app-border-faint) w-full relative">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
+        const Icon = tab.icon;
+
         return (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className="relative flex items-center gap-2 py-3 px-1 text-[13px] font-bold transition-colors"
-            style={{
-              color: isActive ? "var(--app-text)" : "var(--app-text-muted)",
-            }}
+            className={`
+              relative flex items-center gap-2 py-3 px-1 text-[13px] font-bold transition-all
+              ${isActive ? 'text-(--app-text)' : 'text-(--app-text-muted) hover:text-(--app-text)'}
+            `}
           >
-            {tab.icon}
-            {tab.label}
+            <Icon size={14} strokeWidth={isActive ? 2.5 : 2} />
+            <span className="tracking-tight">{tab.label}</span>
             
             {tab.badge != null && tab.badge > 0 && (
-              <span
-                className="ml-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold"
-                style={{
-                  background: isActive ? "var(--app-primary)" : "var(--app-border)",
-                  color: isActive ? "#fff" : "var(--app-text-muted)",
-                }}
-              >
+              <span className="text-[10px] opacity-60 font-black px-1.5 py-0.5 rounded-full bg-(--app-panel)/50 border border-(--app-border-faint)">
                 {tab.badge}
               </span>
             )}
 
+            {/* Subtle Gliding Underline */}
             {isActive && (
               <motion.div
-                layoutId="modal-tab-indicator"
-                className="absolute bottom-0 left-0 right-0 h-0.5 rounded-sm"
-                style={{ background: "var(--app-primary)" }}
+                layoutId="active-underline"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-(--app-primary) z-10"
+                transition={{ type: "spring", bounce: 0.1, duration: 0.4 }}
               />
             )}
           </button>

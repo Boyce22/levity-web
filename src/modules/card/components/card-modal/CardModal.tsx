@@ -112,9 +112,8 @@ export default function CardModal({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.97 }}
           transition={{ type: "spring", damping: 28, stiffness: 320 }}
-          className="relative w-full sm:max-w-4xl sm:mx-4 flex flex-col z-10"
+          className="relative w-full sm:w-[68rem] sm:h-[48rem] max-w-[95vw] max-h-[92vh] sm:mx-4 flex flex-col z-10"
           style={{
-            maxHeight: "92vh",
             borderRadius: "6px",
             background: "var(--app-bg)",
             border: "1px solid var(--app-border)",
@@ -194,7 +193,6 @@ export default function CardModal({
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "var(--app-border) transparent",
-              minHeight: "300px"
             }}
           >
             <AnimatePresence mode="wait">
