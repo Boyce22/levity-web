@@ -107,6 +107,16 @@ export interface IWorkspaceRepository {
   /** Verifica se dois usuários compartilham pelo menos um workspace. */
   hasSharedWorkspace(userId: string, targetUserId: string): Promise<boolean>;
 
+  /** 
+   * ⚡ Turbo Resolver: Fetches complete security context for a card in ONE query.
+   * Joins cards -> lists -> workspace_members to verify access.
+   */
+  findCardWorkspaceContext(cardId: string, userId: string): Promise<{
+    workspace_id: string | null;
+    created_by: string;
+    role: string | null;
+  } | null>;
+
   // ─── Legacy migration ──────────────────────────────────────
   migrateListsWithoutWorkspace(workspaceId: string, createdBy: string): Promise<void>;
 }

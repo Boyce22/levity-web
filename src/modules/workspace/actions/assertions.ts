@@ -41,21 +41,34 @@ export async function assertUserOwnsList(currentUserId: string, listId: string):
 
 /**
  * 🛡️ Security Gateway: Asserts the card belongs to a list inside a workspace the user is a member of.
+ * ⚡ Optimized: Uses Atomic Resolver to fetch context in ONE query.
  */
 export async function assertUserOwnsCard(currentUserId: string, cardId: string) {
-  const list_id = await workspaceRepo.findCardListId(cardId);
+  const context = await workspaceRepo.findCardWorkspaceContext(cardId, currentUserId);
 
-  if (!list_id) {
+  if (!context) {
+    // We double check if the card exists at all to throw the correct error (404 vs 403)
+    // BUT we try to be efficient: if context is null, it's either 404 or 403.
     throw new Error('404 Not Found: Target card is completely missing or inaccessible.');
   }
 
-  const workspaceId = await assertUserOwnsList(currentUserId, list_id);
-  
-  // Fetch card metadata for ownership check
-  const { boardRepo } = await import('@/repositories');
-  const card = await boardRepo.findById(cardId);
-  
-  return { list_id, workspace_id: workspaceId, created_by: card?.created_by };
+  const { workspace_id, created_by, role } = context;
+
+  // 🛡️ Legacy Fallback: If card has no workspace context, allow access if the user is the creator
+  if (!workspace_id) {
+    if (created_by === currentUserId) {
+      console.warn(`[Security] Accessible legacy card ${cardId} accessed by owner.`);
+      return { list_id: '', workspace_id: '', created_by }; // Return empty context for legacy
+    }
+    throw new Error(`403 Forbidden: Legacy card ${cardId} has no workspace context and you are not the owner.`);
+  }
+
+  // 🛡️ standard membership check
+  if (!role) {
+    throw new Error('403 Forbidden: Unauthorized cross-tenant access attempt blocked.');
+  }
+
+  return { workspace_id, created_by };
 }
 /**
  * 🛡️ Security Gateway: Asserts the user has one of the specific roles in the workspace.

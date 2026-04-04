@@ -382,4 +382,43 @@ export class SupabaseWorkspaceRepository implements IWorkspaceRepository {
  
     return false;
   }
+
+  async findCardWorkspaceContext(cardId: string, userId: string): Promise<{
+    workspace_id: string | null;
+    created_by: string;
+    role: string | null;
+  } | null> {
+    const { data, error } = await supabase
+      .from('cards')
+      .select(`
+        created_by,
+        lists (
+          workspace_id,
+          workspace_members (
+            role
+          )
+        )
+      `)
+      .eq('id', cardId)
+      .eq('lists.workspace_members.member_id', userId)
+      .maybeSingle();
+
+    if (error || !data) {
+      // 🛡️ Safe fallback: if join fails or card is missing, return null to trigger assertion 404/403
+      return null;
+    }
+
+    const list = data.lists as any;
+    if (!list) return null;
+
+    const membership = Array.isArray(list.workspace_members) 
+      ? list.workspace_members[0] 
+      : list.workspace_members;
+
+    return {
+      workspace_id: list.workspace_id,
+      created_by: data.created_by,
+      role: membership?.role || null
+    };
+  }
 }
