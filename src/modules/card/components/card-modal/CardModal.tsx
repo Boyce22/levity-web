@@ -183,7 +183,7 @@ export default function CardModal({
             }}
           >
             {/* Sticky Navigation Bar */}
-            <div className="sticky top-0 z-20 bg-(--app-bg) border-b border-(--app-border-faint) px-6 pt-1 shadow-sm shadow-black/5">
+            <div className="sticky top-0 z-30 bg-(--app-bg) border-b border-(--app-border-faint) px-6 pt-1 shadow-sm shadow-black/5">
               <CardModalTabs
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}

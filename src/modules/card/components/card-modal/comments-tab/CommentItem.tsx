@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { formatMentions, timeAgo } from "@/modules/shared/utils/date";
 import { AttachmentCard } from "../AttachmentCard";
-import { extractAttachments, isImageUrl } from "@/modules/shared/utils/attachments";
+import { extractAttachments, isImageUrl, stripAttachments, Attachment } from "@/modules/shared/utils/attachments";
 import { useState } from "react";
 import { Edit2, Trash2, X, Check, Loader2 } from "lucide-react";
 import { updateCommentAction, deleteCommentAction } from "@/modules/board/actions/comments";
@@ -51,11 +51,13 @@ const markdownComponents = (allUrls: string[]) => ({
       </a>
     );
   },
+  img: () => null,
 });
 
 export function CommentItem({ comment, index, isReply, onReply, onDelete, allUsers, currentUserId }: CommentItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
+  const [stagedAttachments, setStagedAttachments] = useState<Attachment[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -67,14 +69,21 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
   const attachmentUrls = attachments.map(a => a.url);
 
   const handleSave = async () => {
-    if (!editContent.trim() || editContent === comment.content) {
+    const finalAttachments = stagedAttachments
+      .map(a => ` [File: ${a.name}](${a.url}) `)
+      .join("");
+    const finalContent = (editContent + finalAttachments).trim();
+
+    if (!finalContent || finalContent === comment.content) {
       setIsEditing(false);
+      setStagedAttachments([]);
       return;
     }
     setIsSaving(true);
     try {
-      await updateCommentAction(comment.id, editContent);
+      await updateCommentAction(comment.id, finalContent);
       setIsEditing(false);
+      setStagedAttachments([]);
     } catch (error) {
       console.error("Failed to update comment:", error);
     } finally {
@@ -88,9 +97,7 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
   };
 
   const removeAttachment = (url: string) => {
-    // Regex para encontrar o padrão exato [Arquivo: Nome](url)
-    const regex = new RegExp(`\\[Arquivo:.*?\\]\\(${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g');
-    setEditContent((prev: string) => prev.replace(regex, '').trim());
+    setStagedAttachments(prev => prev.filter(a => a.url !== url));
   };
 
   return (
@@ -126,8 +133,9 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => {
+                  setEditContent(stripAttachments(comment.content));
+                  setStagedAttachments(extractAttachments(comment.content));
                   setIsEditing(true);
-                  setEditContent(comment.content);
                 }}
                 className="p-1 rounded hover:bg-[var(--app-panel)] transition-colors"
                 style={{ color: "var(--app-text-muted)" }}
@@ -203,9 +211,9 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
           )}
 
           {/* Attachments Section */}
-          {attachments.length > 0 && (
+          {(isEditing ? stagedAttachments.length > 0 : attachments.length > 0) && (
             <div className={`mt-4 pt-3 border-t border-white/5 flex flex-wrap gap-2 ${isEditing ? "opacity-80" : ""}`}>
-              {attachments.map((file, i) => (
+              {(isEditing ? stagedAttachments : attachments).map((file, i) => (
                 <div key={i} className="relative w-full sm:w-[calc(50%-4px)] max-w-xs group/att">
                   <AttachmentCard url={file.url} name={file.name} />
                   {isEditing && (

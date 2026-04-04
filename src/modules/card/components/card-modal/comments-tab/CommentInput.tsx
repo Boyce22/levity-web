@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Send, Paperclip, Loader2 } from "lucide-react";
+import { Send, Loader2, Paperclip } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMentions } from "@/modules/card/hooks/useMentions";
 import { uploadImageAction } from "@/modules/shared/actions/upload";
@@ -19,6 +19,12 @@ interface StagedFile {
   name: string;
   url: string;
 }
+
+const DANGEROUS_EXTENSIONS = [
+  "exe", "bat", "cmd", "sh", "vbs", "js", "mjs", "ts", "py", "php", "pl", "rb", "cgi",
+  "msi", "jar", "bin", "com", "sys", "dll", "drv", "obj", "vxd", "pif", "scr", "hta", "cpl", "msc"
+];
+
 
 function serializeContent(el: HTMLElement): string {
   let result = "";
@@ -195,26 +201,39 @@ export function CommentInput({
     handleMentionTextChange(raw, "comment", cursorPos);
   }, [handleMentionTextChange]);
 
+  const validateFile = (file: File) => {
+    // Security validation: Standard industry blacklist for dangerous files
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    if (DANGEROUS_EXTENSIONS.includes(ext)) {
+      setSubmitError(`File type .${ext} is not allowed for security reasons.`);
+      return false;
+    }
+
+    // 3. Size limit (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setSubmitError("File is too large. Limit: 10MB.");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploadingFile(true);
     setSubmitError("");
-
-    if (file.size > 10 * 1024 * 1024) {
-      setSubmitError("File is too large. Limit: 10MB.");
-      setIsUploadingFile(false);
+    if (!validateFile(file)) {
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
+    setIsUploadingFile(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
       const url = await uploadImageAction(fd, workspaceId);
-
-      setStagedFiles(prev => [...prev, { name: file.name, url }]);
+      setStagedFiles((prev) => [...prev, { name: file.name, url }]);
     } catch (err) {
       console.error("Upload failed", err);
       setSubmitError("Error uploading file. Please try again.");
@@ -225,8 +244,9 @@ export function CommentInput({
   };
 
   const removeStagedFile = (index: number) => {
-    setStagedFiles(prev => prev.filter((_, i) => i !== index));
+    setStagedFiles((prev) => prev.filter((_, i) => i !== index));
   };
+
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -273,14 +293,21 @@ export function CommentInput({
         document.execCommand("insertLineBreak");
       }
     },
-    [mentionState, handleMentionKeyDown, handleMentionSelect]
+    [mentionState, handleMentionKeyDown, handleMentionSelect, handleInput]
   );
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const plainText = e.clipboardData.getData("text/plain");
+    // Insert text at current cursor position
+    document.execCommand("insertText", false, plainText);
+  }, []);
 
   const handleSubmit = async () => {
     if ((!text.trim() && stagedFiles.length === 0) || isSubmitting) return;
 
     const filesMarkdown = stagedFiles
-      .map(f => ` [File: ${f.name}](${f.url}?name=${encodeURIComponent(f.name)}) `)
+      .map((f) => ` [File: ${f.name}](${f.url}?name=${encodeURIComponent(f.name)}) `)
       .join("");
 
     const finalDraft = (text + filesMarkdown).trim();
@@ -416,6 +443,7 @@ export function CommentInput({
             suppressContentEditableWarning
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             onCompositionStart={() => { isComposingRef.current = true; }}
             onCompositionEnd={() => { isComposingRef.current = false; handleInput(); }}
             spellCheck={false}
@@ -471,9 +499,11 @@ export function CommentInput({
                 style={{ color: "var(--app-text-muted)" }}
                 title="Attach file"
               >
-                {isUploadingFile
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <Paperclip className="w-4 h-4" />}
+                {isUploadingFile ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Paperclip className="w-4 h-4" />
+                )}
               </label>
               {stagedFiles.length > 0 && (
                 <span className="text-[10px] text-[var(--app-text-muted)] opacity-50">

@@ -13,8 +13,8 @@ export interface Attachment {
 export function extractAttachments(text: string | null | undefined): Attachment[] {
   if (!text) return [];
 
-  // Padrão: [Arquivo: Nome](url)
-  const attachmentRegex = /\[Arquivo:\s*(.*?)\]\(((?:https?:\/\/|\/)\S+)\)/g;
+  // Padrão: [Arquivo: Nome](url) ou [File: Nome](url)
+  const attachmentRegex = /\[(?:Arquivo|File):\s*(.*?)\]\(((?:https?:\/\/|\/)\S+)\)/g;
   const attachments: Attachment[] = [];
   
   let match;
@@ -35,6 +35,15 @@ export function extractAttachments(text: string | null | undefined): Attachment[
 export function extractStorageUrls(text: string | null | undefined): string[] {
   const attachments = extractAttachments(text);
   return attachments.map(a => a.url);
+}
+
+/**
+ * Remove todas as tags de anexo do texto Markdown.
+ */
+export function stripAttachments(text: string | null | undefined): string {
+  if (!text) return "";
+  const attachmentRegex = /\[(?:Arquivo|File):\s*(.*?)\]\(((?:https?:\/\/|\/)\S+)\)/g;
+  return text.replace(attachmentRegex, "").trim();
 }
 
 function isStorageUrl(url: string): boolean {

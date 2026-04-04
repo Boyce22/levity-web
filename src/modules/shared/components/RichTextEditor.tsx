@@ -124,7 +124,9 @@ export default function RichTextEditor({ initialValue, onChange, onKeyDown, work
         inline: true,
         allowBase64: true,
       }),
-      Markdown,
+      Markdown.configure({
+        transformPastedText: true,
+      }),
       Placeholder.configure({
         placeholder: 'Descreva esta tarefa… Suporta **Markdown**. Use ☑ para criar checklists.',
       }),
