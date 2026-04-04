@@ -10,6 +10,7 @@ export function useCardModal(
   onUpdate: (card: CardType) => void, 
   tags: any[], 
   priorities: any[],
+  workspaceId: string, 
   initialTab: "description" | "comments" | "diagram" = "description"
 ) {
   // Card fields
@@ -188,10 +189,17 @@ export function useCardModal(
   const handleSaveDiagram = useCallback(async (data: any) => {
     if (!card) return;
     setIsSavingDiagram(true);
-    await saveDiagramAction(card.id, data);
+    // Optimistic Update: Set the data immediately so the preview is updated when the modal closes
     setDiagramData(data);
-    setIsSavingDiagram(false);
-  }, [card]);
+    try {
+      await saveDiagramAction(card.id, data, workspaceId);
+    } catch (error) {
+      console.error("Failed to save diagram:", error);
+      // Optional: rollback if needed, but usually not required for this UX
+    } finally {
+      setIsSavingDiagram(false);
+    }
+  }, [card, workspaceId]);
 
   // Lazy load diagram when tab becomes active
   useEffect(() => {

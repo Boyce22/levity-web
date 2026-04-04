@@ -52,6 +52,7 @@ export function DiagramTab({
               onPointerMove={() => { }}
               onPointerUp={() => { }}
               className="cursor-zoom-in"
+              autoScale={true}
             />
           </div>
         ) : (
@@ -106,8 +107,9 @@ export function DiagramTab({
           <DiagramEditor
             initialData={initialData}
             onSave={async (data) => {
-              await onSave(data);
+              // Rapid feedback: Close the modal immediately
               setIsEditorOpen(false);
+              await onSave(data);
             }}
             onClose={() => setIsEditorOpen(false)}
             isSaving={isSaving}

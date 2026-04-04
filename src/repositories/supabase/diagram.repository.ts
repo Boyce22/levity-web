@@ -14,7 +14,7 @@ export class SupabaseDiagramRepository implements IDiagramRepository {
     return data;
   }
 
-  async save(cardId: string, diagramData: any): Promise<DiagramRecord> {
+  async save(cardId: string, diagramData: any, workspaceId: string): Promise<DiagramRecord> {
     // 🛡️ BFLA/IDOR check should be performed in the Action layer, 
     // but here we ensure the record is created or updated.
     const now = new Date().toISOString();
@@ -31,6 +31,7 @@ export class SupabaseDiagramRepository implements IDiagramRepository {
         .from('diagrams')
         .update({
           data: diagramData,
+          workspace_id: workspaceId, // Keep it updated/consistent
           updated_at: now,
         })
         .eq('card_id', cardId)
@@ -44,6 +45,7 @@ export class SupabaseDiagramRepository implements IDiagramRepository {
         .from('diagrams')
         .insert({
           card_id: cardId,
+          workspace_id: workspaceId,
           data: diagramData,
           created_at: now,
           updated_at: now,

@@ -12,7 +12,7 @@ export interface IDiagramRepository {
   findByCardId(cardId: string): Promise<DiagramRecord | null>;
 
   /** Creates or updates a diagram for a specific card. */
-  save(cardId: string, data: any): Promise<DiagramRecord>;
+  save(cardId: string, data: any, workspaceId: string): Promise<DiagramRecord>;
 
   /** Deletes a diagram by card_id. */
   deleteByCardId(cardId: string): Promise<void>;

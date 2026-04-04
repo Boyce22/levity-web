@@ -87,7 +87,7 @@ export default function CardModal({
     loadingDiagram,
     isSavingDiagram,
     handleSaveDiagram,
-  } = useCardModal(card, onUpdate, tags, priorities, initialTab);
+  } = useCardModal(card, onUpdate, tags, priorities, workspaceId, initialTab);
 
   if (!card) return null;
 

@@ -48,10 +48,12 @@ export async function getDiagramAction(cardId: string) {
   return diagramRepo.findByCardId(cardId);
 }
 
-export async function saveDiagramAction(cardId: string, diagramData: any) {
+export async function saveDiagramAction(cardId: string, diagramData: any, workspace_id: string) {
   const userId = await getUserId();
   
   // 🛡️ Security Check: IDOR - Ensure user has membership in the workspace
+  // We use the workspace_id passed from client for performance, 
+  // but assertUserOwnsCard still verifies the user's access to this specific card.
   await assertUserOwnsCard(userId, cardId);
 
   // 🛡️ Payload Size Check: Prevent DoS/Storage Bloating
@@ -63,7 +65,7 @@ export async function saveDiagramAction(cardId: string, diagramData: any) {
   // 🛡️ Schema Validation: Ensure structure integrity
   try {
     const validatedData = DiagramSchema.parse(diagramData);
-    const diagram = await diagramRepo.save(cardId, validatedData);
+    const diagram = await diagramRepo.save(cardId, validatedData, workspace_id);
     
     revalidatePath("/");
     return diagram;
