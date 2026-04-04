@@ -30,6 +30,8 @@ interface CardModalHeaderProps {
   tags: any[];
   priorities: any[];
   workspaceId: string;
+  workspaceName: string;
+  listName: string;
 }
 
 export function CardModalHeader({
@@ -55,9 +57,12 @@ export function CardModalHeader({
   tags,
   priorities,
   workspaceId,
+  workspaceName,
+  listName,
 }: CardModalHeaderProps) {
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copied, setCopied] = useState(false);
 
   // 📐 Auto-resize do textarea do título
   useLayoutEffect(() => {
@@ -93,6 +98,13 @@ export function CardModalHeader({
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  const handleCopyLink = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -116,7 +128,14 @@ export function CardModalHeader({
       style={{ borderBottom: "1px solid var(--app-border-faint)" }}
     >
       <div className="flex items-start gap-4">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-(--app-text)">
+          {/* Breadcrumbs for Context */}
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.1em] text-(--app-text-muted) opacity-60 mb-2">
+            <span className="hover:text-(--app-primary) cursor-default transition-colors">{workspaceName}</span>
+            <span className="opacity-30">/</span>
+            <span className="hover:text-(--app-primary) cursor-default transition-colors">{listName}</span>
+          </div>
+
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span
               className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[4px] text-[10px] font-bold tracking-widest uppercase"
@@ -237,6 +256,37 @@ export function CardModalHeader({
               ? <Loader2 className="w-4 h-4 animate-spin" />
               : <ImagePlus className="w-4 h-4" />}
           </label>
+
+          <button
+            onClick={handleCopyLink}
+            className="relative flex items-center justify-center w-9 h-9 rounded-sm transition-all"
+            style={{
+              background: "var(--app-hover)",
+              border: "1px solid var(--app-border)",
+              color: copied ? "var(--app-primary)" : "var(--app-text-muted)",
+            }}
+            title="Copy link"
+          >
+            <AnimatePresence>
+              {copied && (
+                <motion.span
+                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                  animate={{ opacity: 1, y: -30, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute px-2 py-1 bg-(--app-primary) text-white text-[9px] font-black uppercase rounded-[4px] pointer-events-none"
+                >
+                  Copied!
+                </motion.span>
+              )}
+            </AnimatePresence>
+            {copied ? (
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.2 }}>
+                <Tag className="w-4 h-4" />
+              </motion.div>
+            ) : (
+              <X className="w-4 h-4 rotate-45" /> 
+            )}
+          </button>
 
           <PriorityPicker
             isOpen={isPriorityOpen}

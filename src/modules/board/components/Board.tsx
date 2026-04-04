@@ -304,6 +304,8 @@ export default function Board({
           tags={tags}
           priorities={priorities}
           workspaceId={currentWorkspaceId}
+          workspaceName={currentWorkspace?.name || "Workspace"}
+          listName={lists.find(l => l.id === editingCard?.list_id)?.title || "List"}
           initialTab={initialCardTab}
         />
       )}

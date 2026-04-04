@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Card as CardType } from "@/modules/board/actions/board";
 import { useCardModal } from "../../hooks/useCardModal";
@@ -20,6 +21,8 @@ interface CardModalProps {
   tags: any[];
   priorities: any[];
   workspaceId: string;
+  workspaceName: string;
+  listName: string;
   initialTab?: "description" | "comments" | "diagram";
 }
 
@@ -48,6 +51,8 @@ export default function CardModal({
   tags,
   priorities,
   workspaceId,
+  workspaceName,
+  listName,
   initialTab,
 }: CardModalProps) {
   const {
@@ -88,6 +93,22 @@ export default function CardModal({
     isSavingDiagram,
     handleSaveDiagram,
   } = useCardModal(card, onUpdate, tags, priorities, workspaceId, initialTab);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSave, onClose]);
 
   if (!card) return null;
 
@@ -150,43 +171,9 @@ export default function CardModal({
             tags={tags}
             priorities={priorities}
             workspaceId={workspaceId}
+            workspaceName={workspaceName}
+            listName={listName}
           />
-
-          <div className="px-6 pt-1" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
-            <CardModalTabs
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              commentsCount={comments.length}
-            />
-          </div>
-
-          {/* Checklist progress bar */}
-          {checklistCounts.total > 0 && (
-            <div className="px-6 py-2" style={{ borderBottom: "1px solid var(--app-border-faint)" }}>
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex-1 h-1.5 rounded-sm overflow-hidden"
-                  style={{ background: "var(--app-border)" }}
-                >
-                  <div
-                    className="h-full rounded-sm transition-all duration-500"
-                    style={{
-                      width: `${Math.round((checklistCounts.done / checklistCounts.total) * 100)}%`,
-                      background:
-                        checklistCounts.done === checklistCounts.total
-                          ? "#34d399"
-                          : checklistCounts.done / checklistCounts.total >= 0.4
-                            ? "var(--app-primary)"
-                            : "#fbbf24",
-                    }}
-                  />
-                </div>
-                <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--app-text-muted)" }}>
-                  {checklistCounts.done}/{checklistCounts.total} tasks
-                </span>
-              </div>
-            </div>
-          )}
 
           <div
             className="flex-1 overflow-y-auto relative"
@@ -195,6 +182,42 @@ export default function CardModal({
               scrollbarColor: "var(--app-border) transparent",
             }}
           >
+            {/* Sticky Navigation Bar */}
+            <div className="sticky top-0 z-20 bg-(--app-bg) border-b border-(--app-border-faint) px-6 pt-1 shadow-sm shadow-black/5">
+              <CardModalTabs
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                commentsCount={comments.length}
+              />
+
+              {/* Checklist progress bar (Sticky inside the nav bar) */}
+              {checklistCounts.total > 0 && (
+                <div className="py-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex-1 h-1.5 rounded-sm overflow-hidden"
+                      style={{ background: "var(--app-border)" }}
+                    >
+                      <div
+                        className="h-full rounded-sm transition-all duration-500"
+                        style={{
+                          width: `${Math.round((checklistCounts.done / checklistCounts.total) * 100)}%`,
+                          background:
+                            checklistCounts.done === checklistCounts.total
+                              ? "#34d399"
+                              : checklistCounts.done / checklistCounts.total >= 0.4
+                                ? "var(--app-primary)"
+                                : "#fbbf24",
+                        }}
+                      />
+                    </div>
+                    <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--app-text-muted)" }}>
+                      {checklistCounts.done}/{checklistCounts.total} tasks
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
             <AnimatePresence mode="wait">
               {activeTab === "description" ? (
                 <motion.div
@@ -273,6 +296,19 @@ export default function CardModal({
                 You are editing this card
               </span>
             </div>
+
+            {/* Keyboard Legends (Desktop only) */}
+            <div className="hidden md:flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-(--app-text-muted) opacity-40">
+              <div className="flex items-center gap-1.5 hover:opacity-100 transition-opacity">
+                <kbd className="px-1.5 py-0.5 rounded-xs border border-(--app-border) bg-(--app-panel)">ESC</kbd>
+                <span>Close</span>
+              </div>
+              <div className="flex items-center gap-1.5 hover:opacity-100 transition-opacity">
+                <kbd className="px-1.5 py-0.5 rounded-xs border border-(--app-border) bg-(--app-panel)">CTRL + SHIF + S</kbd>
+                <span>Save</span>
+              </div>
+            </div>
+
             <div className="flex items-center gap-2">
               <button
                 onClick={onClose}
