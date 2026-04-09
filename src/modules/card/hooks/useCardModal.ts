@@ -1,16 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card as CardType, updateCardDetailsAction } from "@/modules/board/actions/board";
 import { getCommentsAction, createCommentAction, deleteCommentAction, Comment } from "@/modules/board/actions/comments";
 import { getCardHistoryAction } from "@/modules/board/actions/history";
 import { getDiagramAction, saveDiagramAction } from "@/modules/diagram/actions/diagram";
 import { parseProgress, parseChecklistCounts } from "@/modules/card/utils/parseProgress";
 
+// PRÉ-REQUISITO: `onUpdate` deve ser estabilizado com useCallback no componente pai.
+// Se não for, todos os callbacks deste hook serão recriados a cada render do pai.
 export function useCardModal(
-  card: CardType | null, 
-  onUpdate: (card: CardType) => void, 
-  tags: any[], 
+  card: CardType | null,
+  onUpdate: (card: CardType) => void,
+  tags: any[],
   priorities: any[],
-  workspaceId: string, 
+  workspaceId: string,
   initialTab: "description" | "comments" | "diagram" = "description"
 ) {
   // Card fields
@@ -44,39 +46,25 @@ export function useCardModal(
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
 
-  // Auto-save description — debounce aumentado para reduzir histórico excessivo
-  useEffect(() => {
-    if (!isEditingDesc || description === card?.description) return;
-    setSavedStatus("saving");
-    const timer = setTimeout(async () => {
-      const progress = parseProgress(description);
-      await handleSave({ description, progress });
-      setSavedStatus("saved");
-      setTimeout(() => setSavedStatus("idle"), 2000);
-    }, 3000); // 3s para evitar múltiplas entradas de histórico
-    return () => clearTimeout(timer);
-  }, [description, isEditingDesc]);
+  // Ref de guarda para fetchComments: evita incluir `loadingComments` (estado) nas deps
+  // do useCallback, o que recriaria a função a cada mudança de loading e causaria
+  // re-execuções desnecessárias do useEffect que depende de fetchComments.
+  const loadingCommentsRef = useRef(false);
 
-  // Load Comments
-  const fetchComments = useCallback(async () => {
-    if (!card || commentsLoaded || loadingComments) return;
-    setLoadingComments(true);
-    const commentsData = await getCommentsAction(card.id, 3, null);
-    setComments(commentsData.data);
-    setHasMoreComments(
-      commentsData.data.filter((c) => !c.parentId).length === 3
-    );
-    setCommentsLoaded(true);
-    setLoadingComments(false);
-  }, [card, commentsLoaded, loadingComments]);
+  // Ref para o timer do debounce: permite cancelar o timer anterior sem depender
+  // de uma variável local (que seria recriada a cada render da closure do useEffect).
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load History
-  const fetchHistory = useCallback(async () => {
-    if (!card || historyLoaded) return;
-    const historyData = await getCardHistoryAction(workspaceId, card.id);
-    setHistory(historyData);
-    setHistoryLoaded(true);
-  }, [card, historyLoaded, workspaceId]);
+  // Refs dos valores mais recentes dos campos do card: permite que handleSave (modo completo)
+  // e o callback do debounce leiam o estado atualizado mesmo dentro de uma janela de 3s,
+  // evitando stale closure sem adicionar todos os campos às deps do useCallback.
+  // Atualizado sincronamente a cada render (sem useEffect para não atrasar 1 frame).
+  const latestValuesRef = useRef({ content, description, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority });
+  latestValuesRef.current = { content, description, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority };
+
+  // Ref para handleSave: permite que o debounce sempre chame a versão mais recente
+  // sem adicionar handleSave às dependências do useEffect de auto-save.
+  const handleSaveRef = useRef<(overrides?: Partial<CardType>) => Promise<void>>(async () => {});
 
   // Sync state & reset on card change
   useEffect(() => {
@@ -88,40 +76,33 @@ export function useCardModal(
     setSelectedLabel(card.label || null);
     setSelectedPriority(card.priority || null);
     setAssigneeId(card.assigneeId || null);
-    
+
     // Reset data & loaded flags
     setComments([]);
     setCommentsLoaded(false);
+    loadingCommentsRef.current = false;
     setHistory([]);
     setHistoryLoaded(false);
     setDiagramData(undefined);
     setLoadingComments(false);
   }, [card?.id]);
 
-  // Trigger lazy loads
-  useEffect(() => {
-    if (activeTab === "description" && !historyLoaded) {
-      fetchHistory();
-    } else if (activeTab === "comments" && !commentsLoaded) {
-      fetchComments();
-    }
-  }, [activeTab, historyLoaded, commentsLoaded, fetchHistory, fetchComments]);
-
-  // handleSave com modo "partial" — quando overrides é passado sozinho,
-  // envia APENAS os campos do override para evitar histórico fantasma de
-  // campos que não mudaram (stale closure problem).
+  // handleSave com modo "partial" — quando overrides é passado, envia APENAS os campos do
+  // override para evitar histórico fantasma de campos que não mudaram (stale closure problem).
+  // Modo completo lê valores via latestValuesRef para garantir dados atualizados mesmo quando
+  // chamado de dentro de closures estáveis (debounce, keydown handler).
   const handleSave = useCallback(async (overrides?: Partial<CardType>) => {
     if (!card) return;
 
-    // Modo parcial: chamado por ações rápidas (label, priority, assignee, dueDate)
-    // Envia apenas o campo alterado para não gerar histórico falso dos demais.
     if (overrides) {
+      // Modo parcial: ações rápidas (label, priority, assignee, dueDate, cover)
       onUpdate({ ...card, ...overrides });
       await updateCardDetailsAction(card.id, overrides, workspaceId);
       return;
     }
 
-    // Modo completo: chamado pelo usuário via botão "Concluído" ou title blur
+    // Modo completo: lê da ref para não sofrer stale closure na janela de debounce
+    const { content, description, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority } = latestValuesRef.current;
     const changes = {
       content,
       description,
@@ -134,27 +115,85 @@ export function useCardModal(
     };
     onUpdate({ ...card, ...changes });
     await updateCardDetailsAction(card.id, changes, workspaceId);
-  }, [card, content, description, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority, onUpdate, workspaceId]);
+  }, [card, onUpdate, workspaceId]); // campos de estado removidos: lidos via latestValuesRef
 
-  // Sincronização local imediata para o Board (UX Reativa)
+  // Mantém handleSaveRef sincronizado com a versão mais recente de handleSave
   useEffect(() => {
-    if (!card || description === card.description) return;
-    
-    // Atualiza o estado local do Board sem esperar o debounce do DB
-    const progress = parseProgress(description);
-    onUpdate({ 
-      ...card, 
-      description, 
-      progress,
-      content,
-      coverUrl,
-      assigneeId,
-      dueDate,
-      label: selectedLabel,
-      priority: selectedPriority
-    });
-  }, [description, content, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority]);
+    handleSaveRef.current = handleSave;
+  }, [handleSave]);
 
+  // Auto-save description — debounce com timer via ref e valores via latestValuesRef
+  useEffect(() => {
+    if (!isEditingDesc || description === card?.description) return;
+    setSavedStatus("saving");
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
+    debounceTimerRef.current = setTimeout(async () => {
+      // Lê o valor mais recente da ref: garante que o save usa o estado final após
+      // múltiplas digitações dentro da janela de 3s, sem incluir handleSave nas deps.
+      const { description: latestDesc } = latestValuesRef.current;
+      const progress = parseProgress(latestDesc);
+      await handleSaveRef.current({ description: latestDesc, progress });
+      setSavedStatus("saved");
+      setTimeout(() => setSavedStatus("idle"), 2000);
+    }, 3000); // 3s para evitar múltiplas entradas de histórico
+
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [description, isEditingDesc]); // handleSave removido: acessado via handleSaveRef
+
+  // Load Comments — loadingComments via ref para não recriar fetchComments a cada mudança de loading
+  const fetchComments = useCallback(async () => {
+    if (!card || commentsLoaded || loadingCommentsRef.current) return;
+    loadingCommentsRef.current = true;
+    setLoadingComments(true);
+    try {
+      const commentsData = await getCommentsAction(card.id, 3, null);
+      setComments(commentsData.data);
+      setHasMoreComments(commentsData.data.filter((c) => !c.parentId).length === 3);
+      setCommentsLoaded(true);
+    } finally {
+      loadingCommentsRef.current = false;
+      setLoadingComments(false);
+    }
+  }, [card, commentsLoaded]); // loadingComments removido: lido via ref
+
+  // Load History
+  const fetchHistory = useCallback(async () => {
+    if (!card || historyLoaded) return;
+    const historyData = await getCardHistoryAction(workspaceId, card.id);
+    setHistory(historyData);
+    setHistoryLoaded(true);
+  }, [card, historyLoaded, workspaceId]);
+
+  // Load Diagram
+  const fetchDiagram = useCallback(async () => {
+    if (!card) return;
+    setLoadingDiagram(true);
+    const data = await getDiagramAction(card.id);
+    setDiagramData(data || null);
+    setLoadingDiagram(false);
+  }, [card]);
+
+  // Trigger lazy loads por tab
+  useEffect(() => {
+    if (activeTab === "description" && !historyLoaded) {
+      fetchHistory();
+    } else if (activeTab === "comments" && !commentsLoaded) {
+      fetchComments();
+    }
+  }, [activeTab, historyLoaded, commentsLoaded, fetchHistory, fetchComments]);
+
+  // Lazy load diagram quando tab fica ativa
+  useEffect(() => {
+    if (activeTab === "diagram" && diagramData === undefined && !loadingDiagram) {
+      fetchDiagram();
+    }
+  }, [activeTab, diagramData, loadingDiagram, fetchDiagram]);
+
+  // toggleAssignee — chama onUpdate via handleSave(partial), sem sync effect separado
   const toggleAssignee = useCallback(async (userId: string) => {
     const next = assigneeId === userId ? null : userId;
     setAssigneeId(next);
@@ -183,6 +222,19 @@ export function useCardModal(
     await handleSave({ coverUrl: "" });
   }, [handleSave]);
 
+  // Substitui setDescription puro: propaga onUpdate imediatamente para o board
+  // (optimistic update) sem depender de um useEffect com múltiplas dependências.
+  // A interface pública mantém o nome `setDescription` no return.
+  const handleDescriptionChange = useCallback((newDesc: string) => {
+    setDescription(newDesc);
+    if (!card) return;
+    onUpdate({
+      ...card,
+      description: newDesc,
+      progress: parseProgress(newDesc),
+    });
+  }, [card, onUpdate]);
+
   const handlePostComment = useCallback(async (commentText: string, parentId: string | null = null) => {
     if (!card) return;
     const newComment = await createCommentAction(card.id, commentText, parentId);
@@ -201,48 +253,30 @@ export function useCardModal(
     }
     setIsLoadingMore(false);
   }, [card, comments]);
-  
+
   const handleDeleteComment = useCallback(async (commentId: string) => {
-    // Optimistic update: filter out the comment immediately
+    // Optimistic update: remove imediatamente da UI
     setComments((prev) => prev.filter((c) => c.id !== commentId));
     try {
       await deleteCommentAction(commentId);
     } catch (error) {
       console.error("Failed to delete comment:", error);
-      // If it fails, we might want to reload comments or show an error, 
-      // but for now, the UI will reflect the change.
     }
   }, []);
-
-  const fetchDiagram = useCallback(async () => {
-    if (!card) return;
-    setLoadingDiagram(true);
-    const data = await getDiagramAction(card.id);
-    setDiagramData(data || null);
-    setLoadingDiagram(false);
-  }, [card]);
 
   const handleSaveDiagram = useCallback(async (data: any) => {
     if (!card) return;
     setIsSavingDiagram(true);
-    // Optimistic Update: Set the data immediately so the preview is updated when the modal closes
+    // Optimistic Update: atualiza localmente antes de confirmar no servidor
     setDiagramData(data);
     try {
       await saveDiagramAction(card.id, data);
     } catch (error) {
       console.error("Failed to save diagram:", error);
-      // Optional: rollback if needed, but usually not required for this UX
     } finally {
       setIsSavingDiagram(false);
     }
-  }, [card, workspaceId]);
-
-  // Lazy load diagram when tab becomes active
-  useEffect(() => {
-    if (activeTab === "diagram" && diagramData === undefined && !loadingDiagram) {
-      fetchDiagram();
-    }
-  }, [activeTab, diagramData, loadingDiagram, fetchDiagram]);
+  }, [card]);
 
   const checklistCounts = parseChecklistCounts(description);
 
@@ -250,7 +284,9 @@ export function useCardModal(
     content,
     setContent,
     description,
-    setDescription,
+    // setDescription mapeado para handleDescriptionChange para garantir propagação imediata
+    // ao board sem sync effect — interface pública inalterada
+    setDescription: handleDescriptionChange,
     coverUrl,
     dueDate,
     setDueDate,
@@ -285,4 +321,3 @@ export function useCardModal(
     handleSaveDiagram,
   };
 }
-
