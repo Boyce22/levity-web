@@ -46,7 +46,7 @@ export function Sidebar({
   const [isWsOpen, setIsWsOpen] = useState(false);
 
   const displayAvatar =
-    userProfile?.avatar_url ||
+    userProfile?.avatarUrl ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile?.username}`;
 
   const isAdmin = ['owner', 'admin'].includes(userRole);
@@ -255,7 +255,7 @@ export function Sidebar({
             className="flex-1 min-w-0 overflow-hidden whitespace-nowrap"
           >
             <p className="text-sm font-bold text-(--app-text) truncate tracking-tight">
-              {userProfile?.display_name || userProfile?.username}
+              {userProfile?.displayName || userProfile?.username}
             </p>
             <p className="text-[11px] text-(--app-text-muted) truncate opacity-60 capitalize">
               {userRole}

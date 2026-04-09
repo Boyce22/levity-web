@@ -1,10 +1,7 @@
 "use server";
 
-import { diagramRepo } from "@/repositories";
+import { httpGet, httpPut } from "@/lib/http";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { verifyJwtToken } from "@/lib/auth";
-import { assertUserOwnsCard } from "@/modules/workspace/actions/assertions";
 import { z } from "zod";
 
 const MAX_DIAGRAM_SIZE_BYTES = 256 * 1024; // 256KB
@@ -15,11 +12,10 @@ const MAX_POINTS_PER_PATH = 2500;
 const ElementSchema = z.object({
   id: z.string().uuid(),
   type: z.enum(['path', 'rect', 'circle', 'db', 'cloud', 'server', 'user', 'arrow', 'line', 'eraser']),
-  points: z.array(z.object({
-    x: z.number(),
-    y: z.number(),
-    pressure: z.number().optional()
-  })).max(MAX_POINTS_PER_PATH).optional(),
+  points: z
+    .array(z.object({ x: z.number(), y: z.number(), pressure: z.number().optional() }))
+    .max(MAX_POINTS_PER_PATH)
+    .optional(),
   x: z.number().optional(),
   y: z.number().optional(),
   w: z.number().optional(),
@@ -32,46 +28,34 @@ const DiagramSchema = z.object({
   elements: z.array(ElementSchema).max(MAX_ELEMENTS),
 });
 
-async function getUserId() {
-  const token = (await cookies()).get("token")?.value;
-  if (!token) throw new Error("Unauthorized");
-  const payload = await verifyJwtToken(token);
-  if (!payload || !payload.id) throw new Error("Unauthorized");
-  return payload.id as string;
+export type Diagram = {
+  id: string;
+  cardId: string;
+  data: any;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function getDiagramAction(cardId: string): Promise<Diagram | null> {
+  return httpGet<Diagram>(`/diagrams/${cardId}`).catch(() => null);
 }
 
-export async function getDiagramAction(cardId: string) {
-  const userId = await getUserId();
-  // 🛡️ Security Check: Ensure user has access to the card (IDOR protection)
-  await assertUserOwnsCard(userId, cardId);
-
-  return diagramRepo.findByCardId(cardId);
-}
-
-export async function saveDiagramAction(cardId: string, diagramData: any, workspace_id: string) {
-  const userId = await getUserId();
-  
-  // 🛡️ Security Check: IDOR - Ensure user has membership in the workspace
-  // We use the workspace_id passed from client for performance, 
-  // but assertUserOwnsCard still verifies the user's access to this specific card.
-  await assertUserOwnsCard(userId, cardId);
-
-  // 🛡️ Payload Size Check: Prevent DoS/Storage Bloating
+export async function saveDiagramAction(cardId: string, diagramData: any) {
   const payloadString = JSON.stringify(diagramData);
   if (payloadString.length > MAX_DIAGRAM_SIZE_BYTES) {
     throw new Error(`413 Payload Too Large: Diagram exceeds the ${MAX_DIAGRAM_SIZE_BYTES / 1024}KB limit.`);
   }
 
-  // 🛡️ Schema Validation: Ensure structure integrity
   try {
     const validatedData = DiagramSchema.parse(diagramData);
-    const diagram = await diagramRepo.save(cardId, validatedData, workspace_id);
-    
+    const diagram = await httpPut(`/diagrams`, { cardId, data: validatedData });
     revalidatePath("/");
     return diagram;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new Error(`400 Bad Request: Data validation failed. ${error.issues[0]?.message || 'Invalid format'}`);
+      throw new Error(
+        `400 Bad Request: Data validation failed. ${error.issues[0]?.message || 'Invalid format'}`,
+      );
     }
     throw error;
   }

@@ -4,7 +4,7 @@ const rateLimitStore = new Map<string, { count: number; expiresAt: number }>();
  * 🛡️ Anti-Abuse Rate Limiter (Memory-Level)
  * Protects Server Actions from brutal volume spam (DDoS/Brute-force).
  * 
- * @param identifier Unique key representing the action and user (e.g. `user_123_generate_invite`)
+ * @param identifier Unique key representing the action and user (e.g. `user123GenerateInvite`)
  * @param limit Max amount of requests permitted in the temporal window
  * @param windowMs Amount of milliseconds before the counter resets (e.g. 60000 = 1 minute)
  */

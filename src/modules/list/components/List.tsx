@@ -52,7 +52,7 @@ export default function List({
   const isWipExceeded = wipLimit != null && cards.length >= wipLimit;
 
   const handleRename = async (newTitle: string) => {
-    await renameListAction(list.id, newTitle);
+    await renameListAction(list.id, newTitle, list.workspaceId);
   };
 
   const handleAddCard = async (content: string) => {
@@ -106,6 +106,7 @@ export default function List({
           <ListHeader
             dragHandleProps={provided.dragHandleProps}
             listId={list.id}
+            workspaceId={list.workspaceId}
             title={list.title}
             cardCount={cards.length}
             wipLimit={wipLimit}

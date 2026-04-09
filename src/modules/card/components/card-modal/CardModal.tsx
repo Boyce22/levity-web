@@ -10,6 +10,7 @@ import { CardModalTabs } from "./CardModalTabs";
 import { DescriptionTab } from "./description-tab/DescriptionTab";
 import { CommentsTab } from "./comments-tab/CommentsTab";
 import { DiagramTab } from "./diagram-tab/DiagramTab";
+import { ChecklistProgress } from "./ChecklistProgress";
 
 interface CardModalProps {
   card: CardType | null;
@@ -190,33 +191,10 @@ export default function CardModal({
                 commentsCount={comments.length}
               />
 
-              {/* Checklist progress bar (Sticky inside the nav bar) */}
-              {checklistCounts.total > 0 && (
-                <div className="py-2">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="flex-1 h-1.5 rounded-sm overflow-hidden"
-                      style={{ background: "var(--app-border)" }}
-                    >
-                      <div
-                        className="h-full rounded-sm transition-all duration-500"
-                        style={{
-                          width: `${Math.round((checklistCounts.done / checklistCounts.total) * 100)}%`,
-                          background:
-                            checklistCounts.done === checklistCounts.total
-                              ? "#34d399"
-                              : checklistCounts.done / checklistCounts.total >= 0.4
-                                ? "var(--app-primary)"
-                                : "#fbbf24",
-                        }}
-                      />
-                    </div>
-                    <span className="text-[11px] font-semibold shrink-0" style={{ color: "var(--app-text-muted)" }}>
-                      {checklistCounts.done}/{checklistCounts.total} tasks
-                    </span>
-                  </div>
-                </div>
-              )}
+              <ChecklistProgress 
+                done={checklistCounts.done} 
+                total={checklistCounts.total} 
+              />
             </div>
             <AnimatePresence mode="wait">
               {activeTab === "description" ? (

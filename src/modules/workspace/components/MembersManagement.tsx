@@ -34,20 +34,20 @@ const formatDate = (date: string | Date, pattern?: string) => {
 interface Member {
   id: string;
   username: string;
-  display_name: string;
-  avatar_url: string;
+  displayName: string;
+  avatarUrl: string;
   email: string;
   role: string;
-  joined_at: string;
+  joinedAt: string;
 }
 
 interface Invite {
   id: string;
   token: string;
-  max_uses: number;
-  current_uses: number;
-  expires_at: string;
-  created_at: string;
+  maxUses: number;
+  currentUses: number;
+  expiresAt: string;
+  createdAt: string;
   role: string;
 }
 
@@ -83,10 +83,10 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
     }
   };
 
-  const handleRevoke = async (token: string) => {
-    setRevokingToken(token);
+  const handleRevoke = async (inviteId: string) => {
+    setRevokingToken(inviteId);
     try {
-      await revokeInviteAction(workspaceId, token);
+      await revokeInviteAction(workspaceId, inviteId);
       await fetchInvites();
     } catch (err) {
       console.error("Failed to revoke", err);
@@ -119,12 +119,12 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
   };
 
   const copyToClipboard = (token: string) => {
-    const url = `${window.location.origin}/invite/${token}`;
+    const url = `${window.location.origin}/invite/${workspaceId}/${token}`;
     navigator.clipboard.writeText(url);
     // Could show a toast here
   };
 
-  const activeInvites = invites.filter(i => new Date(i.expires_at) > new Date() && i.current_uses < i.max_uses).length;
+  const activeInvites = invites.filter(i => new Date(i.expiresAt) > new Date() && i.currentUses < i.maxUses).length;
   const expiredInvites = invites.length - activeInvites;
 
   return (
@@ -209,12 +209,12 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <img 
-                          src={member.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.username}`} 
+                          src={member.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.username}`} 
                           className="w-8 h-8 rounded-sm object-cover border border-(--app-border-faint)"
                           alt={member.username} 
                         />
                         <div>
-                          <p className="text-sm font-bold text-(--app-text)">{member.display_name || member.username}</p>
+                          <p className="text-sm font-bold text-(--app-text)">{member.displayName || member.username}</p>
                           <p className="text-[11px] text-(--app-text-muted) opacity-60">@{member.username}</p>
                         </div>
                       </div>
@@ -262,7 +262,7 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-(--app-text-muted)">
                          <Calendar size={14} />
-                         <span className="text-[13px]">{formatDate(member.joined_at)}</span>
+                         <span className="text-[13px]">{formatDate(member.joinedAt)}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -318,9 +318,9 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
                   </thead>
                   <tbody className="divide-y divide-(--app-border-faint)">
                     {invites.map((invite) => {
-                      const isExpired = new Date(invite.expires_at) < new Date();
-                      const isRevoked = new Date(invite.expires_at).getFullYear() === 2000;
-                      const isFull = invite.current_uses >= invite.max_uses;
+                      const isExpired = new Date(invite.expiresAt) < new Date();
+                      const isRevoked = new Date(invite.expiresAt).getFullYear() === 2000;
+                      const isFull = invite.currentUses >= invite.maxUses;
                       const isActive = !isExpired && !isFull && !isRevoked;
 
                       return (
@@ -337,20 +337,20 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
                                        <Copy size={12} />
                                      </button>
                                   </div>
-                                  <p className="text-[10px] text-(--app-text-muted) uppercase font-bold tracking-widest mt-0.5 opacity-50">Created {formatDate(invite.created_at)}</p>
+                                  <p className="text-[10px] text-(--app-text-muted) uppercase font-bold tracking-widest mt-0.5 opacity-50">Created {formatDate(invite.createdAt)}</p>
                                 </div>
                              </div>
                           </td>
                           <td className="px-6 py-4">
                              <div className="space-y-1">
                                 <div className="flex justify-between text-[11px] font-bold mb-1">
-                                   <span className="text-(--app-text)">{invite.current_uses} / {invite.max_uses}</span>
-                                   <span className="text-(--app-text-muted)">{Math.round((invite.current_uses / invite.max_uses) * 100)}%</span>
+                                   <span className="text-(--app-text)">{invite.currentUses} / {invite.maxUses}</span>
+                                   <span className="text-(--app-text-muted)">{Math.round((invite.currentUses / invite.maxUses) * 100)}%</span>
                                 </div>
                                 <div className="w-24 h-1 rounded-full bg-(--app-hover) overflow-hidden">
                                    <div 
                                       className={`h-full rounded-full transition-all duration-1000 ${isFull ? 'bg-amber-500' : 'bg-indigo-500'}`}
-                                      style={{ width: `${(invite.current_uses / invite.max_uses) * 100}%` }}
+                                      style={{ width: `${(invite.currentUses / invite.maxUses) * 100}%` }}
                                    />
                                 </div>
                              </div>
@@ -371,7 +371,7 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
                              <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-1.5 text-(--app-text-muted)">
                                    <Clock size={12} />
-                                   <span>{isRevoked ? 'Manually Revoked' : formatDate(invite.expires_at, 'HH:mm')}</span>
+                                   <span>{isRevoked ? 'Manually Revoked' : formatDate(invite.expiresAt, 'HH:mm')}</span>
                                 </div>
                              </div>
                           </td>
@@ -390,12 +390,12 @@ export function MembersManagement({ workspaceId, members, onOpenShare, initialIn
                           </td>
                           <td className="px-6 py-4 text-right">
                              {isActive && (
-                               <button 
-                                 onClick={() => handleRevoke(invite.token)}
-                                 disabled={revokingToken === invite.token}
+                               <button
+                                 onClick={() => handleRevoke(invite.id)}
+                                 disabled={revokingToken === invite.id}
                                  className="px-3 py-1.5 rounded-sm bg-red-500/10 text-red-500 border border-red-500/20 text-[11px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
                                >
-                                 {revokingToken === invite.token ? '...' : 'Revoke'}
+                                 {revokingToken === invite.id ? '...' : 'Revoke'}
                                </button>
                              )}
                           </td>

@@ -61,9 +61,9 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const user = comment.users || allUsers.find((u) => u.id === comment.created_by);
-  const avatar = user?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`;
-  const isOwner = currentUserId === comment.created_by;
+  const user = comment.users || allUsers.find((u) => u.id === comment.createdBy);
+  const avatar = user?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username}`;
+  const isOwner = currentUserId === comment.createdBy;
 
   const attachments = extractAttachments(isEditing ? editContent : comment.content);
   const attachmentUrls = attachments.map(a => a.url);
@@ -116,12 +116,12 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-baseline">
             <span className="text-sm font-semibold mr-2" style={{ color: "var(--app-text)" }}>
-              {user?.display_name || user?.username}
+              {user?.displayName || user?.username}
             </span>
             <span className="text-[11px]" style={{ color: "var(--app-text-muted)" }}>
-              {timeAgo(comment.created_at)}
+              {timeAgo(comment.createdAt)}
             </span>
-            {comment.updated_at && (
+            {comment.updatedAt && (
               <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm" 
                     style={{ background: "var(--app-hover)", color: "var(--app-primary)", opacity: 0.8 }}>
                 Edited

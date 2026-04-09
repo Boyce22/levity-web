@@ -382,14 +382,14 @@ export function CommentInput({
                       }}
                     >
                       <img
-                        src={u.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`}
+                        src={u.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`}
                         className="w-5 h-5 rounded-[4px] object-cover"
                       />
                       <span
                         className="text-xs font-medium"
                         style={{ color: i === mentionState.index ? "var(--app-primary)" : "var(--app-text)" }}
                       >
-                        {u.display_name || u.username}
+                        {u.displayName || u.username}
                       </span>
                     </div>
                   ))}
@@ -412,7 +412,7 @@ export function CommentInput({
             <span>
               Replying to{" "}
               <span className="font-medium" style={{ color: "var(--app-text)" }}>
-                @{replyingTo.users?.display_name || replyingTo.users?.username}
+                @{replyingTo.users?.displayName || replyingTo.users?.username}
               </span>
             </span>
             <button onClick={onCancelReply}>✕</button>

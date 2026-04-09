@@ -1,55 +1,47 @@
 'use server';
 
-import { supabase } from '@/lib/supabase';
 import { cookies } from 'next/headers';
-import { verifyJwtToken } from '@/lib/auth';
+import { getUserIdFromToken } from '@/lib/auth';
+import { httpGet, httpPatch, httpPost } from '@/lib/http';
 
 async function getUserId() {
   const token = (await cookies()).get('token')?.value;
   if (!token) return null;
-  const payload = await verifyJwtToken(token);
-  return payload?.id as string | null;
+  return getUserIdFromToken(token);
 }
 
 export type Notification = {
   id: string;
-  recipient_id: string;
-  created_by: string;
-  card_id: string;
-  type: string;
+  userId: string;
+  actorId: string;
+  cardId: string;
+  type: 'mention' | 'assignment' | 'reply' | 'comment';
   content: string;
   read: boolean;
-  created_at: string;
-  actor: {
+  createdAt: string;
+  actor?: {
+    id: string;
     username: string;
-    display_name?: string;
-    avatar_url?: string;
+    displayName: string | null;
+    avatarUrl: string | null;
   };
 };
 
 export async function getNotificationsAction() {
-  const currentUserId = await getUserId();
-  if (!currentUserId) return [];
-  
-  // Use inner join syntax
-  const { data, error } = await supabase
-    .from('notifications')
-    .select(`
-      *,
-      actor:users!created_by(username, display_name, avatar_url)
-    `)
-    .eq('recipient_id', currentUserId)
-    .order('created_at', { ascending: false });
-    
-  if (error) {
-    console.error('Failed to fetch notifications:', error.message);
-    return [];
-  }
-  return data as any as Notification[];
+  const userId = await getUserId();
+  if (!userId) return [];
+
+  const data = await httpGet<any>('/notifications').catch(() => ({ items: [] }));
+  return Array.isArray(data?.items) ? (data.items as Notification[]) : [];
+}
+
+export async function markNotificationReadAction(id: string) {
+  await httpPatch(`/notifications/${id}/read`).catch(() => null);
 }
 
 export async function markNotificationsReadAction() {
-  const currentUserId = await getUserId();
-  if (!currentUserId) return;
-  await supabase.from('notifications').update({ read: true }).eq('recipient_id', currentUserId);
+  const userId = await getUserId();
+  if (!userId) return;
+
+  await httpPost('/notifications/read-all').catch(() => null);
 }

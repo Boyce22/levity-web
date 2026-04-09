@@ -53,14 +53,14 @@ export function MemberPicker({ isOpen, setIsOpen, assigneeId, onSelect, allUsers
                 >
                   <img
                     src={
-                      u.avatar_url ||
+                      u.avatarUrl ||
                       `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`
                     }
                     className="w-6 h-6 rounded-sm object-cover bg-[var(--app-panel)]"
                     style={{ border: "1px solid var(--app-border-faint)" }}
                   />
                   <span className="flex-1 text-[13px]" style={{ color: "var(--app-text)" }}>
-                    {u.display_name || u.username}
+                    {u.displayName || u.username}
                   </span>
                   {assigneeId === u.id && <Check className="w-3.5 h-3.5" style={{ color: "#34d399" }} />}
                 </div>

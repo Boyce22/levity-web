@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, CheckCheck, Sparkles } from 'lucide-react';
+import { Bell, Sparkles } from 'lucide-react';
 import { getNotificationsAction, markNotificationsReadAction, Notification } from '@/modules/users/actions/notifications';
 import { AnimatePresence, motion } from 'framer-motion';
+import { NotificationHeader } from './notifications/NotificationHeader';
+import { NotificationItem } from './notifications/NotificationItem';
 
 interface NotificationBellProps {
   onNotificationClick?: (cardId: string) => void;
@@ -22,7 +24,9 @@ export default function NotificationBell({ onNotificationClick }: NotificationBe
     return () => clearInterval(interval);
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = Array.isArray(notifications)
+    ? notifications.filter((n) => !n.read).length
+    : 0;
 
   const handleOpen = () => {
     const opening = !isOpen;
@@ -36,6 +40,13 @@ export default function NotificationBell({ onNotificationClick }: NotificationBe
   const handleMarkAll = () => {
     markNotificationsReadAction();
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const handleItemClick = (notif: Notification) => {
+    if (onNotificationClick) {
+      onNotificationClick(notif.cardId);
+      setIsOpen(false);
+    }
   };
 
   return (
@@ -86,27 +97,11 @@ export default function NotificationBell({ onNotificationClick }: NotificationBe
                 maxHeight: '380px',
               }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3.5"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold text-white/85">Notifications</span>
-                  {unreadCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
-                      style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.2)' }}>
-                      {unreadCount} new
-                    </span>
-                  )}
-                </div>
-                {notifications.some(n => !n.read) && (
-                  <button
-                    onClick={handleMarkAll}
-                    className="flex items-center gap-1 text-[11px] font-medium text-white/30 hover:text-indigo-400 transition-colors"
-                  >
-                    <CheckCheck className="w-3.5 h-3.5" /> Mark all read
-                  </button>
-                )}
-              </div>
+              <NotificationHeader
+                notifications={notifications}
+                unreadCount={unreadCount}
+                handleMarkAll={handleMarkAll}
+              />
 
               {/* List */}
               <div className="overflow-y-auto flex-1 p-2"
@@ -122,51 +117,13 @@ export default function NotificationBell({ onNotificationClick }: NotificationBe
                 ) : (
                   <div className="space-y-0.5">
                     {notifications.map((notif, i) => (
-                      <motion.div
+                      <NotificationItem
                         key={notif.id}
-                        initial={{ opacity: 0, x: -6 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        onClick={() => {
-                          if (onNotificationClick) {
-                            onNotificationClick(notif.card_id);
-                            setIsOpen(false);
-                          }
-                        }}
-                        className={`flex items-start gap-3 px-3 py-2.5 rounded-xl transition-colors ${onNotificationClick ? 'cursor-pointer hover:bg-white/5' : 'cursor-default'}`}
-                        style={{
-                          background: notif.read ? 'transparent' : 'rgba(99,102,241,0.07)',
-                          opacity: notif.read ? 0.6 : 1,
-                        }}
-                      >
-                        <div className="relative shrink-0">
-                          <img
-                            src={notif.actor?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${notif.actor?.username}`}
-                            className="w-7 h-7 rounded-full object-cover"
-                            style={{ border: '1.5px solid rgba(255,255,255,0.1)' }}
-                          />
-                          {!notif.read && (
-                            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full"
-                              style={{ background: '#6366f1', boxShadow: '0 0 6px rgba(99,102,241,0.6)' }} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[12.5px] text-white/75 leading-snug">
-                            <span className="font-semibold text-white/90">
-                              {notif.actor?.display_name || notif.actor?.username}
-                            </span>{' '}
-                            mentioned you in a comment.
-                          </p>
-                          {notif.content && (
-                            <p className="text-[11.5px] text-white/35 mt-0.5 truncate">
-                              "{notif.content}"
-                            </p>
-                          )}
-                          <span className="text-[10px] text-white/25 mt-1 block">
-                            {new Date(notif.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      </motion.div>
+                        notification={notif}
+                        index={i}
+                        onClick={onNotificationClick}
+                        onItemClick={handleItemClick}
+                      />
                     ))}
                   </div>
                 )}

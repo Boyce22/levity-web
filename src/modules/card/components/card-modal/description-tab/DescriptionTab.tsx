@@ -54,7 +54,7 @@ export function DescriptionTab({
     setDescription(finalDescription);
 
     // 2. Apagar do bucket (Async)
-    deleteFileAction(url);
+    deleteFileAction(workspaceId, url);
   };
   return (
     <div className="space-y-4">

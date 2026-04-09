@@ -1,23 +1,20 @@
-// src/app/invite/[token]/page.tsx
 import { getInviteDetailsAction, acceptInviteAction } from "@/modules/workspace/actions/members";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { verifyJwtToken } from "@/lib/auth";
-import { Share2, AlertCircle, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
+import { isTokenStructurallyValid } from "@/lib/auth";
+import { Share2, AlertCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 interface PageProps {
-  params: Promise<{ token: string }>;
+  params: Promise<{ workspaceId: string; token: string }>;
 }
 
 export default async function InvitePage({ params }: PageProps) {
-  const { token } = await params;
-  const invite = await getInviteDetailsAction(token);
+  const { workspaceId, token } = await params;
+  const invite = await getInviteDetailsAction(workspaceId, token);
 
-  // Check if user is logged in
   const cookieToken = (await cookies()).get("token")?.value;
-  const payload = cookieToken ? await verifyJwtToken(cookieToken) : null;
-  const isLoggedIn = !!payload;
+  const isLoggedIn = !!cookieToken && isTokenStructurallyValid(cookieToken);
 
   if (!invite) {
     return <InviteError message="This invitation link is invalid or has been revoked." />;
@@ -32,7 +29,7 @@ export default async function InvitePage({ params }: PageProps) {
   }
 
   if (!isLoggedIn) {
-    redirect(`/login?callbackUrl=/invite/${token}`);
+    redirect(`/login?callbackUrl=/invite/${workspaceId}/${token}`);
   }
 
   return (
@@ -45,27 +42,31 @@ export default async function InvitePage({ params }: PageProps) {
         <h1 className="text-2xl font-bold text-[var(--app-text)] mb-3 tracking-tight">
           Join Workspace
         </h1>
-        
+
         <p className="text-[15px] text-[var(--app-text-muted)] mb-10 leading-relaxed">
-          You've been invited to join <strong className="text-[var(--app-text)] font-semibold">{invite.workspaceName}</strong>. 
+          You've been invited to join{" "}
+          <strong className="text-[var(--app-text)] font-semibold">{invite.workspaceName}</strong>.
           As a member, you'll be able to collaborate on boards and manage cards.
         </p>
 
-        <form action={async () => {
-          'use server';
-          let workspaceId: string | null = null;
-          try {
-            workspaceId = await acceptInviteAction(token);
-          } catch (err) {
-            console.error("Join error:", err);
-          }
-          
-          if (workspaceId) {
-            redirect(`/?workspace=${workspaceId}`);
-          } else {
-            redirect("/?error=join_failed");
-          }
-        }} className="w-full">
+        <form
+          action={async () => {
+            "use server";
+            let joinedWorkspaceId: string | null = null;
+            try {
+              joinedWorkspaceId = await acceptInviteAction(workspaceId, token);
+            } catch (err) {
+              console.error("Join error:", err);
+            }
+
+            if (joinedWorkspaceId) {
+              redirect(`/?workspace=${joinedWorkspaceId}`);
+            } else {
+              redirect("/?error=joinFailed");
+            }
+          }}
+          className="w-full"
+        >
           <button
             type="submit"
             className="w-full bg-[var(--app-primary)] text-white font-bold py-4 rounded-2xl shadow-xl shadow-[var(--app-primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
@@ -74,7 +75,7 @@ export default async function InvitePage({ params }: PageProps) {
           </button>
         </form>
       </div>
-      
+
       <p className="mt-8 text-[12px] text-[var(--app-text-muted)] opacity-50 font-medium tracking-wider uppercase">
         Protected by Levity Cryptography
       </p>
@@ -90,9 +91,7 @@ function InviteError({ message }: { message: string }) {
           <AlertCircle className="w-8 h-8 text-red-500" />
         </div>
         <h2 className="text-xl font-bold text-[var(--app-text)] mb-3">Invite Invalid</h2>
-        <p className="text-[14px] text-[var(--app-text-muted)] mb-8 leading-relaxed">
-          {message}
-        </p>
+        <p className="text-[14px] text-[var(--app-text-muted)] mb-8 leading-relaxed">{message}</p>
         <Link
           href="/"
           className="w-full bg-[var(--app-bg)] border border-[var(--app-border)] text-[var(--app-text)] font-bold py-3 rounded-xl hover:bg-[var(--app-panel-hover)] transition-all"

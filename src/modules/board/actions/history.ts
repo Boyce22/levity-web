@@ -1,23 +1,30 @@
 'use server';
 
-import { cardRepo } from '@/repositories';
-import { cookies } from 'next/headers';
-import { verifyJwtToken } from '@/lib/auth';
-import { assertUserOwnsCard } from '@/modules/workspace/actions/assertions';
+import { httpGet } from '@/lib/http';
 
-async function getUserId() {
-  const token = (await cookies()).get('token')?.value;
-  if (!token) throw new Error('Unauthorized');
-  const payload = await verifyJwtToken(token);
-  if (!payload || !payload.id) throw new Error('Unauthorized');
-  return payload.id as string;
+export interface CardHistoryResponse {
+  id: string;
+  createdBy: string;
+  actionType: string;
+  field: string;
+  oldValue?: string;
+  newValue?: string;
+  createdAt: string;
+  users?: {
+    id: string;
+    username: string;
+    displayName?: string;
+    avatarUrl?: string;
+  };
 }
 
-export async function getCardHistoryAction(cardId: string) {
-  const currentUserId = await getUserId();
-  
-  // 🛡️ Security Gateway: IDOR Protection
-  await assertUserOwnsCard(currentUserId, cardId);
-
-  return cardRepo.getHistory(cardId);
+export async function getCardHistoryAction(workspaceId: string, cardId: string): Promise<CardHistoryResponse[]> {
+  try {
+    const result = await httpGet<CardHistoryResponse[]>(`/workspaces/${workspaceId}/cards/${cardId}/history`);
+    return result || [];
+  } catch (error) {
+    console.error('Failed to fetch card history:', error);
+    return [];
+  }
 }
+

@@ -39,12 +39,12 @@ export function CommentsTab({
 
   const handleCancelReply = () => setReplyingTo(null);
 
-  const rootComments = comments.filter((c) => !c.parent_id);
+  const rootComments = comments.filter((c) => !c.parentId);
   const repliesMap = new Map();
   comments.forEach((c) => {
-    if (c.parent_id) {
-      if (!repliesMap.has(c.parent_id)) repliesMap.set(c.parent_id, []);
-      repliesMap.get(c.parent_id).push(c);
+    if (c.parentId) {
+      if (!repliesMap.has(c.parentId)) repliesMap.set(c.parentId, []);
+      repliesMap.get(c.parentId).push(c);
     }
   });
 
@@ -121,4 +121,4 @@ export function CommentsTab({
       )}
     </div>
   );
-}
+}

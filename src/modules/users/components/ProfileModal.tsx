@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { updateUserProfile, uploadAvatarAction } from "@/modules/users/actions/user";
-import { Check, Camera, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SimpleField } from "@/modules/shared/components/SimpleField";
+import { AvatarUploadSection } from "./AvatarUploadSection";
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -26,14 +27,14 @@ export default function ProfileModal({
   onProfileUpdated,
   currentWorkspaceId,
 }: ProfileModalProps) {
-  const [displayName, setDisplayName] = useState(profile?.display_name || "");
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
+  const [displayName, setDisplayName] = useState(profile?.displayName || "");
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatarUrl || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
-    profile?.avatar_url ||
+    profile?.avatarUrl ||
     (profile?.username
       ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`
       : null),
@@ -43,11 +44,11 @@ export default function ProfileModal({
 
   useEffect(() => {
     if (profile) {
-      setDisplayName(profile.display_name || "");
-      setAvatarUrl(profile.avatar_url || "");
+      setDisplayName(profile.displayName || "");
+      setAvatarUrl(profile.avatarUrl || "");
       setBio(profile.bio || "");
       setAvatarPreview(
-        profile.avatar_url ||
+        profile.avatarUrl ||
         (profile.username
           ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`
           : null),
@@ -111,21 +112,49 @@ export default function ProfileModal({
     setErrors({});
     try {
       let finalAvatarUrl = avatarUrl;
+      
+      // 1. First handle avatar upload if it's a data URL
       if (avatarUrl.startsWith("data:")) {
-        finalAvatarUrl = await uploadAvatarAction(avatarUrl, currentWorkspaceId);
-        setAvatarUrl(finalAvatarUrl);
+        const response = await fetch(avatarUrl);
+        const blob = await response.blob();
+        const formData = new FormData();
+        // The user says "envie só o file e o token". 
+        // I will use 'file' as the standard field name if not specified.
+        formData.append('file', blob, 'avatar.png');
+
+        const res = await fetch('/api/users/me/avatar', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) throw new Error('Avatar upload failed');
+        const data = await res.json();
+        // The response shape for avatar usually returns the new url or the user
+        finalAvatarUrl = data.avatarUrl || data.url;
       }
-      await updateUserProfile({
-        display_name: displayName,
-        avatar_url: finalAvatarUrl,
-        bio,
+
+      // 2. Next handle other profile updates via /api/users/me
+      const profileRes = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          displayName,
+          bio,
+          avatarUrl: finalAvatarUrl // Just in case, although the avatar was already updated
+        })
       });
+
+      if (!profileRes.ok) throw new Error('Profile update failed');
+      const profileData = await profileRes.json();
+      finalAvatarUrl = profileData.avatarUrl;
+
       onProfileUpdated({
         ...profile,
-        display_name: displayName,
-        avatar_url: finalAvatarUrl,
+        displayName,
+        avatarUrl: finalAvatarUrl,
         bio,
       });
+      setAvatarUrl(finalAvatarUrl);
       setAvatarPreview(finalAvatarUrl);
       setSaved(true);
       setTimeout(() => {
@@ -139,8 +168,8 @@ export default function ProfileModal({
     }
   };
 
-  const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString("en-US", {
+  const memberSince = profile?.createdAt
+    ? new Date(profile.createdAt).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
     })
@@ -175,52 +204,18 @@ export default function ProfileModal({
 
             {/* Header: Left-aligned profile info */}
             <div className="px-6 pt-6 pb-5 flex items-center gap-4">
-              <div
-                className="relative group cursor-pointer shrink-0"
-                onClick={() => fileInputRef.current?.click()}
-                onMouseEnter={() => setAvatarHovered(true)}
-                onMouseLeave={() => setAvatarHovered(false)}
-              >
-                <div className="w-[72px] h-[72px] rounded-lg overflow-hidden bg-[var(--app-panel)] border border-[var(--app-border)] relative z-10 transition-colors shadow-sm ring-4 ring-[var(--app-panel)]/50">
-                  {avatarPreview ? (
-                    <img
-                      src={avatarPreview}
-                      alt="Avatar"
-                      className="w-full h-full object-cover"
-                      onError={() =>
-                        setAvatarPreview(null)
-                      }
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-[var(--app-panel)]" />
-                  )}
-
-                  <AnimatePresence>
-                    {avatarHovered && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute inset-0 bg-black/50 flex items-center justify-center text-white"
-                      >
-                        <Camera size={22} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </div>
+              <AvatarUploadSection
+                avatarPreview={avatarPreview}
+                avatarHovered={avatarHovered}
+                setAvatarHovered={setAvatarHovered}
+                onAvatarClick={() => fileInputRef.current?.click()}
+                fileInputRef={fileInputRef}
+                handleFileUpload={handleFileUpload}
+              />
 
               <div className="flex flex-col justify-center">
                 <h1 className="text-[22px] font-bold text-[var(--app-text)] tracking-tight">
-                  {profile?.display_name || "Profile"}
+                  {profile?.displayName || "Profile"}
                 </h1>
                 {profile?.username && (
                   <span className="text-[14px] text-[var(--app-text-muted)] mt-1.5 opacity-90">
@@ -314,29 +309,5 @@ export default function ProfileModal({
         </motion.div>
       </div>
     </AnimatePresence>
-  );
-}
-
-function SimpleField({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-[6px]">
-      <div className="flex items-center justify-between">
-        <label className="text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider opacity-60 ml-1">
-          {label}
-        </label>
-        {error && (
-          <span className="text-[12px] text-red-400 font-medium">{error}</span>
-        )}
-      </div>
-      {children}
-    </div>
   );
 }

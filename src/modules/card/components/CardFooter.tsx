@@ -26,10 +26,10 @@ export function CardFooter({ description, dueDate, commentCount, assignedUser }:
       {assignedUser && (
         <img
           src={
-            assignedUser.avatar_url ||
+            assignedUser.avatarUrl ||
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${assignedUser.username}`
           }
-          title={assignedUser.display_name || assignedUser.username}
+          title={assignedUser.displayName || assignedUser.username}
           className="w-6 h-6 rounded-full object-cover"
           style={{ border: "2px solid var(--app-panel)" }}
         />

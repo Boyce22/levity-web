@@ -1,4 +1,3 @@
-// modules/board/hooks/useBoardData.ts
 import { useState, useCallback, useEffect } from "react";
 import {
   List as ListType,
@@ -10,7 +9,6 @@ import {
   deleteCardAction,
   updateListWipLimitAction,
 } from "@/modules/board/actions/board";
-import { getCommentsAction } from "@/modules/board/actions/comments";
 
 interface UseBoardDataProps {
   initialLists: ListType[];
@@ -31,25 +29,20 @@ export function useBoardData({
     {},
   );
   const [isReady, setIsReady] = useState(false);
-
+  
   useEffect(() => {
-    const loadCounts = async () => {
-      const counts: Record<string, number> = {};
-      await Promise.all(
-        initialCards.map(async (card) => {
-          const comments = await getCommentsAction(card.id, 50, null);
-          counts[card.id] = comments.length;
-        }),
-      );
-      setCommentCounts(counts);
-      setIsReady(true);
-    };
-    if (initialCards.length) {
-      loadCounts();
-    } else {
-      setIsReady(true);
-    }
-  }, [initialCards]);
+    setLists(initialLists);
+    setCards(initialCards);
+
+    // Populate commentCounts from initialCards
+    const counts: Record<string, number> = {};
+    initialCards.forEach((card) => {
+      counts[card.id] = card.commentCount ?? 0;
+    });
+    setCommentCounts(counts);
+
+    setIsReady(true);
+  }, [initialLists, initialCards]);
 
   const addList = useCallback(
     async (title: string) => {
@@ -59,8 +52,10 @@ export function useBoardData({
         id: tempId,
         title,
         position,
-        created_by: userProfile?.id || "temp",
-        workspace_id: currentWorkspaceId,
+        createdBy: userProfile?.id || "temp",
+        workspaceId: currentWorkspaceId,
+        createdAt: new Date().toISOString(),
+        cards: [],
       };
       setLists((prev) => [...prev, newList]);
 
@@ -77,23 +72,25 @@ export function useBoardData({
 
   const deleteList = useCallback(async (listId: string) => {
     setLists((prev) => prev.filter((l) => l.id !== listId));
-    setCards((prev) => prev.filter((c) => c.list_id !== listId));
-    await deleteListAction(listId);
-  }, []);
+    setCards((prev) => prev.filter((c) => c.listId !== listId));
+    await deleteListAction(listId, currentWorkspaceId);
+  }, [currentWorkspaceId]);
 
   const addCard = useCallback(
     async (listId: string, content: string) => {
       const tempId = `temp-${Date.now()}`;
-      const position = cards.filter((c) => c.list_id === listId).length;
+      const position = cards.filter((c) => c.listId === listId).length;
       const newCard: CardType = {
         id: tempId,
-        list_id: listId,
+        listId,
         content,
         position,
+        createdBy: userProfile?.id || "temp",
+        createdAt: new Date().toISOString(),
       };
       setCards((prev) => [...prev, newCard]);
 
-      const saved = await createCardAction(listId, content, position);
+      const saved = await createCardAction(listId, content, position, currentWorkspaceId);
       if (saved) {
         setCards((prev) => prev.map((c) => (c.id === tempId ? saved : c)));
       } else {
@@ -106,12 +103,12 @@ export function useBoardData({
 
   const deleteCard = useCallback(async (cardId: string) => {
     setCards((prev) => prev.filter((c) => c.id !== cardId));
-    await deleteCardAction(cardId);
-  }, []);
+    await deleteCardAction(cardId, currentWorkspaceId);
+  }, [currentWorkspaceId]);
 
   const updateListType = useCallback((listId: string, type: LType) => {
     setLists((prev) =>
-      prev.map((l) => (l.id === listId ? { ...l, list_type: type } : l)),
+      prev.map((l) => (l.id === listId ? { ...l, listType: type } : l)),
     );
   }, []);
 
@@ -122,12 +119,11 @@ export function useBoardData({
   }, []);
 
   const updateListWipLimit = useCallback(async (listId: string, wipLimit: number | null) => {
-    // 🚀 Optimistic Update
     setLists((prev) =>
-      prev.map((l) => (l.id === listId ? { ...l, wip_limit: wipLimit } : l)),
+      prev.map((l) => (l.id === listId ? { ...l, wipLimit } : l)),
     );
-    await updateListWipLimitAction(listId, wipLimit);
-  }, []);
+    await updateListWipLimitAction(listId, wipLimit, currentWorkspaceId);
+  }, [currentWorkspaceId]);
 
   return {
     lists,

@@ -69,7 +69,7 @@ export function BoardCanvas({
           >
             {lists.map((list, index) => {
               const listCards = cards
-                .filter((c) => c.list_id === list.id)
+                .filter((c) => c.listId === list.id)
                 .sort((a, b) => a.position - b.position);
               return (
                 <List
@@ -85,7 +85,7 @@ export function BoardCanvas({
                   avatarUrl={userAvatarUrl}
                   allUsers={allUsers}
                   commentCounts={commentCounts}
-                  wipLimit={list.wip_limit}
+                  wipLimit={list.wipLimit}
                   onListTypeChange={onListTypeChange}
                   onWipLimitChange={onWipLimitChange}
                   userRole={userRole}

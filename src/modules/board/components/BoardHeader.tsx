@@ -37,7 +37,7 @@ export function BoardHeader({
     totalCards > 0
       ? Math.round(
           cards.reduce((sum, c) => {
-            const listType = listTypeMap.get(c.list_id) ?? "todo";
+            const listType = listTypeMap.get(c.listId) ?? "todo";
             return sum + getCardEffectiveProgress(c.progress, listType);
           }, 0) / totalCards
         )

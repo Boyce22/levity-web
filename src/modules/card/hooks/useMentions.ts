@@ -24,8 +24,8 @@ export function useMentions(allUsers: any[]) {
         .filter(
           (u) =>
             u.username.toLowerCase().startsWith(query.toLowerCase()) ||
-            (u.display_name &&
-              u.display_name.toLowerCase().startsWith(query.toLowerCase())),
+            (u.displayName &&
+              u.displayName.toLowerCase().startsWith(query.toLowerCase())),
         )
         .slice(0, 5);
       setMentionState({

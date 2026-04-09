@@ -30,8 +30,8 @@ export default function Card({
   commentCount = 0,
   userRole,
 }: CardProps) {
-  const assignedUser = card.assignee_id
-    ? allUsers.find((u) => u.id === card.assignee_id)
+  const assignedUser = card.assigneeId
+    ? allUsers.find((u) => u.id === card.assigneeId)
     : null;
 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -72,7 +72,7 @@ export default function Card({
                 : provided.draggableProps.style?.transform,
             }}
           >
-            {card.cover_url && <CardCover coverUrl={card.cover_url} />}
+            {card.coverUrl && <CardCover coverUrl={card.coverUrl} />}
 
             <div className="p-3.5">
               <div className="flex items-center gap-2 mb-2.5 flex-wrap">
@@ -109,7 +109,7 @@ export default function Card({
 
               <CardFooter
                 description={card.description}
-                dueDate={card.due_date}
+                dueDate={card.dueDate}
                 commentCount={commentCount}
                 assignedUser={assignedUser}
               />

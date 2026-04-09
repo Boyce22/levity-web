@@ -11,6 +11,7 @@ interface UseDragDropProps {
   setLists: React.Dispatch<React.SetStateAction<ListType[]>>;
   cards: CardType[];
   setCards: React.Dispatch<React.SetStateAction<CardType[]>>;
+  workspaceId: string;
 }
 
 export function useDragDrop({
@@ -18,6 +19,7 @@ export function useDragDrop({
   setLists,
   cards,
   setCards,
+  workspaceId,
 }: UseDragDropProps) {
   const onDragEnd = async (result: DropResult) => {
     const { destination, source, type, draggableId } = result;
@@ -37,6 +39,7 @@ export function useDragDrop({
       setLists(updated);
       await updateListPositionsAction(
         updated.map((l) => ({ id: l.id, position: l.position })),
+        workspaceId,
       );
       return;
     }
@@ -47,10 +50,10 @@ export function useDragDrop({
       const newCards = Array.from(cards);
       const cardIndex = newCards.findIndex((c) => c.id === draggableId);
       const [movedCard] = newCards.splice(cardIndex, 1);
-      movedCard.list_id = destListId;
+      movedCard.listId = destListId;
 
       const destListCards = newCards
-        .filter((c) => c.list_id === destListId)
+        .filter((c) => c.listId === destListId)
         .sort((a, b) => a.position - b.position);
       destListCards.splice(destination.index, 0, movedCard);
       const updatedDest = destListCards.map((c, i) => ({ ...c, position: i }));
@@ -58,14 +61,13 @@ export function useDragDrop({
       let updatedSource: typeof newCards = [];
       if (sourceListId !== destListId) {
         const sourceListCards = newCards
-          .filter((c) => c.list_id === sourceListId)
+          .filter((c) => c.listId === sourceListId)
           .sort((a, b) => a.position - b.position);
         updatedSource = sourceListCards.map((c, i) => ({ ...c, position: i }));
       }
 
-      // Combine with cards from other lists
       const others = newCards.filter(
-        (c) => c.list_id !== destListId && c.list_id !== sourceListId
+        (c) => c.listId !== destListId && c.listId !== sourceListId,
       );
       const finalCards = [...others, ...updatedDest, ...updatedSource];
       setCards(finalCards);
@@ -74,9 +76,10 @@ export function useDragDrop({
       await updateCardPositionsAction(
         toUpdate.map((c) => ({
           id: c.id,
-          list_id: c.list_id,
+          listId: c.listId,
           position: c.position,
-        }))
+        })),
+        workspaceId,
       );
     }
   };

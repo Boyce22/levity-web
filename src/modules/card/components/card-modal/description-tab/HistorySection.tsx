@@ -12,7 +12,7 @@ interface HistorySectionProps {
 export function HistorySection({ history, allUsers }: HistorySectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const sortedHistory = [...history].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   return (
@@ -70,8 +70,8 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
                     style={{ background: "var(--app-border)" }}
                   />
                   {sortedHistory.map((item, i) => {
-                    const user = allUsers.find((u) => u.id === item.created_by) || item.users;
-                    const meta = ACTION_META[item.action_type];
+                    const user = allUsers.find((u) => u.id === item.createdBy) || item.users;
+                    const meta = ACTION_META[item.actionType];
                     return (
                       <motion.li
                         key={item.id}
@@ -93,7 +93,7 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
                           {user && (
                             <img
                               src={
-                                user.avatar_url ||
+                                user.avatarUrl ||
                                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
                               }
                               className="w-5 h-5 rounded-sm object-cover shrink-0 mt-0.5 bg-[var(--app-panel)]"
@@ -101,22 +101,22 @@ export function HistorySection({ history, allUsers }: HistorySectionProps) {
                             />
                           )}
                           <span className="text-[12.5px] font-semibold" style={{ color: "var(--app-text-muted)" }}>
-                            {user?.display_name || user?.username || "Someone"}
+                            {user?.displayName || user?.username || "Someone"}
                           </span>
-                          <ActionPill type={item.action_type} field={item.field} />
-                          {item.action_type === "updated" && item.old_value && item.new_value && (
+                          <ActionPill type={item.actionType} field={item.field} />
+                          {item.actionType === "updated" && item.oldValue && item.newValue && (
                             <span
                               className="flex items-center gap-1 text-[11px] mt-0.5"
                               style={{ color: "var(--app-text-muted)" }}
                             >
-                              <span className="line-through truncate max-w-18">{item.old_value}</span>
+                              <span className="line-through truncate max-w-18">{item.oldValue}</span>
                               <ArrowRight className="w-2.5 h-2.5 shrink-0" />
-                              <span className="truncate max-w-18">{item.new_value}</span>
+                              <span className="truncate max-w-18">{item.newValue}</span>
                             </span>
                           )}
                         </div>
                         <span className="text-[11px] mt-0.5 block" style={{ color: "var(--app-text-muted)", opacity: 0.6 }}>
-                          {timeAgo(item.created_at)}
+                          {timeAgo(item.createdAt)}
                         </span>
                       </motion.li>
                     );

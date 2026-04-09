@@ -16,11 +16,11 @@ export function useCardModal(
   // Card fields
   const [content, setContent] = useState(card?.content || "");
   const [description, setDescription] = useState(card?.description || "");
-  const [coverUrl, setCoverUrl] = useState(card?.cover_url || "");
-  const [dueDate, setDueDate] = useState(card?.due_date || "");
+  const [coverUrl, setCoverUrl] = useState(card?.coverUrl || "");
+  const [dueDate, setDueDate] = useState(card?.dueDate || "");
   const [selectedLabel, setSelectedLabel] = useState(card?.label || null);
   const [selectedPriority, setSelectedPriority] = useState(card?.priority || null);
-  const [assigneeId, setAssigneeId] = useState(card?.assignee_id || null);
+  const [assigneeId, setAssigneeId] = useState(card?.assigneeId || null);
 
   // UI states
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -36,11 +36,13 @@ export function useCardModal(
   // Comments
   const [comments, setComments] = useState<Comment[]>([]);
   const [hasMoreComments, setHasMoreComments] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(true);
+  const [loadingComments, setLoadingComments] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // History
   const [history, setHistory] = useState<any[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [commentsLoaded, setCommentsLoaded] = useState(false);
 
   // Auto-save description — debounce aumentado para reduzir histórico excessivo
   useEffect(() => {
@@ -55,21 +57,55 @@ export function useCardModal(
     return () => clearTimeout(timer);
   }, [description, isEditingDesc]);
 
-  // Load data
+  // Load Comments
+  const fetchComments = useCallback(async () => {
+    if (!card || commentsLoaded || loadingComments) return;
+    setLoadingComments(true);
+    const commentsData = await getCommentsAction(card.id, 3, null);
+    setComments(commentsData.data);
+    setHasMoreComments(
+      commentsData.data.filter((c) => !c.parentId).length === 3
+    );
+    setCommentsLoaded(true);
+    setLoadingComments(false);
+  }, [card, commentsLoaded, loadingComments]);
+
+  // Load History
+  const fetchHistory = useCallback(async () => {
+    if (!card || historyLoaded) return;
+    const historyData = await getCardHistoryAction(workspaceId, card.id);
+    setHistory(historyData);
+    setHistoryLoaded(true);
+  }, [card, historyLoaded, workspaceId]);
+
+  // Sync state & reset on card change
   useEffect(() => {
     if (!card) return;
-    const load = async () => {
-      const [commentsData, historyData] = await Promise.all([
-        getCommentsAction(card.id, 3, null),
-        getCardHistoryAction(card.id),
-      ]);
-      setComments(commentsData);
-      setHasMoreComments(commentsData.filter((c) => !c.parent_id).length === 3);
-      setHistory(historyData);
-      setLoadingComments(false);
-    };
-    load();
-  }, [card]);
+    setContent(card.content || "");
+    setDescription(card.description || "");
+    setCoverUrl(card.coverUrl || "");
+    setDueDate(card.dueDate || "");
+    setSelectedLabel(card.label || null);
+    setSelectedPriority(card.priority || null);
+    setAssigneeId(card.assigneeId || null);
+    
+    // Reset data & loaded flags
+    setComments([]);
+    setCommentsLoaded(false);
+    setHistory([]);
+    setHistoryLoaded(false);
+    setDiagramData(undefined);
+    setLoadingComments(false);
+  }, [card?.id]);
+
+  // Trigger lazy loads
+  useEffect(() => {
+    if (activeTab === "description" && !historyLoaded) {
+      fetchHistory();
+    } else if (activeTab === "comments" && !commentsLoaded) {
+      fetchComments();
+    }
+  }, [activeTab, historyLoaded, commentsLoaded, fetchHistory, fetchComments]);
 
   // handleSave com modo "partial" — quando overrides é passado sozinho,
   // envia APENAS os campos do override para evitar histórico fantasma de
@@ -81,7 +117,7 @@ export function useCardModal(
     // Envia apenas o campo alterado para não gerar histórico falso dos demais.
     if (overrides) {
       onUpdate({ ...card, ...overrides });
-      await updateCardDetailsAction(card.id, overrides);
+      await updateCardDetailsAction(card.id, overrides, workspaceId);
       return;
     }
 
@@ -90,15 +126,15 @@ export function useCardModal(
       content,
       description,
       progress: parseProgress(description),
-      cover_url: coverUrl,
-      assignee_id: assigneeId,
-      due_date: dueDate,
+      coverUrl,
+      assigneeId,
+      dueDate,
       label: selectedLabel,
       priority: selectedPriority,
     };
     onUpdate({ ...card, ...changes });
-    await updateCardDetailsAction(card.id, changes);
-  }, [card, content, description, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority, onUpdate]);
+    await updateCardDetailsAction(card.id, changes, workspaceId);
+  }, [card, content, description, coverUrl, assigneeId, dueDate, selectedLabel, selectedPriority, onUpdate, workspaceId]);
 
   // Sincronização local imediata para o Board (UX Reativa)
   useEffect(() => {
@@ -111,9 +147,9 @@ export function useCardModal(
       description, 
       progress,
       content,
-      cover_url: coverUrl,
-      assignee_id: assigneeId,
-      due_date: dueDate,
+      coverUrl,
+      assigneeId,
+      dueDate,
       label: selectedLabel,
       priority: selectedPriority
     });
@@ -122,7 +158,7 @@ export function useCardModal(
   const toggleAssignee = useCallback(async (userId: string) => {
     const next = assigneeId === userId ? null : userId;
     setAssigneeId(next);
-    await handleSave({ assignee_id: next });
+    await handleSave({ assigneeId: next });
   }, [assigneeId, handleSave]);
 
   const handleLabelSelect = useCallback(async (labelId: string) => {
@@ -139,12 +175,12 @@ export function useCardModal(
 
   const handleCoverUpload = useCallback(async (url: string) => {
     setCoverUrl(url);
-    await handleSave({ cover_url: url });
+    await handleSave({ coverUrl: url });
   }, [handleSave]);
 
   const handleRemoveCover = useCallback(async () => {
     setCoverUrl("");
-    await handleSave({ cover_url: "" });
+    await handleSave({ coverUrl: "" });
   }, [handleSave]);
 
   const handlePostComment = useCallback(async (commentText: string, parentId: string | null = null) => {
@@ -156,12 +192,12 @@ export function useCardModal(
   const loadMoreComments = useCallback(async () => {
     if (!card) return;
     setIsLoadingMore(true);
-    const parents = comments.filter((c) => !c.parent_id);
-    const cursor = parents[parents.length - 1]?.created_at || null;
+    const parents = comments.filter((c) => !c.parentId);
+    const cursor = parents[parents.length - 1]?.createdAt || null;
     if (cursor) {
       const more = await getCommentsAction(card.id, 3, cursor);
-      setComments((prev) => [...prev, ...more]);
-      setHasMoreComments(more.filter((c) => !c.parent_id).length === 3);
+      setComments((prev) => [...prev, ...more.data]);
+      setHasMoreComments(more.data.filter((c) => !c.parentId).length === 3);
     }
     setIsLoadingMore(false);
   }, [card, comments]);
@@ -182,7 +218,7 @@ export function useCardModal(
     if (!card) return;
     setLoadingDiagram(true);
     const data = await getDiagramAction(card.id);
-    setDiagramData(data?.data || null);
+    setDiagramData(data || null);
     setLoadingDiagram(false);
   }, [card]);
 
@@ -192,7 +228,7 @@ export function useCardModal(
     // Optimistic Update: Set the data immediately so the preview is updated when the modal closes
     setDiagramData(data);
     try {
-      await saveDiagramAction(card.id, data, workspaceId);
+      await saveDiagramAction(card.id, data);
     } catch (error) {
       console.error("Failed to save diagram:", error);
       // Optional: rollback if needed, but usually not required for this UX

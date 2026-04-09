@@ -35,7 +35,7 @@ export function AuthBackground({ mode }: AuthBackgroundProps) {
              opacity: isRegister ? 0.4 : 0.25,
            }}
            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] max-w-[800px] max-h-[800px] rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,rgba(79,70,229,0.4)_0%,transparent_100%)]"
+           className="absolute -top-[20%] -left-[10%] w-[70vw] h-[70vw] max-w-[800px] max-h-[800px] rounded-full bg-[radial-gradient(50%_50%_at50%_50%,rgba(79,70,229,0.4)_0%,transparent100%)]"
         />
         
         {/* Secondary Orb */}
@@ -45,7 +45,7 @@ export function AuthBackground({ mode }: AuthBackgroundProps) {
              scale: isRegister ? 1.1 : 1,
            }}
            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-           className="absolute top-[10%] right-[5%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,rgba(109,40,217,0.3)_0%,transparent_100%)]"
+           className="absolute top-[10%] right-[5%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] rounded-full bg-[radial-gradient(50%_50%_at50%_50%,rgba(109,40,217,0.3)_0%,transparent100%)]"
            style={{ transformOrigin: 'center center' }}
         />
 
@@ -56,7 +56,7 @@ export function AuthBackground({ mode }: AuthBackgroundProps) {
              opacity: [0.15, 0.2, 0.15],
            }}
            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-           className="absolute bottom-[-10%] left-[20%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,rgba(30,64,175,0.3)_0%,transparent_100%)]"
+           className="absolute bottom-[-10%] left-[20%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full bg-[radial-gradient(50%_50%_at50%_50%,rgba(30,64,175,0.3)_0%,transparent100%)]"
         />
       </motion.div>
 
@@ -84,7 +84,7 @@ export function AuthBackground({ mode }: AuthBackgroundProps) {
       />
       
       {/* Subtle Vignette to focus the center */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(5,5,7,0.8)_100%)]" />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circleAtCenter,transparent0%,rgba(5,5,7,0.8)_100%)]" />
     </div>
   );
 }

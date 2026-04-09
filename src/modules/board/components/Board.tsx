@@ -11,12 +11,7 @@ import {
   Card as CardType,
   List as ListType,
 } from "@/modules/board/actions/board";
-import CardModal from "@/modules/card/components/card-modal/CardModal";
 
-import ProfileModal from "@/modules/users/components/ProfileModal";
-import ShareWorkspaceModal from "@/modules/workspace/components/ShareWorkspaceModal";
-import WorkspaceSettingsModal from "@/modules/workspace/components/WorkspaceSettingsModal";
-import CreateWorkspaceModal from "@/modules/workspace/components/CreateWorkspaceModal";
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardFiltersBar } from "./BoardFiltersBar";
 import { BoardHeader } from "./BoardHeader";
@@ -25,9 +20,10 @@ import { MembersManagement } from "@/modules/workspace/components/MembersManagem
 import { useBoardData } from "../hooks/useBoardData";
 import { useDragDrop } from "../hooks/useDragDrop";
 import { useFilters } from "../hooks/useFilters";
+import { useWorkspaceResolution } from "../hooks/useWorkspaceResolution";
+import { BoardModals } from "./BoardModals";
 import { 
   Users,
-  Mail 
 } from "lucide-react";
 
 interface BoardProps {
@@ -56,8 +52,6 @@ export default function Board({
   initialInvites,
 }: BoardProps) {
   const router = useRouter();
-  const [isResolving, setIsResolving] = useState(true);
-  const [minTimeReached, setMinTimeReached] = useState(false);
   const [activeView, setActiveView] = useState("board");
   const [currentUserProfile, setCurrentUserProfile] = useState(userProfile);
 
@@ -65,31 +59,11 @@ export default function Board({
     setCurrentUserProfile(userProfile);
   }, [userProfile]);
 
-  // Persistence & Workspace Resolution
-  useEffect(() => {
-    const timer = setTimeout(() => setMinTimeReached(true), 1200);
+  const { isResolving, minTimeReached } = useWorkspaceResolution({
+    currentWorkspaceId,
+    workspaces,
+  });
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlWorkspace = urlParams.get("workspace");
-    const lastWorkspace = localStorage.getItem("last-workspace-id");
-
-    if (!urlWorkspace && lastWorkspace && lastWorkspace !== currentWorkspaceId) {
-      const exists = workspaces.some(w => w.id === lastWorkspace);
-      if (exists) {
-        router.replace(`/?workspace=${lastWorkspace}`);
-        return;
-      }
-    }
-
-    if (currentWorkspaceId) {
-      localStorage.setItem("last-workspace-id", currentWorkspaceId);
-    }
-
-    setIsResolving(false);
-    return () => clearTimeout(timer);
-  }, [currentWorkspaceId, router, workspaces]);
-
-  // Core board state management
   const boardData = useBoardData({
     initialLists,
     initialCards,
@@ -99,11 +73,8 @@ export default function Board({
 
   const {
     lists,
-    setLists,
     cards,
-    setCards,
     commentCounts,
-    setCommentCounts,
     isReady,
     addList,
     deleteList,
@@ -132,9 +103,10 @@ export default function Board({
   // Drag & drop logic
   const onDragEnd = useDragDrop({
     lists,
-    setLists,
+    setLists: boardData.setLists,
     cards,
-    setCards,
+    setCards: boardData.setCards,
+    workspaceId: currentWorkspaceId,
   });
 
   // Workspace modals state
@@ -143,18 +115,17 @@ export default function Board({
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
   const [initialCardTab, setInitialCardTab] = useState<"description" | "comments">("description");
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
 
   const handleNotificationClick = (cardId: string) => {
     const card = cards.find((c) => c.id === cardId);
     if (card) {
-      setActiveView("board"); // Return to board view when clicking notification
+      setActiveView("board");
       setInitialCardTab("comments");
       setEditingCard(card);
     }
   };
 
-  // Workspace creation
-  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const handleCreateWorkspace = async (name: string) => {
     setIsCreatingWorkspace(true);
     try {
@@ -248,7 +219,7 @@ export default function Board({
                   allUsers={allUsers}
                   commentCounts={commentCounts}
                   userAvatarUrl={
-                    currentUserProfile?.avatar_url ||
+                    currentUserProfile?.avatarUrl ||
                     `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserProfile?.username}`
                   }
                   onListTypeChange={updateListType}
@@ -289,52 +260,28 @@ export default function Board({
         </div>
       </main>
 
-      {/* Modals */}
-      {editingCard && (
-        <CardModal
-          card={editingCard}
-          onClose={() => setEditingCard(null)}
-          onUpdate={updateCard}
-          currentUserId={currentUserProfile?.id}
-          currentUserAvatar={
-            currentUserProfile?.avatar_url ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserProfile?.username}`
-          }
-          allUsers={allUsers}
-          tags={tags}
-          priorities={priorities}
-          workspaceId={currentWorkspaceId}
-          workspaceName={currentWorkspace?.name || "Workspace"}
-          listName={lists.find(l => l.id === editingCard?.list_id)?.title || "List"}
-          initialTab={initialCardTab}
-        />
-      )}
-
-      <ProfileModal
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        profile={currentUserProfile}
-        onProfileUpdated={(updated) => setCurrentUserProfile(updated)}
+      <BoardModals
+        editingCard={editingCard}
+        setEditingCard={setEditingCard}
+        updateCard={updateCard}
+        currentUserProfile={currentUserProfile}
+        setCurrentUserProfile={setCurrentUserProfile}
         currentWorkspaceId={currentWorkspaceId}
-      />
-
-      <WorkspaceSettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        workspace={currentWorkspace}
-      />
-
-      <CreateWorkspaceModal
-        isOpen={isCreatingWorkspace}
-        onClose={() => setIsCreatingWorkspace(false)}
-        onCreate={handleCreateWorkspace}
-      />
-
-      <ShareWorkspaceModal
-        isOpen={isShareOpen}
-        onClose={() => setIsShareOpen(false)}
-        workspaceId={currentWorkspaceId}
-        workspaceName={currentWorkspace?.name}
+        currentWorkspace={currentWorkspace}
+        allUsers={allUsers}
+        tags={tags}
+        priorities={priorities}
+        lists={lists}
+        initialCardTab={initialCardTab}
+        isProfileOpen={isProfileOpen}
+        setIsProfileOpen={setIsProfileOpen}
+        isSettingsOpen={isSettingsOpen}
+        setIsSettingsOpen={setIsSettingsOpen}
+        isCreatingWorkspace={isCreatingWorkspace}
+        setIsCreatingWorkspace={setIsCreatingWorkspace}
+        isShareOpen={isShareOpen}
+        setIsShareOpen={setIsShareOpen}
+        handleCreateWorkspace={handleCreateWorkspace}
       />
     </div>
   );
