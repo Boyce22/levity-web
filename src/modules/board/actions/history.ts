@@ -2,7 +2,7 @@
 
 import { httpGet } from '@/lib/http';
 
-export interface CardHistoryResponse {
+interface CardHistoryResponse {
   id: string;
   createdBy: string;
   actionType: string;

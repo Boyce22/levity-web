@@ -4,7 +4,6 @@ import { httpGet, httpPost, httpPatch, httpDelete } from '@/lib/http';
 import { revalidatePath } from 'next/cache';
 
 import type { Workspace } from "@/types/workspace";
-export type { Workspace };
 
 export async function createWorkspaceAction(name: string): Promise<Workspace> {
   const trimmed = name?.trim();

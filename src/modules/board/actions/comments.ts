@@ -4,7 +4,6 @@ import { httpGet, httpPost, httpPatch, httpDelete } from '@/lib/http';
 import { revalidatePath } from 'next/cache';
 
 import type { Comment } from "@/types/comments";
-export type { Comment };
 
 export async function getCommentsAction(
   cardId: string,

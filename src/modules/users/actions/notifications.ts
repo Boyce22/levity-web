@@ -11,7 +11,6 @@ async function getUserId() {
 }
 
 import type { Notification } from "@/types/notifications";
-export type { Notification };
 
 export async function getNotificationsAction() {
   const userId = await getUserId();

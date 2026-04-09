@@ -9,7 +9,6 @@ import { getUserIdFromToken } from "@/lib/auth";
 // funções desta action e re-exportados para compatibilidade com imports legados.
 // Novos arquivos devem importar de @/types/board diretamente.
 import type { Card, List, ListType } from "@/types/board";
-export type { Card, List, ListType };
 
 async function getUserId() {
   const token = (await cookies()).get("token")?.value;

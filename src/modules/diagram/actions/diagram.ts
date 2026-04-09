@@ -28,7 +28,7 @@ const DiagramSchema = z.object({
   elements: z.array(ElementSchema).max(MAX_ELEMENTS),
 });
 
-export type Diagram = {
+type Diagram = {
   id: string;
   cardId: string;
   data: any;
