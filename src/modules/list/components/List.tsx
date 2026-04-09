@@ -2,11 +2,11 @@
 
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { motion, AnimatePresence } from "framer-motion";
+import type { List as ListType, Card as CardType, ListType as LType } from "@/types/board";
 import { renameListAction } from "@/modules/board/actions/board";
 import Card from "@/modules/card/components/Card";
 import { ListHeader } from "./ListHeader";
 import { ListAddCard } from "./ListAddCard";
-import { List as ListType, Card as CardType, ListType as LType } from "@/modules/board/actions/board";
 import { getListType, LIST_TYPE_COLOR } from "@/modules/list/utils/listType";
 
 interface ListProps {

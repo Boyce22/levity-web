@@ -1,4 +1,5 @@
-import { getBoardData, List as ListType, Card as CardType } from '@/modules/board/actions/board';
+import type { List as ListType, Card as CardType } from "@/types/board";
+import { getBoardData } from '@/modules/board/actions/board';
 import { getUserProfile } from '@/modules/users/actions/user';
 import { getAllUsersAction } from '@/modules/users/actions/users';
 import Board from '@/modules/board/components/Board';

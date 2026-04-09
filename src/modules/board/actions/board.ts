@@ -5,36 +5,11 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getUserIdFromToken } from "@/lib/auth";
 
-export type ListType = 'todo' | 'inProgress' | 'review' | 'done';
-
-export type List = {
-  id: string;
-  createdBy: string;
-  title: string;
-  position: number;
-  wipLimit?: number | null;
-  workspaceId: string;
-  listType?: ListType | null;
-  createdAt: string;
-  cards: Card[];
-};
-
-export type Card = {
-  id: string;
-  listId: string;
-  content: string;
-  position: number;
-  description?: string | null;
-  coverUrl?: string | null;
-  assigneeId?: string | null;
-  priority?: string | null;
-  label?: string | null;
-  progress?: number | null;
-  dueDate?: string | null;
-  createdBy: string;
-  createdAt: string;
-  commentCount?: number;
-};
+// Tipos centralizados em @/types/board — importados para uso nas assinaturas das
+// funções desta action e re-exportados para compatibilidade com imports legados.
+// Novos arquivos devem importar de @/types/board diretamente.
+import type { Card, List, ListType } from "@/types/board";
+export type { Card, List, ListType };
 
 async function getUserId() {
   const token = (await cookies()).get("token")?.value;

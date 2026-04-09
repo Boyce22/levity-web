@@ -7,10 +7,7 @@ import { createWorkspaceAction } from "@/modules/workspace/actions/workspace";
 import { ProgressLoader } from "@/modules/shared/components/ProgressLoader";
 import { AnimatePresence, motion } from "framer-motion";
 
-import {
-  Card as CardType,
-  List as ListType,
-} from "@/modules/board/actions/board";
+import type { Card as CardType, List as ListType } from "@/types/board";
 
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardFiltersBar } from "./BoardFiltersBar";

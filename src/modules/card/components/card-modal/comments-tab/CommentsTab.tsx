@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CommentInput } from "./CommentInput";
 import { CommentThread } from "./CommentThread";
-import { Comment } from "@/modules/board/actions/comments";
+import type { Comment } from "@/types/comments";
 import { MessageSquare } from "lucide-react";
 
 interface CommentsTabProps {
@@ -33,20 +33,25 @@ export function CommentsTab({
 }: CommentsTabProps) {
   const [replyingTo, setReplyingTo] = useState<any | null>(null);
 
-  const handleReply = (parent: any, targetUser: any) => {
+  // targetUser removido: nunca foi usado nesta função
+  const handleReply = (parent: any) => {
     setReplyingTo(parent);
   };
 
   const handleCancelReply = () => setReplyingTo(null);
 
-  const rootComments = comments.filter((c) => !c.parentId);
-  const repliesMap = new Map();
-  comments.forEach((c) => {
-    if (c.parentId) {
-      if (!repliesMap.has(c.parentId)) repliesMap.set(c.parentId, []);
-      repliesMap.get(c.parentId).push(c);
-    }
-  });
+  // Memoizados: evitam loop linear a cada render quando comments não mudou
+  const rootComments = useMemo(() => comments.filter((c) => !c.parentId), [comments]);
+  const repliesMap = useMemo(() => {
+    const map = new Map<string, typeof comments>();
+    comments.forEach((c) => {
+      if (c.parentId) {
+        if (!map.has(c.parentId)) map.set(c.parentId, []);
+        map.get(c.parentId)!.push(c);
+      }
+    });
+    return map;
+  }, [comments]);
 
   return (
     <div className="space-y-6">

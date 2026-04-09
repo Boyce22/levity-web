@@ -186,6 +186,14 @@ export function useDiagram(initialData?: any) {
   const [history, setHistory] = useState<DiagramElement[][]>([]);
   const [redoStack, setRedoStack] = useState<DiagramElement[][]>([]);
 
+  // Refs para leitura de valores atuais sem adicionar estado às deps de useCallback.
+  // elements: lido por undo/redo/clear para push no stack sem recriar os callbacks.
+  // currentElement: lido por updateElement para evitar recriar a função a cada mousemove.
+  const elementsRef = useRef(elements);
+  elementsRef.current = elements;
+  const currentElementRef = useRef(currentElement);
+  currentElementRef.current = currentElement;
+
   // Controla se um snapshot de histórico já foi salvo para o gesto atual da borracha
   const eraserHistorySaved = useRef(false);
 
@@ -251,7 +259,9 @@ export function useDiagram(initialData?: any) {
         return;
       }
 
-      if (!currentElement) return;
+      // Lê via ref: evita incluir currentElement nas deps e recriar esta função
+      // a cada mousemove (60fps) durante o desenho.
+      if (!currentElementRef.current) return;
 
       setCurrentElement((prev) => {
         if (!prev) return null;
@@ -265,35 +275,43 @@ export function useDiagram(initialData?: any) {
         }
       });
     },
-    [currentElement, handleEraser]
+    [handleEraser] // currentElement removido: lido via ref
   );
 
   const endElement = useCallback(() => {
-    if (!currentElement) return;
-    setElements((prev) => [...prev, currentElement]);
+    // Lê via ref para não depender de currentElement como estado
+    if (!currentElementRef.current) return;
+    const el = currentElementRef.current;
+    setElements((prev) => [...prev, el]);
     setCurrentElement(null);
-  }, [currentElement]);
+  }, []);
 
   const undo = useCallback(() => {
-    if (history.length === 0) return;
-    const lastState = history[history.length - 1];
-    setRedoStack((prev) => [...prev, elements]);
-    setElements(lastState);
-    setHistory((prev) => prev.slice(0, -1));
-  }, [history, elements]);
+    // Usa setState funcional para ler history/redoStack sem adicioná-los às deps.
+    // elements lido via ref para o push no redo stack.
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const lastState = prev[prev.length - 1];
+      setRedoStack((r) => [...r, elementsRef.current]);
+      setElements(lastState);
+      return prev.slice(0, -1);
+    });
+  }, []); // history e elements removidos: lidos via setState funcional e ref
 
   const redo = useCallback(() => {
-    if (redoStack.length === 0) return;
-    const nextState = redoStack[redoStack.length - 1];
-    setHistory((prev) => [...prev, elements]);
-    setElements(nextState);
-    setRedoStack((prev) => prev.slice(0, -1));
-  }, [redoStack, elements]);
+    setRedoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const nextState = prev[prev.length - 1];
+      setHistory((h) => [...h, elementsRef.current]);
+      setElements(nextState);
+      return prev.slice(0, -1);
+    });
+  }, []); // redoStack e elements removidos: lidos via setState funcional e ref
 
   const clear = useCallback(() => {
-    setHistory((prev) => [...prev, elements]);
+    setHistory((prev) => [...prev, elementsRef.current]);
     setElements([]);
-  }, [elements]);
+  }, []); // elements removido: lido via ref
 
   return {
     elements,

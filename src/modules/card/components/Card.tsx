@@ -2,7 +2,7 @@
 
 import { Draggable } from "@hello-pangea/dnd";
 import { Trash2 } from "lucide-react";
-import { Card as CardType } from "@/modules/board/actions/board";
+import type { Card as CardType } from "@/types/board";
 import { CardCover } from "./CardCover";
 import { CardPriority } from "./CardPriority";
 import { CardLabel } from "./CardLabel";

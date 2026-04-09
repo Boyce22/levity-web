@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import { Plus } from "lucide-react";
 
-import { List as ListType, Card as CardType, ListType as LType } from "@/modules/board/actions/board";
+import type { List as ListType, Card as CardType, ListType as LType } from "@/types/board";
 import List from "@/modules/list/components/List";
 
 interface BoardCanvasProps {

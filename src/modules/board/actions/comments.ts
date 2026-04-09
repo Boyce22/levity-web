@@ -3,17 +3,8 @@
 import { httpGet, httpPost, httpPatch, httpDelete } from '@/lib/http';
 import { revalidatePath } from 'next/cache';
 
-export type Comment = {
-  id: string;
-  cardId: string;
-  createdBy: string;
-  updatedBy?: string | null;
-  parentId?: string | null;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  users: { username: string; displayName?: string; avatarUrl?: string };
-};
+import type { Comment } from "@/types/comments";
+export type { Comment };
 
 export async function getCommentsAction(
   cardId: string,
@@ -31,11 +22,13 @@ export async function createCommentAction(
   content: string,
   parentId?: string | null,
 ) {
-  return httpPost<Comment>('/comments', {
+  const comment = await httpPost<Comment>('/comments', {
     cardId,
     content,
     parentId: parentId ?? null,
   });
+  revalidatePath('/');
+  return comment;
 }
 
 export async function updateCommentAction(id: string, content: string) {

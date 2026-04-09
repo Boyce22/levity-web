@@ -1,13 +1,24 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import reactHooks from "eslint-plugin-react-hooks";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+
+  // Eleva react-hooks/exhaustive-deps de warn → error.
+  // Toda omissão de dependência precisa ser justificada explicitamente com um
+  // comentário `// eslint-disable-next-line react-hooks/exhaustive-deps`
+  // que explique o motivo (ex: "lido via ref", "estável por garantia do React").
+  {
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      "react-hooks/exhaustive-deps": "error",
+    },
+  },
+
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",

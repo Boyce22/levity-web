@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Card as CardType, updateCardDetailsAction } from "@/modules/board/actions/board";
-import { getCommentsAction, createCommentAction, deleteCommentAction, Comment } from "@/modules/board/actions/comments";
+import type { Card as CardType } from "@/types/board";
+import { updateCardDetailsAction } from "@/modules/board/actions/board";
+import type { Comment } from "@/types/comments";
+import { getCommentsAction, createCommentAction, deleteCommentAction } from "@/modules/board/actions/comments";
 import { getCardHistoryAction } from "@/modules/board/actions/history";
 import { getDiagramAction, saveDiagramAction } from "@/modules/diagram/actions/diagram";
 import { parseProgress, parseChecklistCounts } from "@/modules/card/utils/parseProgress";

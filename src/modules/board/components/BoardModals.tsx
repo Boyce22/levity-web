@@ -4,7 +4,7 @@ import ProfileModal from "@/modules/users/components/ProfileModal";
 import ShareWorkspaceModal from "@/modules/workspace/components/ShareWorkspaceModal";
 import WorkspaceSettingsModal from "@/modules/workspace/components/WorkspaceSettingsModal";
 import CreateWorkspaceModal from "@/modules/workspace/components/CreateWorkspaceModal";
-import { Card as CardType, List as ListType } from "@/modules/board/actions/board";
+import type { Card as CardType, List as ListType } from "@/types/board";
 
 interface BoardModalsProps {
   editingCard: CardType | null;

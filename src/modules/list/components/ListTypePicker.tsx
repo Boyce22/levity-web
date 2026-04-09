@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
-import { ListType } from "@/modules/board/actions/board";
+import type { ListType } from "@/types/board";
 import { LIST_TYPE_COLOR, LIST_TYPE_LABEL } from "@/modules/list/utils/listType";
 
 interface ListTypePickerProps {

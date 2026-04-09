@@ -1,7 +1,6 @@
 import { DropResult } from "@hello-pangea/dnd";
+import type { List as ListType, Card as CardType } from "@/types/board";
 import {
-  List as ListType,
-  Card as CardType,
   updateListPositionsAction,
   updateCardPositionsAction,
 } from "@/modules/board/actions/board";
@@ -49,8 +48,9 @@ export function useDragDrop({
       const sourceListId = source.droppableId;
       const newCards = Array.from(cards);
       const cardIndex = newCards.findIndex((c) => c.id === draggableId);
-      const [movedCard] = newCards.splice(cardIndex, 1);
-      movedCard.listId = destListId;
+      // Cria novo objeto em vez de mutar o item extraído do array shallow-copied
+      const [extracted] = newCards.splice(cardIndex, 1);
+      const movedCard = { ...extracted, listId: destListId };
 
       const destListCards = newCards
         .filter((c) => c.listId === destListId)

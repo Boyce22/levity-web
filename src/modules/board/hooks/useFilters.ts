@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Card as CardType } from "@/modules/board/actions/board";
+import { useState, useMemo, useCallback } from "react";
+import type { Card as CardType } from "@/types/board";
 
 export function useFilters({ cards = [] }: { cards?: CardType[] }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,12 +28,12 @@ export function useFilters({ cards = [] }: { cards?: CardType[] }) {
     labelFilter !== null ||
     searchQuery !== "";
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSelectedUserFilters([]);
     setPriorityFilter(null);
     setLabelFilter(null);
     setSearchQuery("");
-  };
+  }, []);
 
   return {
     searchQuery,

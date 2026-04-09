@@ -1,4 +1,4 @@
-import { List, ListType } from "@/modules/board/actions/board";
+import type { List, ListType } from "@/types/board";
 
 /** Progresso padrão por tipo de lista (fallback quando card não tem checklist) */
 export const LIST_TYPE_PROGRESS: Record<ListType, number> = {

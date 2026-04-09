@@ -16,6 +16,9 @@ export function useWorkspaceResolution({
 
   useEffect(() => {
     const timer = setTimeout(() => setMinTimeReached(true), 1200);
+    // Cleanup registrado ANTES de qualquer early return para garantir
+    // que o timer nunca vaze quando o effect re-executa ou o componente desmonta.
+    const cleanup = () => clearTimeout(timer);
 
     const urlParams = new URLSearchParams(window.location.search);
     const urlWorkspace = urlParams.get("workspace");
@@ -25,7 +28,7 @@ export function useWorkspaceResolution({
       const exists = workspaces.some((w) => w.id === lastWorkspace);
       if (exists) {
         router.replace(`/?workspace=${lastWorkspace}`);
-        return;
+        return cleanup; // timer limpo mesmo no caminho de redirect
       }
     }
 
@@ -34,7 +37,7 @@ export function useWorkspaceResolution({
     }
 
     setIsResolving(false);
-    return () => clearTimeout(timer);
+    return cleanup;
   }, [currentWorkspaceId, router, workspaces]);
 
   return { isResolving, minTimeReached };

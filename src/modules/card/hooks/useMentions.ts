@@ -4,7 +4,7 @@ export function useMentions(allUsers: any[]) {
   const [mentionState, setMentionState] = useState<{
     active: boolean;
     query: string;
-    target: "desc" | "comment" | null;
+    target: "comment" | null;
     index: number;
     filteredUsers: any[];
   }>({ active: false, query: "", target: null, index: 0, filteredUsers: [] });

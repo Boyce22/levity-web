@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCheck } from "lucide-react";
-import { Notification } from "@/modules/users/actions/notifications";
+import type { Notification } from "@/types/notifications";
 
 interface NotificationHeaderProps {
   notifications: Notification[];

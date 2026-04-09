@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Notification } from "@/modules/users/actions/notifications";
+import type { Notification } from "@/types/notifications";
 
 interface NotificationItemProps {
   notification: Notification;

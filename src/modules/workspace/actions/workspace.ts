@@ -3,13 +3,8 @@
 import { httpGet, httpPost, httpPatch, httpDelete } from '@/lib/http';
 import { revalidatePath } from 'next/cache';
 
-export type Workspace = {
-  id: string;
-  name: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { Workspace } from "@/types/workspace";
+export type { Workspace };
 
 export async function createWorkspaceAction(name: string): Promise<Workspace> {
   const trimmed = name?.trim();

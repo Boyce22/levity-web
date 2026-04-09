@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Bell, Sparkles } from 'lucide-react';
-import { getNotificationsAction, markNotificationsReadAction, Notification } from '@/modules/users/actions/notifications';
+import type { Notification } from "@/types/notifications";
+import { getNotificationsAction, markNotificationsReadAction } from '@/modules/users/actions/notifications';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NotificationHeader } from './notifications/NotificationHeader';
 import { NotificationItem } from './notifications/NotificationItem';

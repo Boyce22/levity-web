@@ -53,8 +53,8 @@ export function DescriptionTab({
     const finalDescription = newDescription.replace(new RegExp(`!?\\[.*?\\]\\(${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g'), '').trim();
     setDescription(finalDescription);
 
-    // 2. Apagar do bucket (Async)
-    deleteFileAction(workspaceId, url);
+    // 2. Apagar do bucket — fire-and-forget com log de erro para não bloquear a UI
+    deleteFileAction(workspaceId, url).catch(console.error);
   };
   return (
     <div className="space-y-4">

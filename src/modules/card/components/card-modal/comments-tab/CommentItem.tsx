@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import { formatMentions, timeAgo } from "@/modules/shared/utils/date";
 import { AttachmentCard } from "../AttachmentCard";
 import { extractAttachments, isImageUrl, stripAttachments, Attachment } from "@/modules/shared/utils/attachments";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Edit2, Trash2, X, Check, Loader2 } from "lucide-react";
 import { updateCommentAction, deleteCommentAction } from "@/modules/board/actions/comments";
 import { ConfirmationModal } from "@/modules/shared/components/ConfirmationModal";
@@ -68,6 +68,10 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
   const attachments = extractAttachments(isEditing ? editContent : comment.content);
   const attachmentUrls = attachments.map(a => a.url);
 
+  // Memoizado: markdownComponents cria um novo objeto a cada chamada.
+  // Passá-lo inline causaria re-mount completo do ReactMarkdown em todo render.
+  const mdComponents = useMemo(() => markdownComponents(attachmentUrls), [attachmentUrls.join(',')]);
+
   const handleSave = async () => {
     const finalAttachments = stagedAttachments
       .map(a => ` [File: ${a.name}](${a.url}) `)
@@ -121,8 +125,11 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
             <span className="text-[11px]" style={{ color: "var(--app-text-muted)" }}>
               {timeAgo(comment.createdAt)}
             </span>
-            {comment.updatedAt && (
-              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm" 
+            {/* Mostra "Edited" apenas quando updatedAt é posterior a createdAt.
+                updatedAt === createdAt na criação, então essa guarda é necessária
+                para não mostrar "Edited" em comentários nunca editados. */}
+            {comment.updatedAt && comment.updatedAt !== comment.createdAt && (
+              <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-sm"
                     style={{ background: "var(--app-hover)", color: "var(--app-primary)", opacity: 0.8 }}>
                 Edited
               </span>
@@ -203,7 +210,7 @@ export function CommentItem({ comment, index, isReply, onReply, onDelete, allUse
             <div className="prose prose-invert prose-sm max-w-none">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
-                components={markdownComponents(attachmentUrls)}
+                components={mdComponents}
               >
                 {formatMentions(comment.content)}
               </ReactMarkdown>

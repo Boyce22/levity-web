@@ -1,8 +1,6 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import type { List as ListType, Card as CardType, ListType as LType } from "@/types/board";
 import {
-  List as ListType,
-  Card as CardType,
-  ListType as LType,
   createListAction,
   createCardAction,
   deleteListAction,
@@ -25,6 +23,11 @@ export function useBoardData({
 }: UseBoardDataProps) {
   const [lists, setLists] = useState<ListType[]>(initialLists);
   const [cards, setCards] = useState<CardType[]>(initialCards);
+
+  // Ref para cards: permite que addCard leia o valor mais recente sem incluir
+  // o array inteiro nas deps do useCallback (evita recriar addCard em todo drag/update).
+  const cardsRef = useRef(cards);
+  cardsRef.current = cards;
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>(
     {},
   );
@@ -79,7 +82,9 @@ export function useBoardData({
   const addCard = useCallback(
     async (listId: string, content: string) => {
       const tempId = `temp-${Date.now()}`;
-      const position = cards.filter((c) => c.listId === listId).length;
+      // Lê via ref para não incluir `cards` nas deps e evitar recriar addCard
+      // a cada drag-and-drop ou atualização de card no board.
+      const position = cardsRef.current.filter((c) => c.listId === listId).length;
       const newCard: CardType = {
         id: tempId,
         listId,
@@ -98,7 +103,7 @@ export function useBoardData({
       }
       return saved;
     },
-    [cards],
+    [currentWorkspaceId, userProfile],
   );
 
   const deleteCard = useCallback(async (cardId: string) => {

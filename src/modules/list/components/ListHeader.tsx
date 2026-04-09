@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import DeleteListModal from "./DeleteListModal";
-import { ListType, updateListTypeAction, updateListWipLimitAction } from "@/modules/board/actions/board";
+import type { ListType } from "@/types/board";
+import { updateListTypeAction, updateListWipLimitAction } from "@/modules/board/actions/board";
 import { ListTypePicker } from "./ListTypePicker";
 import { WipLimitPicker } from "./WipLimitPicker";
 

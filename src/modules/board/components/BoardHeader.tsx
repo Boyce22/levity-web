@@ -2,7 +2,7 @@
 
 import { Share2, ChevronRight, Layout } from "lucide-react";
 import NotificationBell from "@/modules/users/components/NotificationBell";
-import { Card as CardType, List as ListType } from "@/modules/board/actions/board";
+import type { Card as CardType, List as ListType } from "@/types/board";
 import { getListType, getCardEffectiveProgress } from "@/modules/list/utils/listType";
 
 interface BoardHeaderProps {

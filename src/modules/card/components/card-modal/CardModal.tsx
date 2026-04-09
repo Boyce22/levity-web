@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Card as CardType } from "@/modules/board/actions/board";
+import type { Card as CardType } from "@/types/board";
 import { useCardModal } from "../../hooks/useCardModal";
 import { CardModalCover } from "./CardModalCover";
 import { CardModalHeader } from "./CardModalHeader";
