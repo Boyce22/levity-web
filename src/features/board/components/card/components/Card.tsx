@@ -1,0 +1,135 @@
+"use client";
+
+import {  Draggable } from "@hello-pangea/dnd";
+import { Trash2 } from "lucide-react";
+import type { Card as CardType  } from '@/contracts/Board';
+import { CardCover } from "./CardCover";
+import { CardPriority } from "./CardPriority";
+import { CardLabel } from "./CardLabel";
+import { CardProgress } from "./CardProgress";
+import { CardFooter } from "./CardFooter";
+import { ConfirmationModal } from "@/ui/components/ConfirmationModal";
+import { useState } from "react";
+
+interface CardProps {
+  card: CardType;
+  index: number;
+  onDelete: () => void;
+  onClick: () => void;
+  allUsers: any[];
+  commentCount?: number;
+  userRole: string;
+}
+
+export default function Card({
+  card,
+  index,
+  onDelete,
+  onClick,
+  allUsers,
+  commentCount = 0,
+  userRole,
+}: CardProps) {
+  const assignedUser = card.assigneeId
+    ? allUsers.find((u) => u.id === card.assigneeId)
+    : null;
+
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  return (
+    <>
+      <Draggable 
+        draggableId={card.id} 
+        index={index}
+        isDragDisabled={userRole === 'viewer'}
+      >
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            onClick={onClick}
+            className="group relative flex cursor-grab flex-col overflow-hidden active:cursor-grabbing"
+            style={{
+              ...provided.draggableProps.style,
+              background: "var(--app-elevated)",
+              border: snapshot.isDragging
+                ? "1px solid var(--app-primary)"
+                : "1px solid var(--app-border-faint)",
+              borderRadius: "14px",
+              boxShadow: snapshot.isDragging
+                ? "0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--app-primary)"
+                : "0 1px 3px rgba(0,0,0,0.2)",
+              transition: snapshot.isDragging
+                ? provided.draggableProps.style?.transition
+                : provided.draggableProps.style?.transition
+                  ? `${provided.draggableProps.style.transition}, border-color 0.2s, box-shadow 0.2s`
+                  : "border-color 0.2s, box-shadow 0.2s",
+              transform: snapshot.isDragging
+                ? provided.draggableProps.style?.transform
+                  ? `${provided.draggableProps.style.transform} scale(1.03) rotate(1deg)`
+                  : "scale(1.03) rotate(1deg)"
+                : provided.draggableProps.style?.transform,
+            }}
+          >
+            {card.coverUrl && <CardCover coverUrl={card.coverUrl} />}
+
+            <div className="p-3.5">
+              <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                {card.priority && <CardPriority priority={card.priority} />}
+                {card.label && <CardLabel label={card.label} />}
+              </div>
+
+              <div className="flex items-start justify-between gap-2">
+                <p
+                  className="min-w-0 flex-1 text-[13px] leading-[1.45] font-medium break-all"
+                  style={{ color: "var(--app-text)", opacity: 0.85 }}
+                >
+                  {card.content}
+                </p>
+                {['owner', 'admin', 'member'].includes(userRole) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDeleteConfirmOpen(true);
+                    }}
+                    className="-mt-0.5 -mr-0.5 shrink-0 rounded-md p-1 opacity-0 transition-opacity group-hover:opacity-100"
+                    style={{ color: "var(--app-text-muted)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "var(--app-text-muted)")
+                    }
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {card.progress != null && <CardProgress progress={card.progress} />}
+
+              <CardFooter
+                description={card.description}
+                dueDate={card.dueDate}
+                commentCount={commentCount}
+                assignedUser={assignedUser}
+              />
+            </div>
+          </div>
+        )}
+      </Draggable>
+
+      <ConfirmationModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={() => {
+          onDelete();
+          setIsDeleteConfirmOpen(false);
+        }}
+        title="Delete Card"
+        description="Are you sure you want to delete this card? This action is permanent and cannot be undone."
+        confirmText="Delete Card"
+        variant="danger"
+      />
+    </>
+  );
+}

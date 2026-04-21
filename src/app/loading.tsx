@@ -1,4 +1,4 @@
-import { ProgressLoader } from '@/modules/shared/components/ProgressLoader';
+import { ProgressLoader } from '@/ui/components/ProgressLoader';
 
 export default function Loading() {
   return <ProgressLoader message="Waking up the engine" />;

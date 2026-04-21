@@ -1,61 +1,42 @@
-import type { List as ListType, Card as CardType } from "@/types/board";
-import { getBoardData } from '@/modules/board/actions/board';
-import { getUserProfile } from '@/modules/users/actions/user';
-import { getAllUsersAction } from '@/modules/users/actions/users';
-import Board from '@/modules/board/components/Board';
+import {  List as ListType, Card as CardType  } from '@/contracts/Board';
+import { getUserProfileAction as getUserProfile, getAllUsersAction } from '@/features/users/server/actions';
+import Board from '@/features/board/components/Board';
 import { redirect } from 'next/navigation';
+import { getBoardDataAction } from '@/features/board/server/actions/board.actions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home(props: { searchParams: Promise<{ workspace?: string }> }) {
   const sp = await props.searchParams;
-  let initialLists: ListType[] = [];
-  let initialCards: CardType[] = [];
-  let userProfile = null;
-  let allUsers: any[] = [];
-  let workspaces: any[] = [];
-  let tags: any[] = [];
-  let priorities: any[] = [];
-  let currentWorkspaceId = sp.workspace || '';
-  let isAuthError = false;
 
   try {
-    const data = await getBoardData(sp.workspace);
-    initialLists = data.lists;
-    initialCards = data.cards;
-    workspaces = data.workspaces;
-    tags = data.tags;
-    priorities = data.priorities;
-    const userRole = data.userRole;
-    const initialInvites = data.invites || [];
-    
-    if (!currentWorkspaceId && workspaces.length > 0) currentWorkspaceId = workspaces[0].id;
+    const data = await getBoardDataAction(sp.workspace);
 
-    userProfile = await getUserProfile();
-    allUsers = await getAllUsersAction(currentWorkspaceId);
+    const userProfile = await getUserProfile();
+    const allUsers = await getAllUsersAction(data.currentWorkspaceId);
 
     return (
-      <main className="h-screen bg-[#1c1c1e] text-slate-200 flex flex-col font-sans overflow-hidden">
+      <main className="flex h-screen flex-col overflow-hidden bg-[#1c1c1e] font-sans text-slate-200">
         <Board 
-          initialLists={initialLists} 
-          initialCards={initialCards} 
+          initialLists={data.lists as any} 
+          initialCards={data.cards as any} 
           userProfile={userProfile} 
           allUsers={allUsers} 
-          workspaces={workspaces}
-          currentWorkspaceId={currentWorkspaceId}
-          tags={tags}
-          priorities={priorities}
-          userRole={userRole}
-          initialInvites={initialInvites}
+          workspaces={data.workspaces}
+          currentWorkspaceId={data.currentWorkspaceId}
+          tags={data.tags}
+          priorities={data.priorities}
+          userRole={data.userRole}
+          initialInvites={data.invites}
         />
       </main>
     );
   } catch (err: any) {
-    if (err?.message === 'Unauthorized') {
+    if (err?.message === 'Unauthorized' || err?.statusCode === 401) {
       redirect('/login');
     }
     console.error('Failed to fetch board data', err);
-    // Generic fallback if everything fails
     return <div>Error loading workspace. Please try logging in again.</div>;
   }
 }
+

@@ -3,25 +3,25 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { LevityLogo } from '@/modules/shared/components/LevityLogo';
+import { LevityLogo } from '@/ui/components/LevityLogo';
 
 export default function NotFound() {
   return (
-    <div className="fixed inset-0 z-[1000] flex flex-col items-center justify-center bg-[#050507] overflow-hidden">
+    <div className="fixed inset-0 z-1000 flex flex-col items-center justify-center overflow-hidden bg-[#050507]">
       {/* Background Atmosphere */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="pointer-events-none absolute inset-0">
         <motion.div 
           animate={{ 
             opacity: [0.15, 0.3, 0.15],
             scale: [1, 1.2, 1] 
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full bg-indigo-500/10 blur-[140px]" 
+          className="absolute top-1/2 left-1/2 h-[60%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/10 blur-[140px]" 
         />
         
         {/* Film Grain Texture Overlay */}
         <div 
-          className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
+          className="pointer-events-none absolute inset-0 opacity-[0.03] mix-blend-overlay"
           style={{
             backgroundImage: `url("https://grainy-gradients.vercel.app/noise.svg")`,
             backgroundSize: '200px 200px',
@@ -29,7 +29,7 @@ export default function NotFound() {
         />
       </div>
 
-      <div className="relative flex flex-col items-center gap-12 text-center px-6">
+      <div className="relative flex flex-col items-center gap-12 px-6 text-center">
         {/* Floating Logo - Zero Gravity Effect */}
         <motion.div
           animate={{
@@ -45,12 +45,12 @@ export default function NotFound() {
           className="relative"
         >
           {/* Outer Glow */}
-          <div className="absolute inset-0 blur-3xl bg-indigo-500/20 rounded-full scale-150" />
+          <div className="absolute inset-0 scale-150 rounded-full bg-indigo-500/20 blur-3xl" />
           <LevityLogo size={100} className="relative z-10 opacity-90" />
         </motion.div>
 
         {/* Content */}
-        <div className="space-y-4 max-w-sm">
+        <div className="max-w-sm space-y-4">
           <motion.h1 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -63,7 +63,7 @@ export default function NotFound() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-[14px] text-indigo-200/40 font-medium leading-relaxed px-4"
+            className="px-4 text-[14px] leading-relaxed font-medium text-indigo-200/40"
           >
             The workspace or page you are looking for has drifted into deep space.
           </motion.p>
@@ -79,14 +79,14 @@ export default function NotFound() {
             <motion.button
               whileHover={{ scale: 1.02, filter: 'brightness(1.2)' }}
               whileTap={{ scale: 0.98 }}
-              className="group flex items-center gap-3 px-8 py-3.5 rounded-2xl text-[13px] font-bold text-white transition-all shadow-2xl shadow-indigo-500/10"
+              className="group flex items-center gap-3 rounded-2xl px-8 py-3.5 text-[13px] font-bold text-white shadow-2xl shadow-indigo-500/10 transition-all"
               style={{
                 background: 'rgba(255, 255, 255, 0.03)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 backdropFilter: 'blur(10px)',
               }}
             >
-              <ArrowLeft className="w-4 h-4 text-indigo-400 group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="h-4 w-4 text-indigo-400 transition-transform group-hover:-translate-x-1" />
               Return to Workspace
             </motion.button>
           </Link>
@@ -94,7 +94,7 @@ export default function NotFound() {
       </div>
 
       {/* 404 Watermark */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 pointer-events-none opacity-[0.02]">
+      <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 opacity-[0.02]">
         <span className="text-[120px] font-black tracking-tighter text-white select-none">
           404
         </span>

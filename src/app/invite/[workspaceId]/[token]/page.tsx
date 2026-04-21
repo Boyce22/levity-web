@@ -1,9 +1,10 @@
-import { getInviteDetailsAction, acceptInviteAction } from "@/modules/workspace/actions/members";
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { isTokenStructurallyValid } from "@/lib/auth";
-import { Share2, AlertCircle, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { getInviteDetailsAction, acceptInviteAction } from '@/features/workspaces/server/actions';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { isTokenStructurallyValid } from '@/infra/auth/session';
+import { Share2, AlertCircle, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { ApiError } from '@/infra/http/errors';
 
 interface PageProps {
   params: Promise<{ workspaceId: string; token: string }>;
@@ -13,7 +14,7 @@ export default async function InvitePage({ params }: PageProps) {
   const { workspaceId, token } = await params;
   const invite = await getInviteDetailsAction(workspaceId, token);
 
-  const cookieToken = (await cookies()).get("token")?.value;
+  const cookieToken = (await cookies()).get('token')?.value;
   const isLoggedIn = !!cookieToken && isTokenStructurallyValid(cookieToken);
 
   if (!invite) {
@@ -33,50 +34,55 @@ export default async function InvitePage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-[440px] bg-[var(--app-panel)] rounded-[32px] border border-[var(--app-border)] shadow-[0_32px_80px_rgba(0,0,0,0.5)] p-10 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-500">
-        <div className="w-16 h-16 bg-[var(--app-primary)]/10 rounded-2xl flex items-center justify-center mb-8">
-          <Share2 className="w-8 h-8 text-[var(--app-primary)]" />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--app-bg)] p-4">
+      <div className="animate-in fade-in zoom-in-95 flex w-full max-w-[440px] flex-col items-center rounded-[32px] border border-[var(--app-border)] bg-[var(--app-panel)] p-10 text-center shadow-[0_32px_80px_rgba(0,0,0,0.5)] duration-500">
+        <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--app-primary)]/10">
+          <Share2 className="h-8 w-8 text-[var(--app-primary)]" />
         </div>
 
-        <h1 className="text-2xl font-bold text-[var(--app-text)] mb-3 tracking-tight">
+        <h1 className="mb-3 text-2xl font-bold tracking-tight text-[var(--app-text)]">
           Join Workspace
         </h1>
 
-        <p className="text-[15px] text-[var(--app-text-muted)] mb-10 leading-relaxed">
-          You've been invited to join{" "}
-          <strong className="text-[var(--app-text)] font-semibold">{invite.workspaceName}</strong>.
+        <p className="mb-10 text-[15px] leading-relaxed text-[var(--app-text-muted)]">
+          You've been invited to join{' '}
+          <strong className="font-semibold text-[var(--app-text)]">{invite.workspaceName}</strong>.
           As a member, you'll be able to collaborate on boards and manage cards.
         </p>
 
         <form
           action={async () => {
-            "use server";
+            'use server';
             let joinedWorkspaceId: string | null = null;
             try {
-              joinedWorkspaceId = await acceptInviteAction(workspaceId, token);
+              const result: any = await acceptInviteAction(workspaceId, token);
+              joinedWorkspaceId = result.workspaceId || result;
             } catch (err) {
-              console.error("Join error:", err);
+              if (err instanceof ApiError) {
+                console.error(`Join failed. Code: ${err.code}, TraceId: ${err.traceId}`);
+              } else {
+                console.error('Join error:', err);
+              }
             }
 
             if (joinedWorkspaceId) {
               redirect(`/?workspace=${joinedWorkspaceId}`);
             } else {
-              redirect("/?error=joinFailed");
+              redirect('/?error=joinFailed');
             }
           }}
           className="w-full"
         >
           <button
             type="submit"
-            className="w-full bg-[var(--app-primary)] text-white font-bold py-4 rounded-2xl shadow-xl shadow-[var(--app-primary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[var(--app-primary)] py-4 font-bold text-white shadow-[var(--app-primary)]/20 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            Accept Invitation <ArrowRight className="w-5 h-5" />
+            Accept Invitation <ArrowRight className="h-5 w-5" />
           </button>
         </form>
       </div>
 
-      <p className="mt-8 text-[12px] text-[var(--app-text-muted)] opacity-50 font-medium tracking-wider uppercase">
+      <p className="mt-8 text-[12px] font-medium tracking-wider text-[var(--app-text-muted)] uppercase opacity-50">
         Protected by Levity Cryptography
       </p>
     </div>
@@ -85,16 +91,16 @@ export default async function InvitePage({ params }: PageProps) {
 
 function InviteError({ message }: { message: string }) {
   return (
-    <div className="min-h-screen bg-[var(--app-bg)] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-[400px] bg-[var(--app-panel)] rounded-[32px] border border-[var(--app-border)] shadow-[0_32px_80px_rgba(0,0,0,0.5)] p-10 flex flex-col items-center text-center">
-        <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6">
-          <AlertCircle className="w-8 h-8 text-red-500" />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--app-bg)] p-4">
+      <div className="flex w-full max-w-[400px] flex-col items-center rounded-[32px] border border-[var(--app-border)] bg-[var(--app-panel)] p-10 text-center shadow-[0_32px_80px_rgba(0,0,0,0.5)]">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10">
+          <AlertCircle className="h-8 w-8 text-red-500" />
         </div>
-        <h2 className="text-xl font-bold text-[var(--app-text)] mb-3">Invite Invalid</h2>
-        <p className="text-[14px] text-[var(--app-text-muted)] mb-8 leading-relaxed">{message}</p>
+        <h2 className="mb-3 text-xl font-bold text-[var(--app-text)]">Invite Invalid</h2>
+        <p className="mb-8 text-[14px] leading-relaxed text-[var(--app-text-muted)]">{message}</p>
         <Link
           href="/"
-          className="w-full bg-[var(--app-bg)] border border-[var(--app-border)] text-[var(--app-text)] font-bold py-3 rounded-xl hover:bg-[var(--app-panel-hover)] transition-all"
+          className="w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-bg)] py-3 font-bold text-[var(--app-text)] transition-all hover:bg-[var(--app-panel-hover)]"
         >
           Back to Home
         </Link>
