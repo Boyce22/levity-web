@@ -1,14 +1,16 @@
-import { parseApiError } from './errors';
-import { getAccessToken } from '@/infra/auth/session';
+import { parseApiError } from "./errors";
+import { getAccessToken } from "@/infra/auth/session";
 
 type QueryParams = Record<string, string | number | boolean | undefined | null>;
 
-interface FetchOptions extends Omit<RequestInit, 'body'> {
+interface FetchOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
   query?: QueryParams;
 }
 
-const API_BASE = (process.env.EXTERNAL_API_URL ?? 'http://localhost:3001').replace(/\/$/, '') + '/api/v1';
+const API_BASE =
+  (process.env.EXTERNAL_API_URL ?? "http://localhost:3001").replace(/\/$/, "") +
+  "/api";
 
 export class ServerApiClient {
   private buildUrl(path: string, query?: QueryParams): string {
@@ -23,13 +25,16 @@ export class ServerApiClient {
     return url.toString();
   }
 
-  private async execute<T>(path: string, options: FetchOptions = {}): Promise<T> {
+  private async execute<T>(
+    path: string,
+    options: FetchOptions = {},
+  ): Promise<T> {
     const { body, query, headers: customHeaders, ...rest } = options;
     const token = await getAccessToken();
 
     const headers = new Headers(customHeaders);
     if (token) {
-      headers.set('Authorization', `Bearer ${token}`);
+      headers.set("Authorization", `Bearer ${token}`);
     }
 
     let fetchBody: BodyInit | undefined;
@@ -39,7 +44,7 @@ export class ServerApiClient {
       fetchBody = body;
       // O browser/node já insere o multipart/form-data + boundary adequadamente
     } else if (body !== undefined) {
-      headers.set('Content-Type', 'application/json');
+      headers.set("Content-Type", "application/json");
       fetchBody = JSON.stringify(body);
     }
 
@@ -58,10 +63,10 @@ export class ServerApiClient {
       return undefined as T;
     }
 
-    // Suporte para download/tipos strings. 
+    // Suporte para download/tipos strings.
     // Pode expandir baseando no Content-Type se necessário
-    const contentType = res.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
       return res.json();
     }
 
@@ -74,24 +79,44 @@ export class ServerApiClient {
     }
   }
 
-  public get<T = unknown>(path: string, query?: QueryParams, options?: Omit<FetchOptions, 'query' | 'method'>) {
-    return this.execute<T>(path, { ...options, query, method: 'GET' });
+  public get<T = unknown>(
+    path: string,
+    query?: QueryParams,
+    options?: Omit<FetchOptions, "query" | "method">,
+  ) {
+    return this.execute<T>(path, { ...options, query, method: "GET" });
   }
 
-  public post<T = unknown>(path: string, body?: unknown, options?: Omit<FetchOptions, 'body' | 'method'>) {
-    return this.execute<T>(path, { ...options, body, method: 'POST' });
+  public post<T = unknown>(
+    path: string,
+    body?: unknown,
+    options?: Omit<FetchOptions, "body" | "method">,
+  ) {
+    return this.execute<T>(path, { ...options, body, method: "POST" });
   }
 
-  public patch<T = unknown>(path: string, body?: unknown, options?: Omit<FetchOptions, 'body' | 'method'>) {
-    return this.execute<T>(path, { ...options, body, method: 'PATCH' });
+  public patch<T = unknown>(
+    path: string,
+    body?: unknown,
+    options?: Omit<FetchOptions, "body" | "method">,
+  ) {
+    return this.execute<T>(path, { ...options, body, method: "PATCH" });
   }
 
-  public put<T = unknown>(path: string, body?: unknown, options?: Omit<FetchOptions, 'body' | 'method'>) {
-    return this.execute<T>(path, { ...options, body, method: 'PUT' });
+  public put<T = unknown>(
+    path: string,
+    body?: unknown,
+    options?: Omit<FetchOptions, "body" | "method">,
+  ) {
+    return this.execute<T>(path, { ...options, body, method: "PUT" });
   }
 
-  public delete<T = unknown>(path: string, body?: unknown, options?: Omit<FetchOptions, 'body' | 'method'>) {
-    return this.execute<T>(path, { ...options, body, method: 'DELETE' });
+  public delete<T = unknown>(
+    path: string,
+    body?: unknown,
+    options?: Omit<FetchOptions, "body" | "method">,
+  ) {
+    return this.execute<T>(path, { ...options, body, method: "DELETE" });
   }
 }
 
