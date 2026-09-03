@@ -1,5 +1,11 @@
 # CLAUDE.md — Levity SaaS: Architecture & Component Standards
 
+> [!WARNING]
+> Estas regras continuam válidas somente para manutenção do frontend Next.js
+> durante a transição. Elas não definem a arquitetura-alvo em SvelteKit. Para a
+> migração, consulte [docs/frontend-migration/README.md](docs/frontend-migration/README.md),
+> em especial o plano e a auditoria da documentação legada.
+
 This file instructs Claude (and any AI assistant) on the coding conventions, architectural rules, and component standards used in this project. Follow these rules **without exception** on every code generation, refactor, or review task.
 
 ---

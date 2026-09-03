@@ -1,5 +1,12 @@
 # Levity
 
+> [!WARNING]
+> Este README descreve uma arquitetura anterior do frontend e contém informações
+> que não correspondem ao código atual (por exemplo, acesso direto a Supabase e
+> Backblaze). Para manutenção e para a migração Next.js → SvelteKit, use o
+> [índice de documentação da migração](docs/frontend-migration/README.md).
+> O conteúdo abaixo foi preservado temporariamente como histórico.
+
 <p align="center">
   <img src="levity_logo.png" alt="Levity Logo" width="150" />
 </p>
