@@ -11,5 +11,5 @@
     "strict": true,
     "moduleResolution": "bundler"
   },
-  "exclude": ["src/app", "src/features", "src/contracts", "src/infra", "src/proxy.ts", "src/ui"]
+  "exclude": ["legacy"]
 }
