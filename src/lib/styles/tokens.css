@@ -1,0 +1,66 @@
+:root {
+  /* Action tokens (Indigo hierarchy from legacy) */
+  --action-primary-solid: #4f46e5;
+  --action-primary-hover: #4338ca;
+  --action-emphasis-start: #4f46e5;
+  --action-emphasis-end: #312e81;
+
+  /* Semantic status colors */
+  --color-success: #34d399;
+  --color-success-strong: #10b981;
+  --color-warning: #fbbf24;
+  --color-warning-strong: #f59e0b;
+  --color-danger: #f87171;
+  --color-danger-strong: #ef4444;
+  --color-info: #60a5fa;
+  --color-neutral: #94a3b8;
+
+  /* Overlay and focus */
+  --overlay-standard: rgba(0, 0, 0, 0.6);
+  --overlay-strong: rgba(0, 0, 0, 0.75);
+  --focus-ring: color-mix(in srgb, var(--app-primary) 20%, transparent);
+
+  /* Domain colors - Column types */
+  --column-todo: #6b7280;
+  --column-in-progress: #818cf8;
+  --column-review: #f59e0b;
+  --column-done: #34d399;
+
+  /* Domain colors - Priorities */
+  --priority-high: #f87171;
+  --priority-medium: #fbbf24;
+  --priority-low: #34d399;
+
+  /* Radii */
+  --radius-micro: 2px;
+  --radius-control: 8px;
+  --radius-input: 8px;
+  --radius-panel: 12px;
+  --radius-card: 14px;
+  --radius-float: 16px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-list: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-popover: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-drag: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 32px 80px rgba(0, 0, 0, 0.6);
+
+  /* Motion */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-panel: 220ms;
+  --motion-slow: 500ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* Stacking */
+  --z-content: 0;
+  --z-sticky: 20;
+  --z-dropdown: 40;
+  --z-overlay: 60;
+  --z-modal: 70;
+  --z-modal-popover: 80;
+  --z-loader: 100;
+}

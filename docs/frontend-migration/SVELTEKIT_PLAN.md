@@ -1,5 +1,8 @@
 # Plano de migração para SvelteKit
 
+> Revisado em **2026-09-14** para `levity-api@2eef9c7`. A revisão adiciona o
+> modelo multi-board, rotas por `boardId`, roles separadas e enums uppercase.
+
 ## 1. Decisão arquitetural
 
 A migração recomendada é para **Svelte 5 + SvelteKit 2**, mantendo SSR e o padrão
@@ -38,8 +41,8 @@ Referências oficiais usadas para a arquitetura-alvo:
    passar em testes contra payloads reais snake_case.
 2. **Migração vertical.** Entregar um fluxo completo por vez, da rota ao backend,
    em vez de converter todas as views e conectar APIs no final.
-3. **URL é estado navegável.** Workspace, sprint e entidade selecionada que
-   precisa de deep link devem estar na URL; estado efêmero permanece local.
+3. **URL é estado navegável.** Workspace, board, sprint e entidade selecionada
+   que precisa de deep link devem estar na URL; estado efêmero permanece local.
 4. **Estado por request/componente.** Nunca colocar estado mutável de usuário em
    módulo global do servidor, pois SSR pode compartilhá-lo entre requests.
 5. **Mappers explícitos.** Validar snake_case na borda e expor camelCase à UI.
@@ -47,6 +50,8 @@ Referências oficiais usadas para a arquitetura-alvo:
    pending e restaura dados em erro.
 7. **Dependência só com necessidade.** Não portar bibliotecas React/legado por
    equivalência de nome; cada uma precisa de spike e caso de uso.
+8. **Roles não se misturam.** Workspace role governa tenant/catálogos; board role
+   governa colunas, issues, comentários, diagramas e sprints.
 
 ## 3. Estrutura-alvo
 
@@ -65,6 +70,7 @@ src/
 │   │   └── repositories/            # chamadas por domínio
 │   ├── features/
 │   │   ├── auth/
+│   │   ├── boards/
 │   │   ├── board/
 │   │   ├── comments/
 │   │   ├── diagrams/
@@ -82,18 +88,24 @@ src/
     │   ├── login/+page.server.ts
     │   ├── register/+page.svelte
     │   ├── register/+page.server.ts
-    │   └── invite/[workspaceId]/[token]/...
+    │   └── invite/[workspaceId]/[token]/... # mover para (app) se continuar autenticado
     └── (app)/
         ├── +layout.server.ts         # sessão/perfil compartilhados
         ├── +layout.svelte            # shell/sidebar/header
-        ├── +page.server.ts           # board por ?workspace
-        ├── +page.svelte
-        ├── sprints/[workspaceId]/[sprintId]/...
+        ├── +page.server.ts           # resolve/redirect para workspace + board
+        ├── w/[workspaceId]/b/[boardId]/
+        │   ├── +page.server.ts       # board + catálogos necessários
+        │   ├── +page.svelte
+        │   └── sprints/[sprintId]/...
         └── api/                      # BFF JSON explícito para interações ricas
 ```
 
 Route groups não mudam a URL. Eles permitem separar layout/guard público e
 autenticado sem duplicar lógica.
+
+URL canônica recomendada: `/w/:workspaceId/b/:boardId`. Ela evita depender de
+`localStorage` no SSR e torna impossível confundir ID de workspace com ID de
+board nos repositories.
 
 ## 4. Equivalências Next → SvelteKit
 
@@ -198,29 +210,34 @@ limite de responsabilidade:
 ```text
 BoardWireSchema.parse(response)
   -> mapBoardFromWire(wire)
-  -> { workspace, lists, cards, members, tags, priorities }
+  -> { board, columns, issues }
+
+WorkspaceCatalogsWire.parse(parallel responses)
+  -> { members, users, tags, priorities, boards }
 ```
 
 O mapper do board deve:
 
 - converter campos snake_case;
-- converter `in_progress` para o enum de UI escolhido;
-- achatar `lists[].cards` somente se a UI continuar precisando de arrays separados;
+- converter enums `UPPER_SNAKE_CASE` para o enum de UI escolhido;
+- achatar `columns[].issues` somente se a UI continuar precisando de arrays
+  separados e documentar a tradução UI `list/card` ↔ wire `column/issue`;
+- nunca derivar `boardId` de `workspaceId`;
 - preservar `publicId`/storage key quando disponível;
 - manter datas como string ISO na borda; converter para `Date` somente em APIs que
   realmente precisem;
-- não usar `any` ou schemas com `z.any()` para members/tags/priorities.
+- não usar `any` ou schemas com `z.any()` para board, memberships e catálogos.
 
-Requests precisam de mappers inversos, especialmente card, sprint, comentário,
-diagrama, invite, perfil e upload.
+Requests precisam de mappers inversos, especialmente column/issue, sprint,
+comentário, diagrama, invite com grants, perfil e upload.
 
 ## 8. Estratégia por tipo de interação
 
 ### Form actions
 
-Usar em login, register, criação/rename de workspace, perfil, convite e forms de
-settings. São operações orientadas a formulário e se beneficiam de validação e
-progressive enhancement.
+Usar em login, register, criação/rename de workspace e board, perfil, convite e
+forms de settings. São operações orientadas a formulário e se beneficiam de
+validação e progressive enhancement.
 
 ### Endpoints BFF JSON
 
@@ -238,7 +255,9 @@ Cada endpoint deve validar params e body antes de chamar o backend.
 
 ### Load functions
 
-- board inicial, perfil e usuários em `+page.server.ts`/layout;
+- workspaces e perfil no layout autenticado;
+- boards do workspace, snapshot do board, users/members, tags e prioridades em
+  paralelo no `+page.server.ts` da rota do board;
 - sprint e dependências em paralelo no load da rota;
 - convite no load público/protegido conforme contrato decidido;
 - declarar dependências (`depends`) para invalidação granular quando útil.
@@ -250,8 +269,9 @@ Cada endpoint deve validar params e body antes de chamar o backend.
 Uma factory/classe `createBoardState(initial)` em arquivo `.svelte.ts` por
 instância deve expor:
 
-- `$state` para lists/cards/pending/errors;
-- `$derived` para cards filtrados, comment counts e agrupamento por lista;
+- identidade imutável `workspaceId` + `boardId`;
+- `$state` para columns/issues/pending/errors (ou aliases UI documentados);
+- `$derived` para issues filtradas, comment counts e agrupamento por coluna;
 - métodos add/update/delete/reorder com snapshot e rollback;
 - geração de temp IDs sem colisão;
 - reconciliação com resultado do servidor;
@@ -273,17 +293,19 @@ mas também:
 Filtros são bons candidatos a `$state` + `$derived`, sem `$effect`. Se precisarem
 ser compartilháveis, serializar no query string; caso contrário ficam locais.
 
-### Workspace ativo
+### Workspace e board ativos
 
 Prioridade:
 
-1. `?workspace=` válido;
-2. preferência `localStorage` após mount;
-3. primeiro workspace retornado;
-4. criação do workspace default no servidor.
+1. IDs válidos da URL `/w/:workspaceId/b/:boardId`;
+2. último par workspace/board salvo, apenas para redirecionar a entrada `/`;
+3. primeiro workspace e primeiro board acessível retornados pela API;
+4. criação do workspace default no servidor, que já cria board/colunas;
+5. `self-grant` somente como ação explícita para OWNER/ADMIN sem membership no
+   board, nunca como retry silencioso para qualquer 403.
 
-Evitar loop de navegação e loader mínimo fixo. A preferência local não deve
-substituir uma URL explícita.
+Evitar loop de navegação e loader mínimo fixo. A preferência local nunca
+substitui uma URL explícita nem concede acesso inexistente.
 
 ### Notificações
 
@@ -296,10 +318,11 @@ cleanup. Marcar como lida deve aguardar/registrar erro ou restaurar o estado.
 
 1. layout, tokens CSS, font e error page;
 2. auth;
-3. sidebar/header/navigation;
-4. page do board;
-5. rotas de sprint;
-6. invite.
+3. resolução workspace → boards e URLs canônicas;
+4. sidebar/header com seletores de workspace e board;
+5. page do board;
+6. rotas de sprint;
+7. invite.
 
 ### Board
 
@@ -359,10 +382,13 @@ Entregas:
 - schemas wire e mappers de todos os domínios;
 - fixtures reais ou capturadas sem dados sensíveis;
 - testes para todos os casos da matriz de divergências;
-- decisão documentada para invite, notification workspace, comments e storage.
+- decisão documentada para URLs/seleção multi-board, roles, invite grants,
+  contexto de notification, comments e storage;
+- contrato separado para workspace, home boards, board snapshot e catálogos.
 
 Aceite: payloads válidos do backend viram modelos UI; payloads incompatíveis
-falham com erro descritivo; requests gerados possuem snake_case correto.
+falham com erro descritivo; requests usam snake_case/enums uppercase; nenhum
+repository envia `workspaceId` onde a rota exige `boardId`.
 
 ### Fase 1 — fundação SvelteKit e auth
 
@@ -378,18 +404,22 @@ convite não permite open redirect; refresh preserva sessão.
 
 ### Fase 2 — board somente leitura
 
-Entregas: workspaces, perfil, users, board snapshot, sidebar/header, listas/cards,
-filtros e 404/loading.
+Entregas: workspaces, home boards, perfil, users/members, board snapshot,
+tags/prioridades, sidebar/header, colunas/issues, filtros e 404/loading.
 
-Aceite: todos os campos snake viram dados visíveis corretos; URLs diretas e
-troca de workspace funcionam; zero erro de hidratação.
+Aceite: todos os campos snake viram dados visíveis corretos; URLs diretas e troca
+de workspace/board funcionam; VIEWER lê sem ver ações de escrita; zero erro de
+hidratação.
 
 ### Fase 3 — mutações do board
 
-Entregas: CRUD de workspace/list/card, tipos/WIP, DnD e settings.
+Entregas: CRUD de workspace, create/rename/self-grant de board, CRUD de
+column/issue, tipos/WIP, DnD e settings. Delete de board só entra após contrato
+no backend.
 
-Aceite: optimistic update com rollback testado para 403/409/422/500; move entre
-listas envia `list_id`; roles da UI correspondem ao backend decidido.
+Aceite: optimistic update com rollback testado para 400/403/409/422/500; move
+entre colunas envia `column_id`; roles de workspace e board nunca são
+intercambiadas; limite WIP restaura o snapshot em 400.
 
 ### Fase 4 — card avançado
 
@@ -401,18 +431,20 @@ anexos mantêm key; diagrama round-trip não perde geometria.
 
 ### Fase 5 — colaboração e perfil
 
-Entregas: members, invites, profile/avatar e notifications.
+Entregas: workspace members, invites/grants, profile/avatar e notifications.
+Gestão posterior de board members depende de endpoints ainda inexistentes.
 
-Aceite: invite anônimo/autenticado segue contrato; avatar persiste após novo
-login; notificação abre workspace/card correto; falha de mark-all faz rollback.
+Aceite: invite autenticado (ou novo contrato público) usa `board_grants`; avatar
+persiste após novo login sem salvar URL assinada; notificação abre workspace,
+board e issue corretos; falha de mark-all faz rollback.
 
 ### Fase 6 — sprints
 
-Entregas: rotas, lista/detalhe, create/edit/delete/activate/complete, cards,
-reorder e carry-over.
+Entregas: rotas por board, lista/detalhe, create/edit/delete/activate/complete,
+issues, reorder e carry-over.
 
-Aceite: regras de estado são testadas, requests usam snake_case e deep links
-funcionam após refresh.
+Aceite: regras de estado são testadas, requests usam snake_case/enums uppercase,
+uma sprint ativa por board e deep links funcionam após refresh.
 
 ### Fase 7 — corte e remoção
 
@@ -481,16 +513,19 @@ Estratégia segura:
 | DnD inacessível                  | spike teclado/touch + E2E                              |
 | perda de Markdown/anexos         | fixtures round-trip e storage key separada             |
 | perda de geometria               | unificar width/height e snapshot de diagramas          |
+| confundir workspace e board IDs  | URL tipada, repositories separados e contract tests    |
 | duplicação sprint/board          | URL como fonte e controller único                      |
-| permissões apenas na UI          | corrigir enforcement no backend; E2E por role          |
+| regressão de permissões          | E2E por workspace role e board role                    |
+| contexto ausente na notificação  | expandir contrato ou endpoint de resolução antes da UI |
 | biblioteca inadequada            | spikes antes de comprometer package.json               |
 
 ## 16. Definition of Done da migração
 
 - todas as fases aceitas e CI verde;
 - `npm run build`/equivalente SvelteKit sem erro ou warning não justificado;
-- todos os 53 pontos de integração tentados pelo front têm teste ou foram
-  explicitamente removidos;
+- as 63 rotas `/api` estão catalogadas; todo endpoint consumido tem contract test;
+- os 53 pontos de integração legados foram substituídos, testados ou removidos
+  explicitamente; cada rota atual tem decisão `consumir` ou `fora de escopo`;
 - nenhum `any` nos wire contracts;
 - cookie/JWT e redirects auditados;
 - comportamento de erro/rollback visível ao usuário;

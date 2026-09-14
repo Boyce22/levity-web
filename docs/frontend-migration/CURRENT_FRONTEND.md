@@ -23,6 +23,12 @@ Não há conexão WebSocket, SSE, Supabase ou banco direto no código atual do
 frontend. “Tempo real” no README antigo não existe: notificações são buscadas ao
 montar o sino e quando a janela recupera foco.
 
+> Estado de compatibilidade em 2026-09-14: esta arquitetura descreve fielmente o
+> Next existente, mas ele não é compatível com `levity-api@2eef9c7`. O backend
+> agora exige a sequência workspace → board e usa `/api/boards/:boardId`,
+> `column`/`issue`, roles separadas e enums uppercase. Board e sprints não
+> carregam contra a API atual. Veja `API_CONTRACTS.md`.
+
 ## 2. Fronteiras dos repositórios
 
 O diretório pai contém dois repositórios Git independentes:
@@ -31,18 +37,19 @@ O diretório pai contém dois repositórios Git independentes:
 - `levity-api`: API Fastify, domínio, aplicação, persistência e storage.
 
 Não existe workspace npm compartilhado entre os dois. Tipos e schemas são
-duplicados. Essa duplicação está divergente e é hoje o maior risco funcional.
+duplicados. Essa duplicação está divergente e é hoje o maior risco funcional. A
+divergência deixou de ser apenas casing: os agregados e IDs também mudaram.
 
 ## 3. Rotas da aplicação
 
 | URL                                 | Arquivo atual                                       | Renderização e dados                                                                                        | Equivalência SvelteKit                                                     |
 | ----------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `/`                                 | `src/app/page.tsx`                                  | Server Component dinâmico. Carrega board, perfil e usuários; entrega tudo a `Board`. Usa `?workspace=<id>`. | `src/routes/+page.server.ts` + `+page.svelte`                              |
+| `/`                                 | `src/app/page.tsx`                                  | Server Component dinâmico. Carrega board, perfil e usuários; entrega tudo a `Board`. Usa `?workspace=<id>`. | redirect para `/w/[workspaceId]/b/[boardId]`                               |
 | `/login`                            | `src/app/login/page.tsx`                            | Página estática que monta formulário client-side; login ocorre por Server Action.                           | `src/routes/login/+page.svelte` + `+page.server.ts`                        |
 | `/register`                         | `src/app/register/page.tsx`                         | Mesmo componente de auth em modo register.                                                                  | `src/routes/register/+page.svelte` + `+page.server.ts`                     |
 | `/invite/[workspaceId]/[token]`     | `src/app/invite/[workspaceId]/[token]/page.tsx`     | Busca convite no servidor, verifica cookie, aceita via form action inline.                                  | `src/routes/invite/[workspaceId]/[token]/+page.server.ts` + `+page.svelte` |
-| `/sprints/[workspaceId]/[sprintId]` | `src/app/sprints/[workspaceId]/[sprintId]/page.tsx` | Carrega sprint, lista de sprints, board, perfil e usuários em paralelo.                                     | mesma árvore em `src/routes`, com `+page.server.ts`                        |
-| `/sprints/[workspaceId]/new`        | `src/app/sprints/[workspaceId]/new/page.tsx`        | Redireciona para sprint planning/primeira sprint ou monta estado vazio.                                     | mesma árvore em `src/routes`, com `+page.server.ts`                        |
+| `/sprints/[workspaceId]/[sprintId]` | `src/app/sprints/[workspaceId]/[sprintId]/page.tsx` | Carrega sprint, lista de sprints, board, perfil e usuários em paralelo.                                     | `/w/[workspaceId]/b/[boardId]/sprints/[sprintId]`                          |
+| `/sprints/[workspaceId]/new`        | `src/app/sprints/[workspaceId]/new/page.tsx`        | Redireciona para sprint planning/primeira sprint ou monta estado vazio.                                     | rota equivalente sob `/w/[workspaceId]/b/[boardId]`                       |
 | qualquer rota inválida              | `src/app/not-found.tsx`                             | 404 client-side animada.                                                                                    | `src/routes/+error.svelte`                                                 |
 
 `src/app/layout.tsx` define metadata, idioma `en`, fontes Geist e importa
@@ -118,7 +125,8 @@ Exceções importantes:
 Validam sessão e, em alguns fluxos, entrada com Zod. Também fazem orquestração:
 
 - `getBoardUseCase` cria automaticamente “My Workspace” se o usuário não tiver
-  workspace, escolhe o workspace ativo, busca board e convites e calcula role;
+  workspace, escolhe o workspace ativo, busca o antigo board por workspace e
+  convites e calcula uma role única;
 - `getAllUsersUseCase` ordena usuários para exibição;
 - `uploadAvatarUseCase` converte base64 em `Blob/FormData`;
 - `saveDiagramUseCase` limita o JSON a 256 KiB e valida até 1.000 elementos;
@@ -165,7 +173,8 @@ senha, refresh token, logout na API nem persistência client-side do token.
 ### 6.2 Board
 
 `Board.tsx` é o shell client-side. Controla view ativa, modais e card selecionado.
-Compõe:
+Não possui conceito de board selecionado dentro do workspace, embora a API atual
+permita vários boards e tenha membership própria em cada um. Compõe:
 
 - `Sidebar`: seleção de workspace, board/sprints/management, perfil e logout;
 - `BoardHeader`: nome, contadores, share e notificações;
@@ -190,7 +199,8 @@ create/delete não possuem rollback confiável em todos os caminhos.
 - não aplica WIP/role no cliente antes de arrastar.
 
 `useWorkspaceResolution` persiste `last-workspace-id` em `localStorage`, usa o
-query param `workspace` como prioridade e força loader mínimo de 1,2 s.
+query param `workspace` como prioridade e força loader mínimo de 1,2 s. Não
+persiste/resgata `boardId`.
 
 ### 6.3 Modal do card
 
@@ -235,15 +245,16 @@ O estado é mantido por `useDiagram`:
 - divisão de paths longos para respeitar 2.500 pontos;
 - limite contratual de 1.000 elementos e 256 KiB no frontend.
 
-A UI usa propriedades `w`/`h`, mas o backend documenta/valida `width`/`height`.
-Essa decisão deve ser unificada antes de portar a renderização.
+A UI usa propriedades `w`/`h`, mas o backend valida `width`/`height` e chama o
+agregado relacionado de `issue`, não `card`. Essa decisão deve ser unificada
+antes de portar a renderização.
 
 ### 6.5 Comentários e notificações
 
-Comentários suportam Markdown, anexos, replies e menções visuais. O backend
-detecta `@username`, mas o método de resolução de usuários está apenas registrado
-em log; criação real de notificações de mention ainda não está ligada. Replies
-podem gerar notificação ao autor do comentário pai.
+Comentários suportam Markdown, anexos, replies e menções visuais. O backend atual
+detecta `@username` e cria `MENTION` apenas para memberships ativas no board.
+Replies criam `REPLY` para o autor do comentário pai. Create/update/delete exigem
+escrita no board; update/delete também continuam limitados ao autor.
 
 Notificações:
 
@@ -251,13 +262,16 @@ Notificações:
 - novo fetch no evento `window.focus`;
 - ao abrir, marca todas como lidas de forma otimista;
 - não usa `markNotificationReadAction` individualmente;
-- clique procura o card apenas no snapshot local e abre a aba comments.
+- clique procura o card apenas no snapshot local e abre a aba comments. O item
+  da API só contém `issue_id`, sem `workspace_id`/`board_id`, ator expandido ou
+  conteúdo; a navegação não pode ser reconstruída fora do board carregado.
 
 Não há polling contínuo nem push.
 
 ### 6.6 Workspaces, membros e settings
 
 - cria workspace e navega com `?workspace=<id>`;
+- não lista, cria, renomeia ou seleciona boards dentro do workspace;
 - renomeia e exclui workspace;
 - cria/revoga convites e copia link;
 - altera role e remove membro;
@@ -266,24 +280,28 @@ Não há polling contínuo nem push.
 
 O parâmetro chamado `memberId` pelo frontend/backend controller é, no repository
 de persistência, tratado como `user_id`. Manter esse detalhe explícito na nova UI.
+O backend aceita apenas roles de workspace `OWNER|ADMIN|MEMBER`; acesso ao board
+usa separadamente `ADMIN|EDITOR|VIEWER`. A UI atual mistura os cinco valores.
 
 No shell atual, `createWorkspaceAction` recebe diretamente uma string, mas o
 use-case valida um objeto `{ name }`; a criação iniciada por `Board` falha antes
-da chamada HTTP. A normalização de membros também consulta `raw.userId`, enquanto
-o board real retorna `user_id`, fazendo a role cair no fallback `member` caso o
-restante do snapshot fosse aceito.
+da chamada HTTP. A normalização de membros consulta `raw.userId`; o snapshot novo
+nem sequer retorna membros, tags ou prioridades. Esses dados agora vêm de
+endpoints de workspace separados.
 
 ### 6.7 Perfil
 
-`ProfileModal` edita display name, bio, email e avatar. O avatar é convertido para
-base64 no browser, reconstruído como upload multipart no servidor Next e depois a
-UI tenta salvar a URL no perfil. O caminho, o campo e a resposta atuais não
-coincidem com a API; consultar `API_CONTRACTS.md`.
+`ProfileModal` edita display name, bio, email e avatar. A API removeu
+`display_name` em favor de `first_name`/`last_name`. O avatar é convertido para
+base64 no browser e reconstruído como multipart no Next, mas usa rota e resposta
+antigas. A API atual já persiste a storage key no upload; não deve haver um
+segundo PATCH com URL assinada. Consultar `API_CONTRACTS.md`.
 
 ### 6.8 Sprints
 
-Conceitos: planning/active/completed; tracking por points/count/hours; capacidade,
-velocity, progresso, cards e carry-over ao completar.
+Conceitos da UI: planning/active/completed; tracking por points/count/hours;
+capacidade, velocity, progresso, cards e carry-over. O wire atual usa os mesmos
+conceitos em uppercase, chama cards de issues e liga a sprint a `board_id`.
 
 `SprintPanel` também busca dados após montar, mesmo quando existem rotas SSR.
 `useSprints` e `useSprintCards` oferecem atualizações otimistas com rollback em
@@ -292,11 +310,11 @@ alguns erros. Há duplicação entre esses hooks e callbacks internos do painel.
 Regras confirmadas no backend:
 
 - só sprint planning pode ser excluída ou ativada;
-- apenas uma sprint ativa por workspace;
+- apenas uma sprint ativa por board;
 - só sprint ativa pode ser concluída;
-- card não pode estar em outra sprint ativa;
-- concluir pode mover cards incompletos para `to_sprint_id`;
-- velocity usa pontos, horas ou quantidade de cards 100% completos.
+- issue não pode estar em outra sprint ativa;
+- concluir pode mover issues incompletas para `to_sprint_id` do mesmo board;
+- velocity usa pontos, horas ou quantidade de issues 100% completas.
 
 ## 7. Estado, cache e sincronização
 
@@ -391,12 +409,48 @@ em `SVELTEKIT_PLAN.md`.
 Antes de retirar o Next, o SvelteKit deve provar:
 
 - login, register, logout e retorno correto ao convite;
-- seleção/persistência de workspace e criação automática do primeiro workspace;
-- board, filtros, CRUD, DnD entre listas e rollback em falha;
+- seleção/persistência de workspace e board, e criação automática do primeiro par;
+- board, filtros, CRUD, DnD entre colunas e rollback em falha;
 - modal com autosave, histórico, comments/replies/mentions e anexos;
 - diagrama completo com limites, undo/redo, pan/zoom e persistência;
 - sprints e suas regras de estado/carry-over;
 - perfil/avatar, membros, convites, labels e prioridades;
-- notificações no load/focus e navegação ao card;
+- notificações no load/focus e navegação ao workspace/board/issue;
 - temas, responsividade, teclado e acessibilidade;
 - ausência de token no JavaScript e de chamadas diretas não autorizadas à API.
+
+## 13. Status da implementação SvelteKit (Concluída)
+
+A migração para SvelteKit foi implementada com alta fidelidade visual e funcional, sem redesenho de produto:
+
+### Estabilização de 2026-09-14
+
+Os quatro gates da Fase 0 (`check`, `lint`, `test` e `build`) executam sem erros ou warnings. Markdown GFM é sanitizado por allowlist antes de ser inserido no DOM; HTML bruto, URLs executáveis, estilos arbitrários e imagens fora de HTTP(S) são removidos. O modal mantém comentários e replies por BFF explícito e preserva `publicId` nos anexos inseridos em Markdown.
+
+### Board: consistência de mutações (2026-09-14)
+
+Busca, membro, prioridade e etiqueta filtram as issues no estado da rota. Alterações otimistas de coluna, issue e posição guardam snapshot e restauram a UI em 4xx/5xx/rede, com mensagem visível. O frontend impede criar issue quando a coluna atingiu WIP; a API continua como autoridade para create e move.
+
+### Ajustes de fidelidade visual (2026-09-14)
+
+Shell, canvas, card e modal foram comparados aos equivalentes React. O Svelte preserva larguras de coluna e canvas, a quebra integral do título de card, o título de issue como bloco, altura mínima da área de cards e o gradiente de ação índigo definido pelos tokens legados.
+
+### Gestão de workspace e boards (2026-09-14)
+
+O board disponibiliza criação de workspace pelo BFF `POST /api/workspaces` e navega diretamente para o board inicial retornado. A rota de gestão permite renomear o workspace, criar e renomear boards e executar `self-grant`, além dos fluxos já portados de membros, papéis, convites, etiquetas e prioridades. Papéis de membro são validados contra o enum da API antes da mutação.
+
+### Perfil e notificações (2026-09-14)
+
+O modal de perfil atualiza `first_name`, `last_name`, `email`, `bio` e avatar pelo BFF, aceitando apenas JPEG, PNG, WebP e GIF de até 10 MiB. As notificações usam BFF para carregar e marcar como lidas, com rollback local quando a mutação falha. Como o contrato não fornece `workspace_id` nem `board_id`, uma issue só é aberta quando ela está no board atual; nos demais casos a UI informa que o usuário deve abrir o board correspondente.
+
+### Sprints e diagramas (2026-09-14)
+
+A rota de sprints permite criar, editar, ativar, excluir e concluir uma sprint, com destino opcional para carry-over. Diagramas usam `width`/`height`, validam os limites de elementos e pontos no BFF, aceitam `null` da API e removem o diagrama pelo endpoint DELETE real.
+
+- **Tokens e Design System**: Tokens canônicos `--app-*` (`--app-primary`, `--app-bg`, `--app-panel`, `--app-border`, etc.) preservados como fonte de verdade em `tokens.css`, `themes.css` e `base.css`.
+- **Segurança de Markdown**: Pipeline estrito de renderização com `marked` e sanitizador dedicado `sanitizeHtml` impedindo injeções de script/handlers.
+- **Uploads Restritos**: Contrato de upload estritamente restrito a imagens (`image/jpeg`, `image/png`, `image/webp`, `image/gif` até 10 MiB) em avatares e anexos.
+- **Spike de Drag and Drop**: Validado com sucesso em `dnd.test.ts` (movimentação horizontal de colunas, reordenação de issues, limites WIP com rollback otimista).
+- **Contratos e BFF**: Validação estrita de wire `snake_case` com schemas Zod nos endpoints BFF (`src/routes/api/...`) e mapeamento explícito e bidirecional para modelos UI `camelCase` (`src/lib/contracts/mappers.ts`).
+- **Componentes e Modais**: Modal modular de issue (`DescriptionTab`, `CommentsTab`, `DiagramTab`, `DiagramEditor` vetorial), `ShareWorkspaceModal` com suporte a `board_grants`, e `ProfileModal`.
+- **Rotas Canônicas**: `/w/:workspaceId/b/:boardId`, `/w/:workspaceId/b/:boardId/sprints`, e `/w/:workspaceId/b/:boardId/management`.

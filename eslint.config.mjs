@@ -1,47 +1,6 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
-import reactHooks from "eslint-plugin-react-hooks";
-import tailwindcss from "eslint-plugin-tailwindcss";
-
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-
-  {
-    plugins: { "react-hooks": reactHooks },
-    rules: {
-      "react-hooks/exhaustive-deps": "error",
-    },
-  },
-
-  {
-    plugins: { tailwindcss },
-    settings: {
-      tailwindcss: {
-        // Para Tailwind v4, use false
-        config: false,
-        // Ou para Tailwind v3, aponte para o arquivo
-        // config: "./tailwind.config.js",
-      },
-    },
-    rules: {
-      "tailwindcss/classnames-order": "warn",
-      "tailwindcss/enforces-shorthand": "warn",
-      "tailwindcss/no-contradicting-classname": "error",
-      "tailwindcss/no-custom-classname": "off",
-    },
-  },
-
-  globalIgnores([
-    ".next/**",
-    "out/**",
-    "build/**",
-    "node_modules/**",
-    ".claude/**",
-    "docs/**",
-    "next-env.d.ts",
-  ]),
-]);
-
-export default eslintConfig;
+import js from '@eslint/js';
+import globals from 'globals';
+import svelte from 'eslint-plugin-svelte';
+import svelteParser from 'svelte-eslint-parser';
+import tseslint from 'typescript-eslint';
+export default tseslint.config(js.configs.recommended, ...tseslint.configs.recommended, ...svelte.configs.recommended, { languageOptions: { globals: globals.browser } }, { files: ['**/*.svelte'], languageOptions: { parser: svelteParser, parserOptions: { parser: tseslint.parser } }, rules: { 'svelte/no-navigation-without-resolve': 'off', 'no-undef': 'off' } }, { ignores: ['.next/**', '.svelte-kit/**', 'build/**', 'node_modules/**', 'rename-snake-case.js', 'src/app/**', 'src/features/**', 'src/contracts/**', 'src/infra/**', 'src/proxy.ts', 'src/ui/**'] });

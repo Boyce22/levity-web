@@ -5,6 +5,11 @@ comportamento de produto; “reescrever” contém comportamento útil acoplado 
 React/Next; “reusar” é TypeScript/CSS agnóstico; “remover” não possui consumidor
 ou representa infraestrutura substituída.
 
+> Inventário de arquivos confirmado em 2026-09-14: 173 arquivos TS/TSX e 13.983
+> linhas sob `src`. Os arquivos do Next não mudaram, mas seus repositories estão
+> incompatíveis com a API multi-board atual. “Portar” abaixo significa preservar
+> comportamento de produto, não copiar paths, contracts ou o modelo list/card.
+
 ## 1. Raiz e configuração
 
 | Arquivo                | Responsabilidade                     | Destino                                             |
@@ -29,12 +34,12 @@ do scaffold Next sem uso encontrado; validar e remover, não portar por padrão.
 | ------------------------------------------------------ | -------------------------------------------------------------- | -------------------------------------------------------- |
 | `src/app/layout.tsx`                                   | html/body, metadata, Geist, CSS global                         | `+layout.svelte` e `<svelte:head>`                       |
 | `src/app/globals.css`                                  | Tailwind 4, tokens dos 3 temas, body/scrollbar/autofill/canvas | portar e validar visualmente                             |
-| `src/app/page.tsx`                                     | load do board/perfil/users e shell principal                   | `+page.server.ts` + `+page.svelte`                       |
+| `src/app/page.tsx`                                     | load do board/perfil/users e shell principal                   | redirect + rota `/w/[workspaceId]/b/[boardId]`           |
 | `src/app/login/page.tsx`                               | entrada do login                                               | rota Svelte pública                                      |
 | `src/app/register/page.tsx`                            | entrada do register                                            | rota Svelte pública                                      |
 | `src/app/invite/[workspaceId]/[token]/page.tsx`        | preview/accept/redirect de convite                             | reescrever após contrato de invite                       |
-| `src/app/sprints/[workspaceId]/[sprintId]/page.tsx`    | load SSR paralelo de sprint                                    | rota Svelte autenticada                                  |
-| `src/app/sprints/[workspaceId]/new/page.tsx`           | resolução de sprint ou empty state                             | rota Svelte autenticada                                  |
+| `src/app/sprints/[workspaceId]/[sprintId]/page.tsx`    | load SSR paralelo de sprint                                    | `/w/[workspaceId]/b/[boardId]/sprints/[sprintId]`        |
+| `src/app/sprints/[workspaceId]/new/page.tsx`           | resolução de sprint ou empty state                             | rota equivalente por board                               |
 | `src/app/loading.tsx`                                  | loader global                                                  | loading/layout Svelte                                    |
 | `src/app/sprints/[workspaceId]/[sprintId]/loading.tsx` | loader sprint                                                  | loading local                                            |
 | `src/app/not-found.tsx`                                | 404 animada                                                    | `+error.svelte`; remover textura remota ou CSP explícita |
@@ -58,6 +63,14 @@ do scaffold Next sem uso encontrado; validar e remover, não portar por padrão.
 
 Destino: nenhum deve ser copiado sem revisão. Criar `wire`, `models` e `mappers`
 com testes, conforme Fase 0.
+
+### Atualização de estabilização (2026-09-14)
+
+- `lib/utils/markdown.ts`: renderer GFM e sanitização por allowlist; cobertura para XSS, protocolos perigosos, GFM e imagens permitidas.
+- `lib/utils/attachments.ts`: valida MIME/tamanho e serializa `{ url, publicId }` no Markdown sem derivar identidade de URL assinada.
+- `routes/api/comments/[commentId]/**`: BFFs explícitos para update/delete e replies.
+- `routes/w/[workspaceId]/b/[boardId]/+page.svelte`: filtros reais, snapshots para rollback de CRUD/move e feedback de erro da mutação.
+- `lib/components/{BoardCanvas,column/BoardColumn,card/BoardCard,card-modal/**}`: medidas e tipografia alinhadas aos componentes React de board/card/modal.
 
 ## 4. Infraestrutura
 
@@ -208,7 +221,7 @@ São módulos de alto risco por DOM direto. Criar testes de interação antes do
 | ------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------ |
 | actions      | `board`, `list`, `card`, `comment`, `diagram`, `index`                               | loads/actions/endpoints BFF                            |
 | use-cases    | `board`, `list`, `card`, `comment`, `diagram`                                        | manter regras úteis, remover wrapper 1:1 desnecessário |
-| repositories | `board-repository`, `comment-repository`, `diagram-repository`, `history-repository` | portar com wire schemas/mappers                        |
+| repositories | `board-repository`, `comment-repository`, `diagram-repository`, `history-repository` | reescrever para `/boards/:boardId`, column/issue e mappers |
 
 `board.use-cases.ts` também acessa workspace repository e cria workspace default;
 essa orquestração deve permanecer server-side e ser coberta por teste.
@@ -221,9 +234,14 @@ essa orquestração deve permanecer server-side e ser coberta por teste.
 | `WorkspaceSettingsModal.tsx`                                        | rename/delete                 | portar/form actions                  |
 | `ShareWorkspaceModal.tsx`                                           | opções de invite e copy link  | reescrever após contrato             |
 | `MembersManagement.tsx`                                             | members/roles/invites         | portar; corrigir tipo member vs user |
-| `server/repositories/workspace-repository.ts`                       | 15 integrações de workspace   | dividir por domínio e tipar          |
+| `server/repositories/workspace-repository.ts`                       | 15 integrações de workspace   | dividir em workspace/boards/invites/catalogs e tipar |
 | use-cases `workspace`, `invite`, `member`, `tag`, `priority`        | sessão/validação/orquestração | portar regras, corrigir casing       |
 | actions `workspace`, `invite`, `member`, `tag`, `priority`, `index` | mutations/queries Next        | actions/endpoints SvelteKit          |
+
+Status SvelteKit (2026-09-14): `CreateWorkspaceModal.svelte` e o endpoint BFF
+`src/routes/api/workspaces/+server.ts` criam o workspace e resolvem o seu board
+inicial. A página `management` cobre rename de workspace/board, create board e
+`self-grant`, sem expor exclusão de board porque a API não a oferece.
 
 ## 13. Feature users
 
@@ -252,15 +270,15 @@ essa orquestração deve permanecer server-side e ser coberta por teste.
 | `SprintPanel.tsx`                | fetch/estado/composição dentro do board | consolidar com rota; evitar segunda implementação |
 | `SprintSidebar.tsx`              | navegação de workspace/sprint           | integrar ao shell comum                           |
 | `SprintHeader.tsx`               | status/progresso/actions                | portar                                            |
-| `SprintCardList.tsx`             | DnD de sprint cards                     | portar após spike                                 |
-| `SprintCardItem.tsx`             | card/resumo/métricas                    | portar                                            |
+| `SprintCardList.tsx`             | DnD de sprint cards                     | portar como issues após spike                     |
+| `SprintCardItem.tsx`             | card/resumo/métricas                    | portar com mapper issue → modelo visual           |
 | `modals/CreateSprintModal.tsx`   | create + validação                      | portar; corrigir Zod `issues`                     |
 | `modals/EditSprintModal.tsx`     | edit                                    | portar                                            |
 | `modals/CompleteSprintModal.tsx` | complete/carry-over                     | portar                                            |
 | `modals/AddCardModal.tsx`        | selecionar/criar/adicionar card         | portar                                            |
 | `hooks/useSprints.ts`            | optimistic CRUD/state                   | consolidar em sprint state                        |
 | `hooks/useSprintCards.ts`        | optimistic add/remove/reorder           | consolidar em sprint state                        |
-| `sprint-repository.ts`           | 11 endpoints                            | portar com casing correto                         |
+| `sprint-repository.ts`           | 11 endpoints antigos                    | reescrever por board, `issues` e enums uppercase  |
 | `sprint.use-cases.ts`            | guards/wrappers                         | portar só regras úteis                            |
 | `sprint.actions.ts`/`index.ts`   | Next actions                            | loads/actions/endpoints BFF                       |
 
@@ -268,8 +286,8 @@ essa orquestração deve permanecer server-side e ser coberta por teste.
 
 | Prioridade | Módulos                                                        |
 | ---------- | -------------------------------------------------------------- |
-| P0         | wire contracts/mappers, API client, auth/session, board load   |
-| P1         | CRUD/DnD do board, perfil/users, workspace selection           |
+| P0         | wire contracts/mappers, API client, auth/session, resolução workspace → board |
+| P1         | board load + catálogos, CRUD/DnD, perfil/users, seleção de board |
 | P2         | card modal, comments/history, uploads/storage                  |
 | P3         | members/invites/settings/notifications                         |
 | P4         | sprints                                                        |
@@ -278,3 +296,41 @@ essa orquestração deve permanecer server-side e ser coberta por teste.
 Essa prioridade é técnica, não uma decisão de produto. Se o diagrama ou sprint
 for requisito de lançamento, mover a fatia inteira para cima sem pular contratos
 e testes.
+
+## 17. Componentes e módulos implementados em SvelteKit
+
+| Módulo Legado React | Componente SvelteKit Equivalente | Status |
+| ------------------- | -------------------------------- | ------ |
+| `Button.tsx` | `src/lib/ui/Button.svelte` | Portado fielmente |
+| `Input.tsx` | `src/lib/ui/Input.svelte` | Portado fielmente |
+| `Select.tsx` | `src/lib/ui/Select.svelte` | Portado com a11y |
+| `ConfirmationModal.tsx` | `src/lib/ui/ConfirmationModal.svelte` | Portado fielmente |
+| `ProgressLoader.tsx` | `src/lib/ui/ProgressLoader.svelte` | Portado fielmente |
+| `Badge.tsx` | `src/lib/ui/Badge.svelte` | Portado fielmente |
+| `Tabs.tsx` | `src/lib/ui/Tabs.svelte` | Portado fielmente |
+| `Sidebar.tsx` | `src/lib/components/Sidebar.svelte` | Portado (72px/260px, status, footer) |
+| `BoardHeader.tsx` | `src/lib/components/BoardHeader.svelte` | Portado (breadcrumb, progress, share) |
+| `BoardFiltersBar.tsx` | `src/lib/components/BoardFiltersBar.svelte` | Portado (search, members, priority, label) |
+| `BoardCanvas.tsx` | `src/lib/components/BoardCanvas.svelte` | Portado (DnD spike-validated) |
+| `BoardColumn.tsx` | `src/lib/components/column/BoardColumn.svelte` | Portado (280px, accents, WIP banner) |
+| `BoardCard.tsx` | `src/lib/components/card/BoardCard.svelte` | Portado (14px radius, cover, footer) |
+| `CardModal.tsx` | `src/lib/components/card-modal/CardModal.svelte` | Portado (68rem/48rem, shortcuts, done CTA) |
+| `DescriptionTab.tsx` | `src/lib/components/card-modal/DescriptionTab.svelte` | Portado (sanitized markdown, checklist, history) |
+| `CommentsTab.tsx` | `src/lib/components/card-modal/CommentsTab.svelte` | Portado (threads, replies, mention suggestions) |
+| `DiagramTab.tsx` | `src/lib/components/card-modal/DiagramTab.svelte` | Portado (preview, auto-scale, clear confirm) |
+| `DiagramEditor.tsx` | `src/lib/components/card-modal/DiagramEditor.svelte` | Portado (RoughJS, Perfect Freehand, undo/redo) |
+| `MembersManagement.tsx` | `src/routes/w/[workspaceId]/b/[boardId]/management/+page.svelte` | Portado (members, invites, tags, priorities) |
+| `SprintPanel.tsx` | `src/routes/w/[workspaceId]/b/[boardId]/sprints/+page.svelte` | Portado (active sprint hero, planning, modal) |
+| `ShareWorkspaceModal.tsx` | `src/lib/components/ShareWorkspaceModal.svelte` | Portado (suporte a `board_grants`) |
+| `ProfileModal.tsx` | `src/lib/components/ProfileModal.svelte` | Portado (upload multipart restrito a imagens) |
+| `NotificationBell.tsx` | `src/lib/components/NotificationBell.svelte` | Portado (badge, popover, mark read) |
+
+Sprints e diagramas (2026-09-14): a rota de sprints expõe create, update,
+activate, delete e complete/carry-over pelos paths de board. O modal de issue
+persiste diagramas no wire canônico e usa DELETE para limpar.
+
+Perfil e notificações (2026-09-14): `ProfileModal.svelte` usa o contrato
+separado de `first_name`/`last_name` e inclui e-mail, bio e avatar multipart.
+`NotificationBell.svelte` preserva o popover legado, confirma respostas de
+mark-read/read-all e restaura o estado otimista em falha. Sem contexto de board
+na API, não há navegação inferida para issues fora do board atual.

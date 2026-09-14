@@ -1,6 +1,13 @@
 # Padrões de Desenvolvimento
 
-Decisões de design não óbvias que se repetem no codebase. Leia antes de abrir um PR.
+> [!WARNING]
+> Documento legado do frontend Next/React. Não usar como regra do SvelteKit; veja
+> [o plano de migração](frontend-migration/SVELTEKIT_PLAN.md). Em particular, o
+> padrão de escrever `ref.current` durante render hoje é rejeitado pelo lint
+> `react-hooks/refs` deste próprio projeto e deve ser reavaliado, não copiado.
+
+Registro histórico de decisões de design do frontend Next/React. Consulte-o apenas
+para entender o código legado; novas decisões devem seguir o plano de migração.
 
 ---
 
@@ -10,10 +17,10 @@ Decisões de design não óbvias que se repetem no codebase. Leia antes de abrir
 
 `useCallback` recria a função toda vez que uma dependência muda. Quando a dependência é um estado que muda com frequência (ex: lista de cards durante drag-and-drop, elemento de diagrama em cada mousemove), o callback é recriado dezenas de vezes por segundo — causando re-renders em cascata nos filhos que o recebem como prop.
 
-### Solução: ref atualizado sincronamente no render
+### Solução histórica: ref atualizado sincronamente no render
 
 ```ts
-// ✅ Padrão correto
+// Padrão legado; o lint React atual o rejeita durante render
 const itemsRef = useRef(items);
 itemsRef.current = items; // atualizado a cada render, sem useEffect (sem delay de 1 frame)
 
@@ -25,7 +32,7 @@ const handleAction = useCallback(() => {
 ```
 
 ```ts
-// ❌ Padrão problemático
+// Alternativa histórica que pode recriar o callback
 const handleAction = useCallback(() => {
   const position = items.filter(...).length;
   // ...

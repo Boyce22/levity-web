@@ -153,19 +153,21 @@ rótulo junto à cor.
 
 ### 4.3 Cores de domínio
 
-#### Tipo de lista
+#### Tipo de coluna
 
 | Tipo         | Cor       | Progresso implícito |
 | ------------ | --------- | ------------------- |
-| `todo`       | `#6b7280` | 0%                  |
-| `inProgress` | `#818cf8` | 50%                 |
-| `review`     | `#f59e0b` | 75%                 |
-| `done`       | `#34d399` | 100%                |
+| `TODO`        | `#6b7280` | 0%                  |
+| `IN_PROGRESS` | `#818cf8` | 50%                 |
+| `REVIEW`      | `#f59e0b` | 75%                 |
+| `DONE`        | `#34d399` | 100%                |
 
 Essas cores são informação de domínio e permanecem estáveis entre temas. O tema
 `artic` ou `omni` muda a cor primária da interface, mas não deve mudar o significado
-de review/done. O tipo `inProgress` usa hoje indigo fixo; normalizar como token
-`--list-in-progress`, não como `--app-primary`, para preservar essa decisão.
+de review/done. O tipo `IN_PROGRESS` usa hoje indigo fixo; normalizar como token
+`--column-in-progress`, não como `--app-primary`, para preservar essa decisão.
+Esses são os valores wire atuais; o modelo visual pode usar nomes camelCase
+internos somente depois do mapper explícito.
 
 #### Prioridade
 
@@ -433,7 +435,10 @@ Não transportar literalmente o `Card.tsx` atual, que fixa fundo dark e usa raio
 - sidebar tem borda direita faint e sombra preta a 15%;
 - item ativo recebe `--app-primary-muted`, texto primary e barra direita de 4px;
 - navegação disabled usa 40% de opacidade e badge “Soon”;
-- breadcrumb do header limita workspace a 150px e trunca;
+- breadcrumb do header mostra workspace e board, truncando cada segmento sem
+  esconder qual board está ativo;
+- seletores de workspace e board precisam funcionar por teclado e expor a role
+  correspondente; workspace role e board role nunca usam o mesmo badge;
 - filtros formam uma barra densa, com gaps de 24px e divisores de 18px;
 - “Clear filters” é uma ação danger em 10px/uppercase;
 - progresso geral aparece somente em desktop (`>= 768px`).
@@ -696,6 +701,7 @@ componente.
 - todos os hardcodes estruturais para tokens;
 - botões, campos, selects, modais, popovers, badges e tooltips duplicados;
 - sidebars de board e sprint;
+- seleção de workspace e board dentro do shell comum;
 - focus ring, disabled, loading, erro e hover;
 - raios e sombras conforme o contexto;
 - stacking em uma escala documentada, em vez de `z-40`, `z-50`, `z-100`,

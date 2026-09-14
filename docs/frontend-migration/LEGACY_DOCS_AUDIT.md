@@ -10,6 +10,8 @@ Ação aplicada nesta auditoria:
 
 - `README.md` recebeu aviso de conteúdo desatualizado e link para este conjunto;
 - `CLAUDE.md` recebeu aviso de escopo: manutenção Next, não arquitetura SvelteKit;
+- `docs/patterns.md` recebeu aviso de legado e da incompatibilidade do padrão de
+  escrita de ref durante render com o lint atual;
 - as convenções visuais dispersas nesses arquivos foram consolidadas no
   [design system](DESIGN_SYSTEM.md), que passa a ser a referência para paridade;
 - nenhum conteúdo histórico foi excluído ou movido;
@@ -109,42 +111,48 @@ No corte, mover o atual para `docs/legacy/CLAUDE.next-legacy.md`. Se o time usa
 outro arquivo de instrução (`AGENTS.md`, por exemplo), consolidar em um único
 arquivo para evitar regras contraditórias.
 
-## 3. `levity-api/docs/API.md`
+## 3. `levity-web/docs/patterns.md`
 
-Status: **referência útil, mas incompleta e parcialmente divergente do backend**.
+Status: **legado React e parcialmente contraditório com o lint atual**.
 
-### O que está bom
+O documento registra decisões reais de `useBoardData`, `useDiagram` e
+`useCardModal`, mas chama escrita em `ref.current` durante render de “padrão
+correto”. O ESLint atual acusa exatamente esse uso com `react-hooks/refs`.
 
-- base `/api`, JWT Bearer e códigos HTTP;
-- grande parte das rotas de auth, users, workspaces, board, comments,
-  notifications, diagrams e files;
-- exemplos de payload snake_case;
-- notas de bulk update, cursor, users/members e storage key.
+Plano: manter como explicação histórica enquanto o Next existir. Na migração,
+portar a intenção (callbacks sem stale closure, cleanup e autosave) para estado
+por instância Svelte, validado por testes, e arquivar o arquivo no corte.
 
-### O que precisa ser corrigido
+## 4. `levity-api/docs/API.md`
 
-- resumo lista 45 rotas, enquanto os controllers atuais expõem 59;
-- não cobre sprints, histórico de card, replies e download assinado;
-- resposta de comments descrita não coincide com o service atual;
-- notificações são descritas principalmente como paginação offset, mas o backend
-  também aceita cursor;
-- detalhes de validação estruturados não são enviados pelo error handler atual;
-- tabela de roles não corresponde ao enforcement: board/sprint usam apenas
-  membership; create/delete de tag/priority exigem owner/admin;
-- exemplos de alguns modelos ficaram atrás de campos novos como story points e
-  estimated hours.
+Status: **reconciliado em 2026-09-14 com `levity-api@2eef9c7`**.
+
+### O que foi corrigido
+
+- inventário completo das 63 rotas `/api`;
+- separação workspace → boards → columns/issues e sprints por board;
+- roles de workspace e board, status e demais enums uppercase;
+- convites com `board_grants`, novos DTOs, WIP e prioridade de sistema;
+- contratos atuais de users, comments, notifications, diagrams e files;
+- matriz de permissões correspondente aos guards atuais.
+
+### Limitação restante
+
+- Swagger registra bem paths e request schemas, mas quase nenhuma rota declara
+  response schema. O Markdown ainda é necessário para shapes e regras de negócio;
+  contract tests continuam obrigatórios.
 
 ### Plano
 
-Não duplicar manualmente esse arquivo no SvelteKit. Usá-lo como material de apoio
-enquanto `API_CONTRACTS.md` registra o que o front realmente precisa. Depois,
-gerar OpenAPI/JSON Schema a partir dos schemas/controllers do backend e manter:
+Não copiar tipos manualmente desse arquivo para o SvelteKit. Usá-lo como
+referência humana enquanto `API_CONTRACTS.md` registra o recorte e as divergências
+do frontend. Evoluir o OpenAPI para incluir responses e manter:
 
 - documentação humana para regras e exemplos;
 - especificação gerada para paths/schemas;
 - testes de contrato no frontend.
 
-## 4. `rename-snake-case.js`
+## 5. `rename-snake-case.js`
 
 Status: **script perigoso e desnecessário para a migração**.
 
@@ -157,7 +165,7 @@ Plano: não executar. Após os mappers e testes da Fase 0, remover em PR separad
 arquivar com uma nota explícita de “não usar”. A conversão deve ser semântica e
 localizada nos mappers.
 
-## 5. Dependências legadas no `package.json`
+## 6. Dependências legadas no `package.json`
 
 Status: **não são documentação, mas contam uma história técnica falsa**.
 
@@ -168,7 +176,28 @@ use. Não copiá-los para SvelteKit.
 Plano: retirar somente quando o novo package estiver estabilizado ou em limpeza
 separada do Next, sempre validando build e comportamento.
 
-## 6. Política de remoção
+## 7. `levity-api/docs/boas-praticas-node.md`
+
+Status: **arquitetura de referência, não descrição do backend atual**.
+
+O guia propõe monorepo npm, packages, Redis, filas, worker e `node:test`. O
+backend atual é um package único, não possui Redis/worker e usa Vitest + Postgres.
+Foi adicionado um aviso de escopo com link para `API.md`; os exemplos aspiracionais
+foram preservados, pois reescrevê-los como inventário eliminaria a finalidade do
+guia.
+
+## 8. `levity-api/docs/schema-alterations.json`
+
+Status: **plano histórico implementado e parcialmente supersedido**.
+
+O arquivo ainda se declarava `specified_not_applied` e fonte de verdade, embora
+o baseline, a camada de aplicação e uma migração posterior de enums uppercase já
+tenham sido entregues. Ele agora começa por `current_state`, impede reexecução do
+plano antigo e registra as duas migrations efetivas. O bloco `target_schema`
+lowercase foi preservado como fotografia do baseline anterior à migração
+`UppercaseEnumValues`.
+
+## 9. Política de remoção
 
 Uma documentação/arquivo legado só deve ser apagado quando:
 
