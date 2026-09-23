@@ -164,7 +164,7 @@
             {#each workspaces as w (w.id)}
               {@const isCurrent = w.id === currentWorkspaceId}
               <a
-                href="/w/{w.id}/b/{boards[0]?.id || ''}"
+                href="/w/{w.id}"
                 class="mb-0.5 flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors {isCurrent ? 'bg-app-primary-muted text-app-primary font-bold' : 'text-app-text-muted hover:bg-app-hover hover:text-app-text'}"
               >
                 <div
