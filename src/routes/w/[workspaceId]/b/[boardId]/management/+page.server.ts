@@ -49,11 +49,16 @@ export async function load(event) {
         apiRequest(event, `/workspaces/${workspaceId}/invites`).catch(() => []),
       ]);
 
+    const currentUser = userFromWire(currentUserWire);
+    const members = membersWire.map(workspaceMemberFromWire);
+    const workspaceAvatarUrl = members.find((member) => member.userId === currentUser.id)?.user?.avatarUrl;
+
     return {
-      currentUser: userFromWire(currentUserWire),
+      currentUser,
+      workspaceAvatarUrl: workspaceAvatarUrl ?? currentUser.avatarUrl,
       workspaces: workspacesWire.map(workspaceFromWire),
       boards: boardsWire.map(homeBoardFromWire),
-      members: membersWire.map(workspaceMemberFromWire),
+      members,
       tags: tagsWire.map(tagFromWire),
       priorities: prioritiesWire.map(priorityFromWire),
       invites: Array.isArray(invites) ? invites : [],

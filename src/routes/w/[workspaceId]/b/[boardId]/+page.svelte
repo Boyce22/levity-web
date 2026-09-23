@@ -17,6 +17,8 @@
 
   let columns = $state<ColumnModel[]>([]);
   let currentUser = $state<UserModel>({ id: '', username: '' });
+  let workspaceUsers = $state<UserModel[]>([]);
+  let workspaceAvatarUrl = $state<string | undefined>(undefined);
 
   // Sync columns from data
   $effect(() => {
@@ -26,6 +28,13 @@
     if (data.currentUser) {
       currentUser = data.currentUser;
     }
+    workspaceUsers = data.users;
+    workspaceAvatarUrl = data.workspaceAvatarUrl;
+  });
+
+  const workspaceUser = $derived({
+    ...currentUser,
+    avatarUrl: workspaceAvatarUrl || currentUser.avatarUrl,
   });
 
   const currentWorkspace = $derived(
@@ -350,7 +359,7 @@
     currentWorkspaceName={currentWorkspace?.name}
     boards={data.boards}
     currentBoardId={data.board.id}
-    userProfile={currentUser}
+    userProfile={workspaceUser}
     userRole={currentUserRole}
     activeView="board"
     onOpenProfile={() => (isProfileOpen = true)}
@@ -384,7 +393,7 @@
         bind:selectedUserFilters
         bind:priorityFilter
         bind:labelFilter
-        allUsers={data.users}
+        allUsers={workspaceUsers}
         tags={data.tags}
         priorities={data.priorities}
       />
@@ -394,7 +403,7 @@
         columns={filteredColumns}
         priorities={data.priorities}
         tags={data.tags}
-        allUsers={data.users}
+        allUsers={workspaceUsers}
         {canWrite}
         {recentlyCreatedIssueId}
         oncardclick={(card) => {
@@ -421,11 +430,11 @@
       workspaceId={data.board.workspaceId}
       workspaceName={currentWorkspace?.name ?? 'Workspace'}
       listName={editingCardColumn?.title ?? 'List'}
-      allUsers={data.users}
+      allUsers={workspaceUsers}
       tags={data.tags}
       priorities={data.priorities}
       currentUserId={currentUser.id}
-      currentUserAvatar={currentUser.avatarUrl}
+      currentUserAvatar={workspaceUser.avatarUrl}
       initialTab={initialCardTab}
       onClose={() => (editingCard = null)}
       onUpdate={handleCardUpdate}
@@ -444,9 +453,18 @@
   <ProfileModal
     isOpen={isProfileOpen}
     profile={currentUser}
+    workspaceId={data.board.workspaceId}
+    workspaceName={currentWorkspace?.name}
+    workspaceAvatarUrl={workspaceAvatarUrl}
     onClose={() => (isProfileOpen = false)}
     onProfileUpdated={(updated) => {
       currentUser = updated;
+    }}
+    onWorkspaceAvatarUpdated={(updated) => {
+      workspaceAvatarUrl = updated;
+      workspaceUsers = workspaceUsers.map((user) =>
+        user.id === currentUser.id ? { ...user, avatarUrl: updated } : user,
+      );
     }}
   />
 

@@ -195,7 +195,9 @@ export function workspaceMemberFromWire(wire: z.infer<typeof WorkspaceMemberWire
     joinedAt: wire.joined_at,
     leftAt: wire.left_at,
     lastAccessedAt: wire.last_accessed_at,
-    user: wire.user ? userFromWire(wire.user) : undefined,
+    user: wire.user
+      ? userFromWire({ ...wire.user, id: wire.user.id ?? wire.user_id })
+      : undefined,
   };
 }
 
@@ -305,4 +307,3 @@ export const toDiagramElementModel = (el: z.infer<typeof DiagramElementWire>): D
   color: el.color,
   size: el.size,
 });
-

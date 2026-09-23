@@ -7,28 +7,43 @@
   interface Props {
     isOpen?: boolean;
     profile?: UserModel;
+    workspaceId?: string;
+    workspaceName?: string;
+    workspaceAvatarUrl?: string;
     onClose?: () => void;
     onProfileUpdated?: (updated: UserModel) => void;
+    onWorkspaceAvatarUpdated?: (avatarUrl: string) => void;
   }
 
   let {
     isOpen = false,
     profile = { id: '', username: 'User' },
+    workspaceId,
+    workspaceName = 'este workspace',
+    workspaceAvatarUrl,
     onClose,
     onProfileUpdated,
+    onWorkspaceAvatarUpdated,
   }: Props = $props();
 
   let firstName = $state('');
   let lastName = $state('');
   let email = $state('');
   let bio = $state('');
-  let avatarUrl = $state('');
   let avatarPreview = $state('');
+  let workspaceAvatarPreview = $state('');
+  let workspaceAvatarInput = $state<HTMLInputElement | undefined>(undefined);
+  let workspaceAvatarUpdated = $state(false);
 
   let uploadingAvatar = $state(false);
+  let uploadingWorkspaceAvatar = $state(false);
   let saving = $state(false);
   let saved = $state(false);
   let error = $state('');
+
+  function isRenderableImageUrl(url?: string) {
+    return Boolean(url && /^(https?:|blob:|data:)/i.test(url));
+  }
 
   $effect(() => {
     if (profile) {
@@ -36,8 +51,14 @@
       lastName = profile.lastName || '';
       email = profile.email || '';
       bio = profile.bio || '';
-      avatarUrl = profile.avatarUrl || '';
-      avatarPreview = profile.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`;
+      const fallbackAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`;
+      avatarPreview = isRenderableImageUrl(profile.avatarUrl)
+        ? profile.avatarUrl ?? fallbackAvatar
+        : fallbackAvatar;
+      workspaceAvatarPreview = isRenderableImageUrl(workspaceAvatarUrl)
+        ? workspaceAvatarUrl ?? avatarPreview
+        : avatarPreview;
+      workspaceAvatarUpdated = false;
     }
   });
 
@@ -73,13 +94,57 @@
         throw new Error(body.error || 'Failed to upload avatar.');
       }
 
-      const data = await res.json();
-      avatarUrl = data.url;
-      avatarPreview = data.url;
+      if (avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview);
+      avatarPreview = URL.createObjectURL(file);
     } catch (err: unknown) {
       error = err instanceof Error ? err.message : 'Error uploading avatar.';
     } finally {
       uploadingAvatar = false;
+    }
+  }
+
+  async function handleWorkspaceAvatarSelect(e: Event) {
+    if (!workspaceId) return;
+
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+      error = 'Please select a valid image file (JPEG, PNG, WebP, GIF).';
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      error = 'Image must be smaller than 10 MiB.';
+      return;
+    }
+
+    uploadingWorkspaceAvatar = true;
+    error = '';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`/api/files/workspaces/${workspaceId}/avatar`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Failed to upload workspace photo.');
+      }
+
+      workspaceAvatarPreview = URL.createObjectURL(file);
+      workspaceAvatarUpdated = true;
+      onWorkspaceAvatarUpdated?.(workspaceAvatarPreview);
+      input.value = '';
+    } catch (err: unknown) {
+      error = err instanceof Error ? err.message : 'Error uploading workspace photo.';
+    } finally {
+      uploadingWorkspaceAvatar = false;
     }
   }
 
@@ -98,7 +163,6 @@
           last_name: lastName.trim() || undefined,
           email: email.trim() || undefined,
           bio: bio.trim() || undefined,
-          avatar_url: avatarUrl || undefined,
         }),
       });
 
@@ -188,6 +252,48 @@
             <p class="text-app-text-muted text-xs">JPEG, PNG, WebP or GIF up to 10 MiB</p>
           </div>
         </div>
+
+        {#if workspaceId}
+          <div class="border-app-border-faint bg-app-panel/50 rounded-sm border p-3.5">
+            <div class="flex items-center gap-3">
+              <div class="border-app-border-faint bg-app-bg flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-sm border">
+                <img
+                  src={workspaceAvatarPreview || avatarPreview}
+                  alt=""
+                  class="h-full w-full object-cover"
+                />
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-app-text text-sm font-semibold">Foto deste workspace</p>
+                <p class="text-app-text-muted truncate text-xs">Visível somente em {workspaceName}.</p>
+                {#if workspaceAvatarUpdated}
+                  <p class="mt-1 flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                    <Check class="h-3 w-3" /> Foto atualizada
+                  </p>
+                {/if}
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={uploadingWorkspaceAvatar}
+                disabled={uploadingAvatar || uploadingWorkspaceAvatar}
+                onclick={() => workspaceAvatarInput?.click()}
+              >
+                <Camera class="h-3.5 w-3.5" />
+                {workspaceAvatarUpdated ? 'Trocar' : 'Adicionar'}
+              </Button>
+            </div>
+            <input
+              bind:this={workspaceAvatarInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onchange={handleWorkspaceAvatarSelect}
+              disabled={uploadingAvatar || uploadingWorkspaceAvatar}
+              class="hidden"
+            />
+          </div>
+        {/if}
 
         <div class="grid grid-cols-2 gap-3">
           <Input

@@ -7,6 +7,7 @@ import {
   PriorityWire,
   TagWire,
   UserWire,
+  WorkspaceMemberWire,
   WorkspaceWire,
 } from '$lib/contracts/wire';
 import {
@@ -16,13 +17,14 @@ import {
   homeBoardFromWire,
   tagFromWire,
   priorityFromWire,
+  workspaceMemberFromWire,
 } from '$lib/contracts/mappers';
 
 export async function load(event) {
   if (!event.locals.token) error(401, 'Sessão necessária.');
   const { workspaceId, boardId } = event.params;
   try {
-    const [currentUserWire, workspacesWire, boardsWire, snapshot, usersWire, tagsWire, prioritiesWire] =
+    const [currentUserWire, workspacesWire, boardsWire, snapshot, usersWire, tagsWire, prioritiesWire, membersWire] =
       await Promise.all([
         apiRequest(event, '/users/me', { schema: UserWire }),
         apiRequest(event, '/workspaces/', { schema: WorkspaceWire.array() }),
@@ -31,18 +33,32 @@ export async function load(event) {
         apiRequest(event, `/users/?workspace_id=${workspaceId}`, { schema: UserWire.array() }),
         apiRequest(event, `/workspaces/${workspaceId}/tags`, { schema: TagWire.array() }),
         apiRequest(event, `/workspaces/${workspaceId}/priorities`, { schema: PriorityWire.array() }),
+        apiRequest(event, `/workspaces/${workspaceId}/members`, { schema: WorkspaceMemberWire.array() }).catch(() => []),
       ]);
 
     if (snapshot.board.workspace_id !== workspaceId || !boardsWire.some((board) => board.id === boardId)) {
       error(404, 'Board não encontrado.');
     }
 
+    const currentUser = userFromWire(currentUserWire);
+    const workspaceMembers = membersWire.map(workspaceMemberFromWire);
+    const workspaceAvatars = new Map(
+      workspaceMembers
+        .filter((member) => member.user?.avatarUrl)
+        .map((member) => [member.userId, member.user?.avatarUrl as string]),
+    );
+
     return {
-      currentUser: userFromWire(currentUserWire),
+      currentUser,
+      workspaceAvatarUrl: workspaceAvatars.get(currentUser.id) ?? currentUser.avatarUrl,
       workspaces: workspacesWire.map(workspaceFromWire),
       boards: boardsWire.map(homeBoardFromWire),
       board: boardFromWire(snapshot),
-      users: usersWire.map(userFromWire),
+      users: usersWire.map((wire) => {
+        const user = userFromWire(wire);
+        const workspaceAvatarUrl = workspaceAvatars.get(user.id);
+        return workspaceAvatarUrl ? { ...user, avatarUrl: workspaceAvatarUrl } : user;
+      }),
       tags: tagsWire.map(tagFromWire),
       priorities: prioritiesWire.map(priorityFromWire),
     };

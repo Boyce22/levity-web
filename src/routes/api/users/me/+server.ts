@@ -12,6 +12,18 @@ const updateProfileSchema = z.object({
   email: z.string().trim().email().optional(),
 });
 
+export async function GET(event) {
+  try {
+    const raw = await apiRequest(event, '/users/me', {
+      schema: UserWire,
+    });
+    return json(userFromWire(raw));
+  } catch (cause) {
+    if (cause instanceof ApiError) return json({ error: cause.message, code: cause.code }, { status: cause.status });
+    throw cause;
+  }
+}
+
 export async function PATCH(event) {
   const parsed = updateProfileSchema.safeParse(await event.request.json().catch(() => ({})));
   if (!parsed.success) {
@@ -19,12 +31,16 @@ export async function PATCH(event) {
   }
 
   try {
-    const raw = await apiRequest(event, '/users/me', {
+    await apiRequest(event, '/users/me', {
       method: 'PATCH',
       body: parsed.data,
       schema: UserWire,
     });
-    return json(userFromWire(raw));
+
+    const refreshed = await apiRequest(event, '/users/me', {
+      schema: UserWire,
+    });
+    return json(userFromWire(refreshed));
   } catch (cause) {
     if (cause instanceof ApiError) return json({ error: cause.message, code: cause.code }, { status: cause.status });
     throw cause;

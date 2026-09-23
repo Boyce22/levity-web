@@ -15,7 +15,7 @@ export const PriorityWire = TagWire.extend({ icon: z.string(), position: z.numbe
 export const CommentWire = z.object({ id: z.string().uuid(), issue_id: z.string().uuid(), created_by: z.string().uuid(), parent_id: z.string().uuid().nullable().optional(), content: z.string(), created_at: iso });
 export const CommentsPageWire = z.object({ data: z.array(CommentWire), nextCursor: z.string().optional() });
 export const SprintWire = z.object({ id: z.string().uuid(), board_id: z.string().uuid(), name: z.string(), goal: z.string().optional(), start_date: z.string(), end_date: z.string(), status: z.enum(['PLANNING', 'ACTIVE', 'COMPLETED']), tracking_mode: z.enum(['POINTS', 'COUNT', 'HOURS']), capacity_points: z.number().nullable().optional(), velocity_points: z.number().nullable().optional(), created_by: z.string().uuid(), created_at: iso, total_issues: z.number().int(), completed_issues: z.number().int(), progress_percent: z.number() });
-export const WorkspaceMemberWire = z.object({ id: z.string().uuid(), workspace_id: z.string().uuid(), user_id: z.string().uuid(), role: WorkspaceRole, membership_status: z.enum(['ACTIVE', 'LEFT', 'REMOVED']), joined_at: iso, left_at: iso.optional(), last_accessed_at: iso.optional(), user: UserWire.optional() });
+export const WorkspaceMemberWire = z.object({ id: z.string().uuid(), workspace_id: z.string().uuid(), user_id: z.string().uuid(), role: WorkspaceRole, membership_status: z.enum(['ACTIVE', 'LEFT', 'REMOVED']), joined_at: iso, left_at: iso.optional(), last_accessed_at: iso.optional(), user: UserWire.extend({ id: z.string().uuid().optional() }).optional() });
 
 export const NotificationTypeWire = z.enum(['ASSIGNMENT', 'MENTION', 'STATUS_CHANGE', 'DUE_DATE']);
 export const NotificationWire = z.object({

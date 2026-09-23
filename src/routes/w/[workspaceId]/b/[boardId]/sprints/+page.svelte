@@ -27,7 +27,17 @@
   let isShareOpen = $state(false);
   let isProfileOpen = $state(false);
   let currentUser = $derived<UserModel>(data.currentUser);
+  let workspaceAvatarUrl = $state<string | undefined>(undefined);
   let lastFormMessage = $state('');
+
+  $effect(() => {
+    workspaceAvatarUrl = data.workspaceAvatarUrl;
+  });
+
+  const workspaceUser = $derived({
+    ...currentUser,
+    avatarUrl: workspaceAvatarUrl || currentUser.avatarUrl,
+  });
 
   $effect(() => {
     const message = form?.error || form?.success;
@@ -75,7 +85,7 @@
     currentWorkspaceName={currentWorkspace?.name}
     boards={data.boards}
     currentBoardId={data.boardId}
-    userProfile={currentUser}
+    userProfile={workspaceUser}
     userRole={currentUserRole}
     activeView="sprints"
     onOpenProfile={() => (isProfileOpen = true)}
@@ -465,9 +475,15 @@
   <ProfileModal
     isOpen={isProfileOpen}
     profile={currentUser}
+    workspaceId={data.workspaceId}
+    workspaceName={currentWorkspace?.name}
+    workspaceAvatarUrl={workspaceAvatarUrl}
     onClose={() => (isProfileOpen = false)}
     onProfileUpdated={(updated) => {
       currentUser = updated;
+    }}
+    onWorkspaceAvatarUpdated={(updated) => {
+      workspaceAvatarUrl = updated;
     }}
   />
 </div>

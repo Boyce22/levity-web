@@ -1,12 +1,13 @@
 import { error, fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { ApiError, apiRequest } from '$lib/server/api-client';
-import { SprintWire, UserWire, WorkspaceWire, HomeBoardWire } from '$lib/contracts/wire';
+import { SprintWire, UserWire, WorkspaceMemberWire, WorkspaceWire, HomeBoardWire } from '$lib/contracts/wire';
 import {
   sprintFromWire,
   userFromWire,
   workspaceFromWire,
   homeBoardFromWire,
+  workspaceMemberFromWire,
 } from '$lib/contracts/mappers';
 
 const sprintInput = z.object({
@@ -35,15 +36,21 @@ export async function load(event) {
   const { workspaceId, boardId } = event.params;
 
   try {
-    const [currentUserWire, workspacesWire, boardsWire, sprintsWire] = await Promise.all([
+    const [currentUserWire, workspacesWire, boardsWire, sprintsWire, membersWire] = await Promise.all([
       apiRequest(event, '/users/me', { schema: UserWire }),
       apiRequest(event, '/workspaces/', { schema: WorkspaceWire.array() }),
       apiRequest(event, `/workspaces/${workspaceId}/boards`, { schema: HomeBoardWire.array() }),
       apiRequest(event, `/boards/${boardId}/sprints`, { schema: SprintWire.array() }),
+      apiRequest(event, `/workspaces/${workspaceId}/members`, { schema: WorkspaceMemberWire.array() }).catch(() => []),
     ]);
 
+    const currentUser = userFromWire(currentUserWire);
+    const workspaceMembers = membersWire.map(workspaceMemberFromWire);
+    const workspaceAvatarUrl = workspaceMembers.find((member) => member.userId === currentUser.id)?.user?.avatarUrl;
+
     return {
-      currentUser: userFromWire(currentUserWire),
+      currentUser,
+      workspaceAvatarUrl: workspaceAvatarUrl ?? currentUser.avatarUrl,
       workspaces: workspacesWire.map(workspaceFromWire),
       boards: boardsWire.map(homeBoardFromWire),
       sprints: sprintsWire.map(sprintFromWire),
