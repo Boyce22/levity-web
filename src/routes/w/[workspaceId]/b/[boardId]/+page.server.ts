@@ -3,56 +3,40 @@ import { z } from 'zod';
 import { apiRequest, ApiError } from '$lib/server/api-client';
 import {
   BoardSnapshotWire,
-  HomeBoardWire,
   PriorityWire,
   TagWire,
   UserWire,
-  WorkspaceMemberWire,
-  WorkspaceWire,
 } from '$lib/contracts/wire';
 import {
   boardFromWire,
   userFromWire,
-  workspaceFromWire,
-  homeBoardFromWire,
   tagFromWire,
   priorityFromWire,
-  workspaceMemberFromWire,
 } from '$lib/contracts/mappers';
 
 export async function load(event) {
   if (!event.locals.token) error(401, 'Sessão necessária.');
   const { workspaceId, boardId } = event.params;
   try {
-    const [currentUserWire, workspacesWire, boardsWire, snapshot, usersWire, tagsWire, prioritiesWire, membersWire] =
-      await Promise.all([
-        apiRequest(event, '/users/me', { schema: UserWire }),
-        apiRequest(event, '/workspaces/', { schema: WorkspaceWire.array() }),
-        apiRequest(event, `/workspaces/${workspaceId}/boards`, { schema: HomeBoardWire.array() }),
-        apiRequest(event, `/boards/${boardId}`, { schema: BoardSnapshotWire }),
-        apiRequest(event, `/users/?workspace_id=${workspaceId}`, { schema: UserWire.array() }),
-        apiRequest(event, `/workspaces/${workspaceId}/tags`, { schema: TagWire.array() }),
-        apiRequest(event, `/workspaces/${workspaceId}/priorities`, { schema: PriorityWire.array() }),
-        apiRequest(event, `/workspaces/${workspaceId}/members`, { schema: WorkspaceMemberWire.array() }).catch(() => []),
-      ]);
+    const [parentData, snapshot, usersWire, tagsWire, prioritiesWire] = await Promise.all([
+      event.parent(),
+      apiRequest(event, `/boards/${boardId}`, { schema: BoardSnapshotWire }),
+      apiRequest(event, `/users/?workspace_id=${workspaceId}`, { schema: UserWire.array() }),
+      apiRequest(event, `/workspaces/${workspaceId}/tags`, { schema: TagWire.array() }),
+      apiRequest(event, `/workspaces/${workspaceId}/priorities`, { schema: PriorityWire.array() }),
+    ]);
 
-    if (snapshot.board.workspace_id !== workspaceId || !boardsWire.some((board) => board.id === boardId)) {
+    if (snapshot.board.workspace_id !== workspaceId || !parentData.boards.some((board) => board.id === boardId)) {
       error(404, 'Board não encontrado.');
     }
 
-    const currentUser = userFromWire(currentUserWire);
-    const workspaceMembers = membersWire.map(workspaceMemberFromWire);
     const workspaceAvatars = new Map(
-      workspaceMembers
+      parentData.members
         .filter((member) => member.user?.avatarUrl)
         .map((member) => [member.userId, member.user?.avatarUrl as string]),
     );
 
     return {
-      currentUser,
-      workspaceAvatarUrl: workspaceAvatars.get(currentUser.id) ?? currentUser.avatarUrl,
-      workspaces: workspacesWire.map(workspaceFromWire),
-      boards: boardsWire.map(homeBoardFromWire),
       board: boardFromWire(snapshot),
       users: usersWire.map((wire) => {
         const user = userFromWire(wire);
