@@ -138,12 +138,8 @@
         onclick={toggleWorkspaceMenu}
         class="group flex w-full items-center gap-3 rounded-sm px-3 py-2.5 transition-all {isWsOpen ? 'bg-app-panel' : 'hover:bg-app-hover'}"
       >
-        <div class="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-gradient-to-br from-indigo-500 to-indigo-700 text-[10px] font-bold text-white shadow-sm">
-          {#if userProfile.avatarUrl}
-            <img src={userProfile.avatarUrl} alt="" class="h-full w-full object-cover" />
-          {:else}
-            {currentWorkspaceName.charAt(0).toUpperCase() || 'W'}
-          {/if}
+        <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-gradient-to-br from-indigo-500 to-indigo-700 text-[10px] font-bold text-white shadow-sm">
+          {currentWorkspaceName.charAt(0).toUpperCase() || 'W'}
         </div>
         <div
           class="flex flex-1 items-center justify-between overflow-hidden whitespace-nowrap transition-opacity duration-200"
@@ -172,13 +168,9 @@
                 class="mb-0.5 flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors {isCurrent ? 'bg-app-primary-muted text-app-primary font-bold' : 'text-app-text-muted hover:bg-app-hover hover:text-app-text'}"
               >
                 <div
-                  class="flex h-5 w-5 items-center justify-center overflow-hidden rounded-sm text-[9px] font-bold {isCurrent ? 'bg-app-primary text-white' : 'bg-app-border-faint text-app-text-muted'}"
+                  class="flex h-5 w-5 items-center justify-center rounded-sm text-[9px] font-bold {isCurrent ? 'bg-app-primary text-white' : 'bg-app-border-faint text-app-text-muted'}"
                 >
-                  {#if isCurrent && userProfile.avatarUrl}
-                    <img src={userProfile.avatarUrl} alt="" class="h-full w-full object-cover" />
-                  {:else}
-                    {w.name.charAt(0).toUpperCase()}
-                  {/if}
+                  {w.name.charAt(0).toUpperCase()}
                 </div>
                 <span class="truncate">{w.name}</span>
               </a>

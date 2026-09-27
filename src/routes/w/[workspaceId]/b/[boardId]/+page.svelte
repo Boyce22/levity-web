@@ -16,9 +16,9 @@
   let { data } = $props();
 
   let columns = $state<ColumnModel[]>([]);
-  let currentUser = $state<UserModel>({ id: '', username: '' });
+  let currentUser = $state<UserModel>(data.currentUser);
   let workspaceUsers = $state<UserModel[]>([]);
-  let workspaceAvatarUrl = $state<string | undefined>(undefined);
+  let workspaceAvatarUrl = $state<string | undefined>(data.workspaceAvatarUrl);
 
   // Sync columns from data
   $effect(() => {

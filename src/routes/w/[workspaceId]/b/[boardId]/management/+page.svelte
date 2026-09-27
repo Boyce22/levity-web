@@ -24,7 +24,7 @@
   let isShareOpen = $state(false);
   let isProfileOpen = $state(false);
   let currentUser = $derived<UserModel>(data.currentUser);
-  let workspaceAvatarUrl = $state<string | undefined>(undefined);
+  let workspaceAvatarUrl = $state<string | undefined>(data.workspaceAvatarUrl);
   let copiedToken = $state<string | null>(null);
 
   $effect(() => {
